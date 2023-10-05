@@ -1,13 +1,13 @@
-import requests
+# import requests
 import json
 import csv
 url = "https://zillow56.p.rapidapi.com/search"
-from datetime import datetime
+# from datetime import datetime
 import sqlite3
-import pandas as pd
+
 
 def searchZillow():
-    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    # timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     # filename = f"data_{timestamp}.txt"
     # querystring = {"location":"seattle, wa","status":"recentlySold"}
     #

@@ -139,18 +139,22 @@ def check_new_listings():
     # db.session.commit()
     #
     # if new_listings:
-    send_email([{'id': 1,
-                'details':'asdfasdf'},
-                {'id': 2,
-                'details':'tyjkhggg'}]
-               )
+    test_listings = [{'id': 1,
+            'details':'asdfasdf'},
+            {'id': 2,
+            'details':'tyjkhggg'}]
+
+    email_content = "Scheduled New Listings:\n"
+    for listing in test_listings:
+        email_content += f"ID: {listing['id']}, Details: {listing['details']}\n"
+    send_email('New Listing', email_content)
 
 
 
 
-if __name__ == '__main__':
-    app = create_app()
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(func=check_new_listings, trigger="interval", minutes=1)
-    scheduler.start()
-    app.run()
+# if __name__ == '__main__':
+app = create_app()
+# scheduler = BackgroundScheduler()
+# scheduler.add_job(func=check_new_listings, trigger="interval", minutes=1)
+# scheduler.start()
+    # app.run()
