@@ -120,8 +120,8 @@ def AllSoldHomes():
 @main.route('/beaman', methods=['GET', 'POST'])
 def searchdb():
     listings = Listing.query.all()
-    for soldhouse in listings:
-        listinglengthdays = ListingLength(soldhouse, Listing, db)
+    # for soldhouse in listings:
+    #     listinglengthdays = ListingLength(soldhouse, Listing, db)
     return render_template('table_template.html', listings=listings)
 
 
