@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download Pics</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Download Pics</h1>
+
+    <form id="refForm">
+        <label for="ref_number">Reference Number:</label>
+        <input type="text" id="ref_number" name="ref_number">
+        <button type="submit">Submit</button>
+    </form>
+
+    <p id="responseMessage"></p>
+
+    <script>
+        $(document).ready(function(){
+            $("#refForm").submit(function(event){
+                event.preventDefault();  // Stop form from submitting normally
+                $.ajax({
+                    url: "/downloadpicsfromMLS",
+                    type: "POST",
+                    data: $("#refForm").serialize(),
+                    dataType: "json",
+                    success: function(data) {
+                        $("#responseMessage").text(data.message);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -21,8 +21,24 @@ def send_email( subject, body, html_content=None):
         server.login(fromemail, 'ennyprrdtpvpxalh')
         text = msg.as_string()
         server.sendmail(fromemail, recipient, text)
+    print('email sent')
 
+def send_emailstatic():
+    msg = MIMEMultipart()
+    msg['From'] = fromemail
+    msg['To'] = recipient
+    msg['Subject'] = 'subject'
 
+    msg.attach(MIMEText('body', 'plain'))
+
+    # if html_content:
+    #     msg.attach(MIMEText(html_content, 'html'))
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login(fromemail, 'ennyprrdtpvpxalh')
+        text = msg.as_string()
+        server.sendmail(fromemail, recipient, text)
 
 # def send_email(listings):
 #     # Placeholder for your email sending logic
