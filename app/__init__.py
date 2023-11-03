@@ -22,10 +22,11 @@ def start_scheduler():
         atexit.register(lambda: scheduler.shutdown())
 
 def create_app(debug=False,config_object="config.module.path"):
-    app = Flask(__name__)
+    app = Flask(__name__, instance_relative_config=True)
+
 
     # Apply config or any other settings
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///listings.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.instance_path, 'listings.db')
     app.config['UPLOAD_FOLDER'] = 'uploads'
     app.debug=debug
 
