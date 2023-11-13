@@ -10,11 +10,22 @@ from flask_mail import Mail, Message
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 from SMTP_email import send_emailstatic
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from os import getenv
 from sshtunnel import SSHTunnelForwarder
 
-load_dotenv()  # Load the environment variables from .env
+# load_dotenv()  # Load the environment variables from .env
+
+# Function to load .env file manually
+def load_env(env_file=".env"):
+    with open(env_file) as f:
+        for line in f:
+            if line.strip() and not line.startswith('#'):
+                key, value = line.strip().split('=', 1)
+                os.environ[key] = value
+
+# Call the function to load the environment variables
+load_env()
 
 mail = Mail()
 scheduler = BackgroundScheduler()
@@ -48,7 +59,7 @@ def start_scheduler():
         atexit.register(lambda: scheduler.shutdown())
 
 def create_app(debug=False,config_object="config.module.path"):
-    env = os.getenv('FLASK_ENV', 'production')
+    # env = os.getenv('FLASK_ENV', 'production')
     app = Flask(__name__, instance_relative_config=True)
     tunnel = None
 
