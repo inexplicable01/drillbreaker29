@@ -43,7 +43,9 @@ import logging
 file_handler = logging.FileHandler('flask_errors.log')
 file_handler.setLevel(logging.ERROR)
 
-app = create_app(debug=True)
+app, ssh_tunnel = create_app(debug=True)
 app.logger.addHandler(file_handler)
 if __name__ == '__main__':
     app.run()
+    if ssh_tunnel:
+        ssh_tunnel.stop()

@@ -30,6 +30,11 @@ def HeatMapGen(days, displayfun):
     listings = AllListings()
     if displayfun==SOLDHOTTNESS:
         for listing in listings:
+            try:
+                if listing.dateSold is None:
+                    continue
+            except Exception:
+                print('sdf')
             if  days_ago <= listing.dateSold <= current_date:
                 coords.append([listing.latitude, listing.longitude, HouseSoldSpeed(listing.list2pend)])
                 lat = lat + listing.latitude

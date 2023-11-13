@@ -26,7 +26,18 @@ class Listing(db.Model):
 
 
 def AllListings():
-    return Listing.query.all()
+    results = Listing.query.all()
+    verifiedresults=[]
+    for index, result in enumerate(results):
+        if result is None:
+            # print(f"None found at index {index}")
+            continue
+        else:
+            # Assuming 'Listing' has an 'id' attribute
+            # print(f"Listing ID: {result.id}")
+            verifiedresults.append(result)
+
+    return results
 
 def SaveHouseSearchDataintoDB(housearray, status='solded'):
     for house in housearray:
