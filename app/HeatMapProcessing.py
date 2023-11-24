@@ -285,7 +285,6 @@ def alladdresseswithbuilthomecalues(value_increase=1000000):
         marker = folium.Marker(
             location=coords,
             popup=folium.Popup(description),  # The popup will contain the custom string
-            tooltip='Click me!',
             icon=icon
         )
         marker.add_to(m)

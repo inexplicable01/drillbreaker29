@@ -169,12 +169,12 @@ def MapPotentialValue():
         # displayfun = request.form['displayfun']
 
         map_html2 = validateHomePredictionPrice2(description)
-        return jsonify({'map_html2': map_html2, 'description': description})
+        return jsonify({'map_html2': map_html2, 'report': "Future Justification of Value"})
     else:
         description = None
         selected_address = None
         averagenewbuildprice = None
-        map_html2 = validateHomePredictionPrice(description)
+        map_html2 = 'Display for Property details'
         # displayfun = SOLDHOTTNESS
     map_html = alladdresseswithbuilthomecalues(1500000)
 

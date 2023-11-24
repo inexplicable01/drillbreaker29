@@ -5,31 +5,82 @@
     <!-- Include Leaflet CSS and JavaScript -->
 </head>
 <body>
-{#    <div id="map" style="width: 100%; height: 600px;"></div>#}
-{#    <div id="coordinates">Coordinates: <h2 id="description"></h2></div>#}
+<style>
+  .map-container {
+    width: 80%; /* Adjusted from 50% to 40% */
+    height: 60vh; /* Adjusted from 40vh to 30vh */
+    margin: 0 auto; /* Centers the container */
+    padding: 15px; /* Sufficient padding */
+    box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+    border: 2px solid #333; /* Solid border */
+    display: block; /* Each map will take its own row */
+    overflow: hidden; /* Prevents the content from spilling out */
+  }
 
-    <!-- Folium map -->
+  .map-container2 {
+    width: 60%; /* Adjusted from 50% to 40% */
+    height: 60vh; /* Adjusted from 40vh to 30vh */
+    margin: 0 auto; /* Centers the container */
+    padding: 15px; /* Sufficient padding */
+    box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+    border: 2px solid #333; /* Solid border */
+    display: block; /* Each map will take its own row */
+    overflow: hidden; /* Prevents the content from spilling out */
+  }
+
+  #info, #submitBtn {
+    border: 2px solid #666; /* A lighter border color for these elements */
+    padding: 2px;
+    margin-top: 5px;
+    display: block;
+    width: 50%; /* Adjusted the width to not be full-screen */
+    margin: 5px auto; /* Centers the elements */
+  }
+
+  #info {
+    text-align: center; /* This centers the text inside the info div */
+  }
+
+  button {
+    width: auto; /* Allows the button to shrink to fit its content */
+    display: block;
+    margin: 10px auto; /* Centers the button horizontally */
+    padding: 5px 20px; /* Adds padding inside the button, 5px top/bottom and 20px left/right */
+  }
+
+  h2 {
+    margin: 0; /* This removes the default margin from h2 elements */
+  }
+</style>
+
+<h2>Below is a map of all properties with potential Build value above 1.5 mil</h2>
+<p> The build value is calculated by (Predicted New Build Value) - (current value)</p>
+<div class="map-container" id="map1">
     {{ map|safe }}
+</div>
 
-    <div id="info">Info: <h2 id="description"></h2></div>
-    <button id="submitBtn">Justify New Build Prices</button>
-{##}
-{#    <form id="descriptionForm" method="post" action="/mappotentialValue">#}
-{#        <div id="info">Info: <input type="text" name="description" id="description2" /></div>#}
-{#        <input type="submit" value="Submit Description">#}
-{#    </form>#}
+<div id="info">You Currently Selected: <h2 id="description"></h2>
+<button id="submitBtn">Click to see details of this property and its comps</button>
+</div>
 
-    <h2 id="description2"></h2>
-<div id="mapContainer">
+
+{% if report %}
+    <p>Below is a map focused on the property you selected.</p>
+{#{% else %}#}
+{#    <p>No report available.</p>#}
+{% endif %}
+<div class="map-container2" id="map2">
     {{ map2|safe }}
 </div>
 
-    {{ script|safe }}
 
+<div id="report">
+    {{ report|safe }}
+</div>
 
-    <script>
+<script>
     // Listen for messages from the iframe
-    window.addEventListener('message', function(event) {
+    window.addEventListener('message', function (event) {
         if (event.origin !== "http://yourdomain.com") { // Change to your domain
             return;
         }
@@ -39,31 +90,31 @@
         }
     }, false);
 
-    document.getElementById('submitBtn').addEventListener('click', function() {
-    var descriptionText = document.getElementById('description').innerText; // Make sure the ID matches your <h2> element
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/mappotentialValue', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.onload = function() {
-        if (xhr.status >= 200 && xhr.status < 300) {
-            // Here you can handle the response from your Flask app
-            // For example, you can parse the response and update the DOM accordingly
-            console.log('Server response:', xhr.responseText);
+    document.getElementById('submitBtn').addEventListener('click', function () {
+        var descriptionText = document.getElementById('description').innerText; // Make sure the ID matches your <h2> element
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/mappotentialValue', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                // Here you can handle the response from your Flask app
+                // For example, you can parse the response and update the DOM accordingly
+                console.log('Server response:', xhr.responseText);
 
-            // If you want to update the page based on the response:
-            var response = JSON.parse(xhr.responseText);
-            // Update the element that contains the map
-            document.getElementById('mapContainer').innerHTML = response.map_html2;
-            // Optionally, update the description
-            document.getElementById('description2').innerText = response.description;
-        } else {
-            // Handle errors here
-            console.error('The request failed!');
-        }
-    };
-    // Send the description as form data
-    xhr.send('description=' + encodeURIComponent(descriptionText));
-});
-    </script>
+                // If you want to update the page based on the response:
+                var response = JSON.parse(xhr.responseText);
+                // Update the element that contains the map
+                document.getElementById('map2').innerHTML = response.map_html2;
+                // Optionally, update the description
+                document.getElementById('report').innerText = response.report;
+            } else {
+                // Handle errors here
+                console.error('The request failed!');
+            }
+        };
+        // Send the description as form data
+        xhr.send('description=' + encodeURIComponent(descriptionText));
+    });
+</script>
 </body>
 </html>
