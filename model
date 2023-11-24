@@ -1,0 +1,24 @@
+from sqlalchemy import create_engine, Column, Integer, Float, String, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+Base = declarative_base()
+
+class BellevueTaxAddress(Base):
+    __tablename__ = 'BellevueTaxAddress'  # specify your table name here
+
+    id = Column(Integer, primary_key=True)
+    addr_full = Column(String(255))
+    comments = Column(Text)
+    sitetype = Column(Integer)
+    zip5 = Column(Integer)
+    postalcityname = Column(String(255))
+    latitude = Column(Float)
+    longitude = Column(Float)
+    point_x = Column(Float)
+    point_y = Column(Float)
+    shape_length = Column(Float)
+    shape_area = Column(Float)
+
+    def __repr__(self):
+        return f"<BellevueTaxAddress {self.addr_full}>"

@@ -1,17 +1,17 @@
-from flask import Blueprint, render_template,jsonify,render_template_string, redirect, url_for, request, flash
-from . import db
-from .models import Listing
+from flask import Blueprint, render_template,jsonify, redirect, url_for, request
+
 from SMTP_email import send_email
 # import os
 # from werkzeug.utils import secure_filename
 # import csv
-from ZillowSearch import loadcsv,UpdateListfromLocation, SearchNewListing,SearchNewSoldHomes
-from ZillowDataProcessor import ListingLength, PicturesFromMLS
-from app.HeatMapProcessing import HeatMapGen, SOLDHOTTNESS,EXPENSIVEHOME,WhereExpensiveHomes
+from app.ZillowSearch import UpdateListfromLocation, SearchNewListing,SearchNewSoldHomes
+from app.ZillowDataProcessor import PicturesFromMLS
+from app.HeatMapProcessing import *
 import folium
-from folium.plugins import HeatMap
 main = Blueprint('main', __name__)
-
+# from extensions import dbmethods
+from app.DataBaseFunc import dbmethods
+from markupsafe import Markup
 
 # Register routes
 @main.route('/')
@@ -75,51 +75,42 @@ def WhereToBuild():
 @main.route('/showdb')
 def showtable():
     # Use a subset of your listings or dummy data for testing
-    UpdateListfromLocation('Bellevue', Listing, db)
-
-    listings = Listing.query.all()
+    listings = UpdateListfromLocation('Bellevue')
     return render_template('table_template.html', listings=listings)
 
 @main.route('/newlistings')
 def newlistings():
     # Use a subset of your listings or dummy data for testing
-    SearchNewListing('Bellevue', Listing, db)
-    SearchNewListing('Kenmore', Listing, db)
-    SearchNewListing('Bothell', Listing, db)
-    SearchNewListing('Kirkland', Listing, db)
+    SearchNewListing('Bellevue')
+    SearchNewListing('Kenmore')
+    SearchNewListing('Bothell')
+    SearchNewListing('Kirkland')
     # UpdateListfromLocation('Bellevue', Listing, db)
-
-    listings = Listing.query.filter(Listing.daysOnZillow > -1).order_by(Listing.daysOnZillow).all()
+    listings = dbmethods.ActiveListings()
     return render_template('table_template.html', listings=listings)
 
 AreasToCareAbout =['Bellevue', 'Kenmore', 'Bothell' ,'Kirkland' ,'Seattle', 'Shoreline' ,'Renton', 'Kent' ,'Mercer' ,'Island']
 @main.route('/allthesoldhomes')
 def AllSoldHomes():
     # Use a subset of your listings or dummy data for testing
-    # SearchNewSoldHomes('Bellevue')
-    # SearchNewSoldHomes('Kenmore')
-    # SearchNewSoldHomes('Bothell')
-    # SearchNewSoldHomes('Kirkland')
-    # SearchNewSoldHomes('Ballard')
-    # SearchNewSoldHomes('Fremont')
-    # SearchNewSoldHomes('Phinney Ridge')
-    # SearchNewSoldHomes('Wallingford')
-    #
-    # SearchNewSoldHomes('Shoreline')
-    # SearchNewSoldHomes('Renton', "12m")
+    # SearchNewSoldHomes('Bellevue')'Kenmore')('Bothell')('Kirkland')('Ballard')('Fremont')('Phinney Ridge')('Wallingford')'Shoreline')('Renton', "12m")
     # SearchNewSoldHomes('Clyde Hill', "12m")
     SearchNewSoldHomes('Medina', "12m")
-    # SearchNewSoldHomes('Mercer Island', "12m")
-    # SearchNewSoldHomes('Seattle', "12m")
+    # SearchNewSoldHomes('Mercer Island', "12m")('Seattle', "12m")
     # UpdateListfromLocation('Bellevue', Listing, db)
 
-    listings = Listing.query.order_by(Listing.dateSold).all()
+    listings = dbmethods.AllListingsByDate()
     return render_template('table_template.html', listings=listings)
+
+@main.route('/abunchofBellevueAddress')
+def SomeBellevueAddress():
+    addresses = dbmethods.AllBellevueAddress()
+    return render_template('table_address_template.html', addresses=addresses)
 
 
 @main.route('/beaman', methods=['GET', 'POST'])
 def searchdb():
-    listings = Listing.query.all()
+    listings = dbmethods.AllListigs()
     # for soldhouse in listings:
     #     listinglengthdays = ListingLength(soldhouse, Listing, db)
     return render_template('table_template.html', listings=listings)
@@ -129,7 +120,7 @@ def searchdb():
 def download_pics():
     if request.method == 'POST':
         ref_number = request.form.get('ref_number')
-        success = PicturesFromMLS(ref_number, Listing, db)
+        success = PicturesFromMLS(ref_number)
         if success:  # Check if API was called successfully
             return jsonify(status="success", message="API called successfully")
         else:
@@ -141,12 +132,63 @@ def download_pics():
 def GiveMeComps():
     if request.method == 'POST':
         ref_number = request.form.get('ref_number')
-        success = PicturesFromMLS(ref_number, Listing, db)
+        success = PicturesFromMLS(ref_number)
         if success:  # Check if API was called successfully
             return jsonify(status="success", message="API called successfully")
         else:
             return jsonify(status="error", message="API call failed")
     return render_template('MLS_Input.html')
+
+@main.route('/newbuildlocations', methods=['GET','POST'])
+def GiveMeComps2():
+    # addresses = ["Address 1", "Address 2", "Address 3"]
+    if request.method =='POST':
+        days = 60
+        selected_address = request.form.get('address')
+        # displayfun = request.form['displayfun']
+    else:
+
+        selected_address = None
+        averagenewbuildprice = None
+        # displayfun = SOLDHOTTNESS
+    m = WhereNewBuild()
+    m2, addressestoclick, averagenewbuildprice = WhereOldBuild(selected_address)
+
+    return render_template('WhereToBuild.html', m=m, m2=m2,
+                           addresses=addressestoclick,
+                           selected_address=selected_address,
+                           averagenewbuildprice=averagenewbuildprice)
+
+@main.route('/mappotentialValue', methods=['GET', 'POST'])
+def MapPotentialValue():
+    # addresses = ["Address 1", "Address 2", "Address 3"]
+
+    if request.method =='POST':
+        days = 60
+        description = request.form['description']
+        # displayfun = request.form['displayfun']
+
+        map_html2 = validateHomePredictionPrice2(description)
+        return jsonify({'map_html2': map_html2, 'description': description})
+    else:
+        description = None
+        selected_address = None
+        averagenewbuildprice = None
+        map_html2 = validateHomePredictionPrice(description)
+        # displayfun = SOLDHOTTNESS
+    map_html = alladdresseswithbuilthomecalues(1500000)
+
+    return render_template('MapPotentialValue.html', map=map_html ,map2=map_html2,  description = description)
+
+
+    # if request.method == 'POST':
+    #     ref_number = request.form.get('ref_number')
+    #     success = PicturesFromMLS(ref_number, Listing, db)
+    #     if success:  # Check if API was called successfully
+    #         return jsonify(status="success", message="API called successfully")
+    #     else:
+    #         return jsonify(status="error", message="API call failed")
+    # return render_template('MLS_Input.html')
 
 def call_api_with_ref(ref_number):
     # Logic to call the API with the reference number

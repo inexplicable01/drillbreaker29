@@ -61,7 +61,7 @@ def ListingLength(soldhouse, Listing, db):
             db.session.commit()
 import os
 from os.path import *
-def PicturesFromMLS(zpid, Listing, db):
+def PicturesFromMLS(zpid):
 
     url = "https://zillow56.p.rapidapi.com/property"
     querystring = {"zpid":zpid}

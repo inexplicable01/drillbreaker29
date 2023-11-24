@@ -5,25 +5,43 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-        <h1>Hello World WTF</h1>
-        <form action="{{ url_for('main.send_test_email') }}" method="post">
-            <button type="submit">Send Test Email Hello</button>
-        </form>
-        <a href="/beaman">be</a>
-        <a href="/showdb">showdbafdsf</a>
+        <h1>Welcome to Wayber Real Estate Analysis</h1>
 
-        <p>New Listing goes and fetch these areas : for new Listings</p>
+{#        <a href="/beaman">be</a>#}
+{#        <a href="/showdb">showdbafdsf</a>#}
+
+        <p>New Listing goes and fetch these areas (Bellevue,Kenmore,Bothell,Kirkland): for new Listings</p>
         <a href="/newlistings">newlistings</a>
-                <p>fkajdsf</p>
-        <a href="/allthesoldhomes">allthesoldhomes</a>
+                <p></p>
+        <a href="/allthesoldhomes">Show Sold Homes in the Last 90 days</a>
 
-        <a href="/downloadpicsfromMLS">downloadpicsfromMLS</a>
-        <p>fkajdsf</p>
-        <a href="/mapexample">mapexample</a>
-        <p>Below Link Show a Heat Map of Homes Sold</p>
-        <a href="/heatmapexample">Homes Sold Heat Map</a>
-        <p>Where to Build</p>
-        <a href="/wheretobuild">Where to Build</a>
+        <p>Potential Map Value</p>
+        <a href="/mappotentialValue">Potential Map Value</a>
+
+
+
+
+        <form action="{{ url_for('main.send_test_email') }}" method="post">
+            <button type="submit">Send Us a Question!</button>
+        </form>
+
+{#        <a href="/downloadpicsfromMLS">downloadpicsfromMLS</a>#}
+{#        <p>fkajdsf</p>#}
+{#        <a href="/mapexample">mapexample</a>#}
+{#        <p>Below Link Show a Heat Map of Homes Sold</p>#}
+{#        <a href="/heatmapexample">Homes Sold Heat Map</a>#}
+{#        <p>Where to Build</p>#}
+{#        <a href="/wheretobuild">Where to Build</a>#}
+{##}
+{#        <p>List of Bellevue Address</p>#}
+{#        <a href="/wheretobuild">Where to Build</a>#}
+{#        <p>Some addresses</p>#}
+{#        <a href="/abunchofBellevueAddress">Some addresses</a>#}
+{##}
+{#        <p>Map of new Build</p>#}
+{#        <a href="/newbuildlocations">Map of new Build</a>#}
+
+
 
 </body>
 </html>

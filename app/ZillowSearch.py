@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 import csv
 from warnings import warn
-from app.models import SaveHouseSearchDataintoDB
+# from app.models import SaveHouseSearchDataintoDB
 url = "https://zillow56.p.rapidapi.com/search"
 # from datetime import datetime
 import sqlite3
@@ -12,9 +12,13 @@ keystokeep = ['zpid','price','unit','streetAddress',
               'bathrooms','zestimate','daysOnZillow',
               'dateSold','homeType','latitude','longitude']
 rapidapikey = "0f1a70c877msh63c2699008fda33p17811djsn4ef183cca70a"
-from app.useful_func import safe_int_conversion,safe_float_conversion
+# from app.useful_func import safe_int_conversion,safe_float_conversion
 
-
+headers = {
+    "X-RapidAPI-Key": rapidapikey,
+    "X-RapidAPI-Host": "zillow56.p.rapidapi.com"
+}
+from app.DataBaseFunc import dbmethods
 
 def searchZillow():
     # timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -33,7 +37,7 @@ def searchZillow():
     # with open(filename, "w") as file:
     #     json.dump(responseobject, file)
 
-    with open('data.txt', "r") as file:
+    with open('../data.txt', "r") as file:
         responseobject = json.load(file)
 
     results = responseobject['results']
@@ -42,7 +46,7 @@ def searchZillow():
         all_fields.update(result.keys())
 
     # Step 2 & 3: Use these fields as the CSV headers and write each result to the CSV.
-    with open('data.csv', 'w', newline='') as csvfile:
+    with open('../data.csv', 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=all_fields)
         writer.writeheader()
         for row in results:
@@ -50,73 +54,24 @@ def searchZillow():
     return responseobject
 
 
-def loadHouseSearchDataintoDB(housearray, Listing, db, status='solded'):
-    for house in housearray:
-        # Check if a listing with this zpid already exists.
-        # filtered_house = {k: house[k] for k in keystokeep if k in house}
-        if 'datesold' not in house.keys():
-            house['dateSold'] =0
-        try:
-            filtered_house = {
-                'zpid': house['zpid'],
-                'price': safe_float_conversion(house['price']),
-                'unit': 'house',
-                'streetAddress': house['streetAddress'],
-                'city': house['city'],
-                'state': house['state'],
-                'zipcode': safe_int_conversion(house['zipcode']),
-                'bedrooms': safe_int_conversion(house['bedrooms']),
-                'bathrooms': safe_float_conversion(house['bathrooms']),
-                'zestimate': safe_float_conversion(house['zestimate']),
-                'daysOnZillow': safe_int_conversion(house['daysOnZillow']),
-                'latitude': safe_float_conversion(house['latitude']),
-                'longitude': safe_float_conversion(house['longitude']),
-                'homeType': house['homeType'],
-                'dateSold': datetime.utcfromtimestamp(int(house['dateSold']) / 1000),
-                'status':status
-                # ... other fields ...
-            }
-        except Exception as e:
-            continue
 
-
-        listing = Listing.query.filter_by(zpid=filtered_house['zpid']).first()
-
-        try:
-            if not listing:
-                # Convert dictionary to a Listing object and add it to the session.
-                new_listing = Listing(**filtered_house)
-                db.session.add(new_listing)
-            else:
-                # Update the existing listing with new data.
-                for key, value in filtered_house.items():
-                    setattr(listing, key, value)
-            # db.session.add(new_listing)
-            db.session.commit()
-        except Exception as e:
-            # Handle the error, e.g., log it or notify the user.
-            print(f"Error during insertion: {e}")
 
 
 
 def loadcsv(Listing, db):
-    with open('data.csv', 'r') as file:
+    with open('../data.csv', 'r') as file:
         reader = csv.DictReader(file)
         data = list(reader)
-    loadHouseSearchDataintoDB(data, Listing, db)
+    dbmethods.loadHouseSearchDataintoDB(data, Listing, db)
     return data
 
-def SearchNewListing(location, Listing, db):
+def SearchNewListing(location):
 
     lastpage = 1
     maxpage = 2
     houseresult=[]
     while maxpage>lastpage:
         querystring = {"location":location + ", wa","page": str(lastpage),"status":"forSale","doz":"14"}
-        headers = {
-            "X-RapidAPI-Key": rapidapikey,
-            "X-RapidAPI-Host": "zillow56.p.rapidapi.com"
-        }
         response = requests.get(url, headers=headers, params=querystring)
         result = response.json()
         if response.status_code==502:
@@ -125,7 +80,17 @@ def SearchNewListing(location, Listing, db):
         houseresult = houseresult+ result['results']
         lastpage=lastpage+1
         maxpage = result['totalPages']
-    loadHouseSearchDataintoDB(houseresult, Listing, db, 'forSale')
+    dbmethods.loadHouseSearchDataintoDB(houseresult, 'forSale')
+
+def SearchProperty(bellevueaddr):
+    # querystring = {"location":location + ", wa","page": str(lastpage),"status":"forSale","doz":"14"}
+    querystring = {"address": bellevueaddr.addr_full +'  ' + bellevueaddr.postalcityname + ' ' + str(bellevueaddr.zip5)}
+    url = "https://zillow56.p.rapidapi.com/search_address"
+    response = requests.get(url, headers=headers, params=querystring)
+    result = response.json()
+    if response.status_code==502:
+        warn('502 on ' + bellevueaddr.addr_full +'  ' + bellevueaddr.postalcityname + ' ' + str(bellevueaddr.zip5))
+    return result
 
 def SearchNewSoldHomes(location, duration="14"):
 
@@ -146,10 +111,10 @@ def SearchNewSoldHomes(location, duration="14"):
         houseresult = houseresult+ result['results']
         lastpage=lastpage+1
         maxpage = result['totalPages']
-    SaveHouseSearchDataintoDB(houseresult)
+    dbmethods.SaveHouseSearchDataintoDB(houseresult)
 
 
-def UpdateListfromLocation(location, Listing, db):
+def UpdateListfromLocation(location):
     querystring = {"location":location + ", wa","status":"recentlySold","doz":"30"}
     headers = {
         "X-RapidAPI-Key": rapidapikey,
@@ -174,7 +139,8 @@ def UpdateListfromLocation(location, Listing, db):
         i=i+1
 
 
-    SaveHouseSearchDataintoDB(houseresult)
+    dbmethods.SaveHouseSearchDataintoDB(houseresult)
+    return dbmethods.AllListigs()
 
 def addHomesToDB():
     csv_file_path = 'path_to_your_csv_file.csv'

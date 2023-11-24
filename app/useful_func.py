@@ -9,3 +9,4 @@ def safe_int_conversion(value, default=0):
         return int(value)
     except ValueError:
         return default
+

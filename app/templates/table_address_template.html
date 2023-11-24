@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Display</title>
+</head>
+<body>
+
+<table border="1">
+    <!-- Table headers -->
+    <thead>
+        <tr>
+            <th>address</th>
+            <th>zestimate_value</th>
+{#            <th>unit</th>#}
+{#            <th>streetAddress</th>#}
+{#            <th>city</th>#}
+{#            <th>state</th>#}
+{#            <th>zipcode</th>#}
+{#            <th>bedrooms</th>#}
+{#            <th>bathrooms</th>#}
+{#            <th>zestimate</th>#}
+{#            <th>daysOnZillow</th>#}
+{#            <th>dateSold</th>#}
+{#            <th>homeType</th>#}
+{#            <th>ListingLength</th>#}
+        </tr>
+    </thead>
+
+    <!-- Table data -->
+    <tbody>
+        {% for address in addresses %}
+        <tr>
+            <td>{{ address.addr_full }}</td>
+            <td>{{ address.zestimate_value }}</td>
+{#            <td>{{ address.unit }}</td>#}
+{#            <td>{{ address.streetAddress }}</td>#}
+{#            <td>{{ address.city }}</td>#}
+{#            <td>{{ address.state }}</td>#}
+{#            <td>{{ address.zipcode }}</td>#}
+{#            <td>{{ address.bedrooms }}</td>#}
+{#            <td>{{ address.bathrooms }}</td>#}
+{#            <td>{{ address.zestimate }}</td>#}
+{#            <td>{{ address.daysOnZillow }}</td>#}
+{#            <td>{{ address.dateSold }}</td>#}
+{#            <td>{{ address.homeType }}</td>#}
+{#            <td>{{ address.list2pend }}</td>#}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>
