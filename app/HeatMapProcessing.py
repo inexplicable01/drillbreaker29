@@ -223,7 +223,7 @@ def alladdresseswithbuilthomecalues(value_increase=1000000):
     hackcheck=[]
     addressestoclick = []
     for address in addresses:
-        new = True
+        new = False
         print("\n")
         print(address.detailStr())
         if address.newbuild_prediction is None:
@@ -255,7 +255,7 @@ def alladdresseswithbuilthomecalues(value_increase=1000000):
         if len(entries_to_update)>10:
             dbmethods.UpdateDB(entries_to_update)
             entries_to_update=[]
-        if h>50:
+        if h>20:
             break
     if len(coords) == 0:
         return createblankseattlemap()
