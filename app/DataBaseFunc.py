@@ -1,10 +1,12 @@
-
 from datetime import datetime
 from app.DBModels.Listing import Listing
 from app.DBModels.BellevueTaxAddress import BellevueTaxAddress
 from sqlalchemy.sql import func
 # from app.useful_func import haversine
 from haversine import haversine, Unit
+import pandas as pd
+from LoadAddress import ZillowAddress
+import re
 
 def safe_float_conversion(value, default=0.0):
     try:
@@ -19,6 +21,7 @@ def safe_int_conversion(value, default=0):
     except ValueError:
         return default
 
+
 def print_and_log(message):
     log_file_path = 'logfile.txt'  # Specify your log file name here
     print(message)
@@ -26,10 +29,9 @@ def print_and_log(message):
         file.write(message + '\n')
 
 
-
 class DBMETHOD():
 
-    def __init__(self,db=None,Listing=Listing):
+    def __init__(self, db=None, Listing=Listing):
         self.db = db
         self.Listing = Listing
 
@@ -41,12 +43,17 @@ class DBMETHOD():
 
     def AllListingsByDate(self):
         return self.Listing.query.order_by(self.Listing.dateSold).all()
-    def ActiveListings(self):
-        return self.Listing.query.filter(self.Listing.daysOnZillow > -1).order_by(self.Listing.daysOnZillow).all()
+
+    def ActiveListings(self, daysupperlimit=14,homeType="SINGLE_FAMILY"):
+        # return self.Listing.query.filter(self.Listing.daysOnZillow <14).order_by(self.Listing.daysOnZillow).all()
+        return self.Listing.query.filter(
+            self.Listing.daysOnZillow.between(0, daysupperlimit),
+            self.Listing.homeType == homeType
+        ).order_by(self.Listing.daysOnZillow).all()
 
     def AllListingsforHeatmap(self):
         results = self.Listing.query.all()
-        verifiedresults=[]
+        verifiedresults = []
         for index, result in enumerate(results):
             if result is None:
                 # print(f"None found at index {index}")
@@ -62,7 +69,7 @@ class DBMETHOD():
         current_year = datetime.now().year
         threshold_year = current_year - 4
         results = BellevueTaxAddress.query.filter(BellevueTaxAddress.year_built >= threshold_year).all()
-        verifiedresults=[]
+        verifiedresults = []
         for index, result in enumerate(results):
             if result is None:
                 # print(f"None found at index {index}")
@@ -73,11 +80,11 @@ class DBMETHOD():
                 verifiedresults.append(result)
         return verifiedresults
 
-    def AddressesBuiltYearsAgo(self,Years=10):
+    def AddressesBuiltYearsAgo(self, Years=10):
         current_year = datetime.now().year
         threshold_year = current_year - Years
         results = BellevueTaxAddress.query.filter(BellevueTaxAddress.year_built <= threshold_year).all()
-        verifiedresults=[]
+        verifiedresults = []
         for index, result in enumerate(results):
             if result is None:
                 # print(f"None found at index {index}")
@@ -85,11 +92,11 @@ class DBMETHOD():
             else:
                 # Assuming 'Listing' has an 'id' attribute
                 # print(f"Listing ID: {result.id}")
-                if  result.postalcityname=='BELLEVUE':
+                if result.postalcityname == 'BELLEVUE':
                     verifiedresults.append(result)
         return verifiedresults
 
-    def loadHouseSearchDataintoDB(self,housearray, status='solded'):
+    def loadHouseSearchDataintoDB(self, housearray, status='solded'):
         for house in housearray:
             # Check if a listing with this zpid already exists.
             # filtered_house = {k: house[k] for k in keystokeep if k in house}
@@ -133,6 +140,7 @@ class DBMETHOD():
                 self.db.session.commit()
             except Exception as e:
                 # Handle the error, e.g., log it or notify the user.
+                self.db.session.rollback()
                 print(f"Error during insertion: {e}")
 
     def find_addresses_within_distance(self, origin_lat, origin_long, distance_miles):
@@ -147,7 +155,7 @@ class DBMETHOD():
         addresses_with_distances = []
         for address in distance_query:
             # Calculate the distance using the haversine function
-            distance = haversine((origin_lat, origin_long),(address.latitude, address.longitude), unit=Unit.MILES)
+            distance = haversine((origin_lat, origin_long), (address.latitude, address.longitude), unit=Unit.MILES)
             if distance <= distance_miles:
                 addresses_with_distances.append({
                     'address': address,
@@ -159,31 +167,33 @@ class DBMETHOD():
 
         return addresses_with_distances
 
-    def find_Average_New_Build_Prices(self, address:BellevueTaxAddress, searchradius = 1):
-        addresses_with_distances = self.find_addresses_within_distance( address.latitude, address.longitude, searchradius)
-        averageprice=[]
-        averagepriceitems =[]
+    def find_Average_New_Build_Prices(self, address: BellevueTaxAddress, searchradius=1):
+        addresses_with_distances = self.find_addresses_within_distance(address.latitude, address.longitude,
+                                                                       searchradius)
+        averageprice = []
+        averagepriceitems = []
         for item in addresses_with_distances:
             closeaddress = item['address']
             try:
-                if len(averageprice)>10:
+                if len(averageprice) > 10:
                     break
-                if closeaddress.year_built>2018:
+                if closeaddress.year_built > 2018:
                     # print(closeaddress.detailStr())
                     averageprice.append(closeaddress.zestimate_value)
                     averagepriceitems.append(item)
             except Exception as e:
                 continue
-        if len(averageprice)==0:
+        if len(averageprice) == 0:
             averagenewbuildprice = address.zestimate_value
         else:
-            averagenewbuildprice = sum(averageprice)/len(averageprice)
+            averagenewbuildprice = sum(averageprice) / len(averageprice)
         return averagenewbuildprice, averagepriceitems
 
-    def find_addresses_based_on_Addr_full(self,addr_full):
+    def find_addresses_based_on_Addr_full(self, addr_full):
         return BellevueTaxAddress.query.filter_by(addr_full=addr_full).first()
+
     # find_Average_New_Build_Prices(self, address: BellevueTaxAddress):return averagenewbuildprice, averagepriceaddress
-    def SaveHouseSearchDataintoDB(self,housearray, status='solded'):
+    def SaveHouseSearchDataintoDB(self, housearray, status='solded'):
         for house in housearray:
             # Check if a listing with this zpid already exists.
             # filtered_house = {k: house[k] for k in keystokeep if k in house}
@@ -232,15 +242,94 @@ class DBMETHOD():
                 self.db.session.commit()
             except Exception as e:
                 # Handle the error, e.g., log it or notify the user.
+                self.db.session.rollback()
                 print(f"Error during insertion: {e}")
 
-    def UpdateDB(self,entries_to_update):
+    def UpdateDB(self, entries_to_update):
         try:
             print_and_log('updating')
-            self.db.session.bulk_update_mappings(BellevueTaxAddress,entries_to_update)
+            self.db.session.bulk_update_mappings(BellevueTaxAddress, entries_to_update)
             print_and_log('commiting')
             self.db.session.commit()
         except Exception as e:
             print_and_log(f"Error during bulk update: {str(e)}")
             self.db.session.rollback()
+
+    def WaterFrontProps(self):
+
+        results = BellevueTaxAddress.query.filter(BellevueTaxAddress.haswaterfrontview == True).all()
+        verifiedresults = []
+        for index, result in enumerate(results):
+            if result is None:
+                continue
+            else:
+                verifiedresults.append(result)
+        return verifiedresults
+
+    def PropertiesBuiltAfter(self, year: int = 2016):
+        results = BellevueTaxAddress.query.filter(BellevueTaxAddress.year_built > year)
+        result_set = results.all()
+        df = pd.DataFrame([row.__dict__ for row in result_set])
+        df = df.drop('_sa_instance_state', axis=1)
+        return df
+
+    def returnBellevueTaxAddress(self, addr_full):
+        results = BellevueTaxAddress.query.filter(BellevueTaxAddress.addr_full==addr_full)
+        result_set = results.all()
+        df = pd.DataFrame([row.__dict__ for row in result_set])
+        df = df.drop('_sa_instance_state', axis=1)
+        return df
+
+    def addToBellevueTaxAddress(self,propertdata):
+        return BellevueTaxAddress.create_from_dict(propertdata)
+
+
+    def threeaddress(self):
+        # results = BellevueTaxAddress.query.filter(BellevueTaxAddress.year_built > year)
+        # result_set = results.all()
+        #
+        # entries = session.query(BellevueTaxAddress).filter(BellevueTaxAddress.postalcityname == "BELLEVUE").all()
+        # bellevue_rows = query.all()
+        # for offset in range(0, total_entries, batch_size):
+        #     entries = session.query(BellevueTaxAddress).limit(batch_size).offset(offset).all()
+        zaddress1 = ZillowAddress.OpenAddresstxt("2207 123RD AVE SE  BELLEVUE")
+        zaddress2 = ZillowAddress.OpenAddresstxt("2207 123RD AVE SE  BELLEVUE")
+        zaddress3 = ZillowAddress.OpenAddresstxt("16608 SE 17TH ST  BELLEVUE")
+
+        return [zaddress1, zaddress2, zaddress3]
+
+    def getBellevueTaxAddressbyAddress(self,listing):
+        pattern = r"^(\d+)\s+(.*?)(?:\s+SE|\s+NE|\s+RD|\s+AVE|\s+ST|)?$"
+        streetaddress = listing.streetAddress
+
+        match = re.match(pattern, streetaddress)
+        if match:
+            house_number, street_name = match.groups()
+            street_name = street_name.lower()
+            if "avenue" in street_name:
+                street_name = street_name.replace("avenue","ave")
+            if "street" in street_name:
+                street_name = street_name.replace("street","st")
+            if "key" in street_name:
+                street_name = street_name.replace("key","ky")
+            query =  BellevueTaxAddress.query.filter(
+                BellevueTaxAddress.addr_full.like(f'%{house_number}%'),
+                BellevueTaxAddress.addr_full.like(f'%{street_name}%')).all()
+            if len(query)==0:
+                print(f'Unable to find match for {streetaddress}')
+                return None
+            if len(query)>2:
+                min_distance = float('inf')  # Initialize with a very large number
+                closest_belladdr = None
+                for belladdr in query:
+                    distance = (listing.longitude - belladdr.longitude)**2 + (listing.latitude - belladdr.latitude)**2
+                    if distance < min_distance:
+                        min_distance = distance
+                        closest_belladdr = belladdr
+                print(f'Too many matches for {streetaddress}')
+                return closest_belladdr
+            return query[0]
+        print(f'RegGex Failed  for {streetaddress}')
+        return None
+
 dbmethods = DBMETHOD()

@@ -53,15 +53,34 @@
   }
 </style>
 
-<h2>Below is a map of all properties with potential Build value above 1.5 mil</h2>
-<p> The build value is calculated by (Predicted New Build Value) - (current value)</p>
+<h2>Below is a map of all properties with Build Equity above <h3 id="buildpotentiallabel">{{ buildpotentiallowerlimit }} </h3>mil</h2>
+<p>Build Equity is calculated by (Predicted New Build Value) - (current value)</p>
+
+
+<label for="numberInput">Build Potential Desired:</label>
+<select id="buildpotentiallowerlimitselector">
+  <option value="0">0</option>
+  <option value="500000">500,000</option>
+  <option value="1000000">1,000,000</option>
+  <option value="1500000">1,500,000</option>
+  <option value="2000000" selected>2,000,000</option>
+  <option value="2500000">2,500,000</option>
+  <option value="3000000">3,000,000</option>
+      <option value="3500000">3,500,000</option>
+  <option value="4000000">4,000,000</option>
+</select>
+
+<h3 id="nu_hits">{{ nu_hits }} </h3>
+<button id="buildpotentialsubmitid">Click to what properties can get you above Build potential</button>
+
 <div class="map-container" id="map1">
     {{ map|safe }}
 </div>
 
 <div id="info">You Currently Selected: <h2 id="description"></h2>
-<button id="submitBtn">Click to see details of this property and its comps</button>
+<button id="submitBtn">Click for Homes good for Build</button>
 </div>
+
 
 
 {% if report %}
@@ -89,7 +108,33 @@
             document.getElementById('latlon').textContent = 'Lat: ' + data.lat + ', Lon: ' + data.lon;
         }
     }, false);
+    document.getElementById('buildpotentialsubmitid').addEventListener('click', function () {
+        var buildpotentiallowerlimit = document.getElementById('buildpotentiallowerlimitselector').value; // Make sure the ID matches your <h2> element
+        console.log('buildpotentiallowerlimit',buildpotentiallowerlimit)
+        var xhr = new XMLHttpRequest();
+        xhr.open('PUT', '/mappotentialValue', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                // Here you can handle the response from your Flask app
+                // For example, you can parse the response and update the DOM accordingly
+                console.log('Server response:', xhr.responseText);
 
+                // If you want to update the page based on the response:
+                var response = JSON.parse(xhr.responseText);
+                // Update the element that contains the map
+                document.getElementById('map1').innerHTML = response.map_html;
+                document.getElementById('buildpotentiallabel').innerText = response.buildpotentiallowerlimit;
+                document.getElementById('nu_hits').textContent  = response.nu_hits;
+
+            } else {
+                // Handle errors here
+                console.error('The request failed!');
+            }
+        };
+        // Send the description as form data
+        xhr.send('buildpotentiallowerlimit=' + encodeURIComponent(buildpotentiallowerlimit));
+    });
     document.getElementById('submitBtn').addEventListener('click', function () {
         var descriptionText = document.getElementById('description').innerText; // Make sure the ID matches your <h2> element
         var xhr = new XMLHttpRequest();

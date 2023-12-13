@@ -4,14 +4,14 @@ from SMTP_email import send_email
 # import os
 # from werkzeug.utils import secure_filename
 # import csv
-from app.ZillowSearch import UpdateListfromLocation, SearchNewListing,SearchNewSoldHomes
+from app.ZillowSearch import UpdateListfromLocation, SearchNewListing,SearchNewSoldHomes,SearchProperty
 from app.ZillowDataProcessor import PicturesFromMLS
 from app.HeatMapProcessing import *
 import folium
 main = Blueprint('main', __name__)
 # from extensions import dbmethods
 from app.DataBaseFunc import dbmethods
-from markupsafe import Markup
+from app.NewListing import NewListing
 
 # Register routes
 @main.route('/')
@@ -69,7 +69,7 @@ def WhereToBuild():
         days = 60
         minprice = 2000000
         # displayfun = SOLDHOTTNESS
-    m = WhereExpensiveHomes(minprice,days)
+    m = highvalueMap()
     return render_template('WhereToBuild.html', m=m, minprice=minprice, days=days)
 
 @main.route('/showdb')
@@ -139,6 +139,28 @@ def GiveMeComps():
             return jsonify(status="error", message="API call failed")
     return render_template('MLS_Input.html')
 
+@main.route('/waterfrontproperties', methods=['GET','POST'])
+def waterfrontproperties():
+    # if request.method == 'POST':
+    #     ref_number = request.form.get('ref_number')
+    #     success = PicturesFromMLS(ref_number)
+    #     if success:  # Check if API was called successfully
+    #         return jsonify(status="success", message="API called successfully")
+    #     else:
+    #         return jsonify(status="error", message="API call failed")
+    maphtml = WaterFrontProperties()
+    return render_template('SimpleMap.html',m=maphtml)
+@main.route('/errormap', methods=['GET','POST'])
+def errormap():
+    # if request.method == 'POST':
+    #     ref_number = request.form.get('ref_number')
+    #     success = PicturesFromMLS(ref_number)
+    #     if success:  # Check if API was called successfully
+    #         return jsonify(status="success", message="API called successfully")
+    #     else:
+    #         return jsonify(status="error", message="API call failed")
+    maphtml = PredictionError()
+    return render_template('SimpleMap.html',m=maphtml)
 @main.route('/newbuildlocations', methods=['GET','POST'])
 def GiveMeComps2():
     # addresses = ["Address 1", "Address 2", "Address 3"]
@@ -159,7 +181,7 @@ def GiveMeComps2():
                            selected_address=selected_address,
                            averagenewbuildprice=averagenewbuildprice)
 
-@main.route('/mappotentialValue', methods=['GET', 'POST'])
+@main.route('/mappotentialValue', methods=['GET', 'POST','PUT'])
 def MapPotentialValue():
     # addresses = ["Address 1", "Address 2", "Address 3"]
 
@@ -170,15 +192,19 @@ def MapPotentialValue():
 
         map_html2 = validateHomePredictionPrice2(description)
         return jsonify({'map_html2': map_html2, 'report': "Future Justification of Value"})
+    elif request.method =='PUT':
+        buildpotentiallowerlimit = request.form['buildpotentiallowerlimit']
+        map_html, nu_hits = alladdresseswithbuilthomecalues(float(buildpotentiallowerlimit))
+        return jsonify({'map_html': map_html, 'buildpotentiallowerlimit': buildpotentiallowerlimit, 'nu_hits':nu_hits})
     else:
         description = None
-        selected_address = None
+        buildpotentiallowerlimit=2000000
         averagenewbuildprice = None
         map_html2 = 'Display for Property details'
         # displayfun = SOLDHOTTNESS
-    map_html = alladdresseswithbuilthomecalues(1500000)
+    map_html, nu_hits = alladdresseswithbuilthomecalues(buildpotentiallowerlimit)
 
-    return render_template('MapPotentialValue.html', map=map_html ,map2=map_html2,  description = description)
+    return render_template('MapPotentialValue.html', map=map_html ,map2=map_html2,  description = description, buildpotentiallowerlimit=buildpotentiallowerlimit, nu_hits=nu_hits)
 
 
     # if request.method == 'POST':
@@ -190,34 +216,31 @@ def MapPotentialValue():
     #         return jsonify(status="error", message="API call failed")
     # return render_template('MLS_Input.html')
 
-def call_api_with_ref(ref_number):
-    # Logic to call the API with the reference number
-    # This is a placeholder, replace with actual API call
-    return True  # return True if successful, else False
 
-# @main.route('/upload', methods=['GET', 'POST'])
-# def upload_csv():
-#     if request.method == 'POST':
-#         # check if the post request has the file part
-#         if 'file' not in request.files:
-#             flash('No file part')
-#             return redirect(request.url)
-#         file = request.files['file']
-#         if file.filename == '':
-#             flash('No selected file')
-#             return redirect(request.url)
-#         if file:
-#             filename = secure_filename(file.filename)
-#             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#             file.save(filepath)
-#             import_csv_to_db(filepath)
-#             flash('CSV imported successfully!')
-#             return redirect(url_for('index'))
-#
-#     return render_template_string("""
-#         <h1>Upload CSV</h1>
-#         <form method="post" enctype="multipart/form-data">
-#             <input type="file" name="file">
-#             <input type="submit" value="Upload">
-#         </form>
-#     """)
+@main.route('/comparison_base', methods=['GET','POST'])
+def comparison_base():
+    # addresses = ["Address 1", "Address 2", "Address 3"]
+    threeaddress = dbmethods.threeaddress()
+
+    id = 0
+    infodump=[]
+    for address in threeaddress:
+        images = []
+        for photo in address.photos:
+            for jpeg in photo['mixedSources']['jpeg']:
+                if jpeg['width']==384:
+                    images.append({
+                        "url": jpeg['url'], "caption": photo['caption']
+                    })
+        infodump.append((address,f"carid{str(id)}", images))
+        id = id +1
+
+
+    return render_template('comparison_base.html', infodump=infodump)
+
+
+
+@main.route('/new_listing', methods=['GET','POST'])
+def new_listing():
+    listings,infodump = NewListing(request)
+    return render_template('NewListing.html', listings=listings, infodump=infodump)

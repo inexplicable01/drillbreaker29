@@ -8,10 +8,13 @@ from folium.map import Marker
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
 
+from joblib import load
 SOLDHOTTNESS = 'SOLDHOTTNESS'
 EXPENSIVEHOME =  'EXPENSIVEHOME'
 min_price=1000000
 max_price=5000000
+
+model = load('linear_regression_model.joblib')
 def HouseSoldSpeed(list2pend):
     if list2pend==0:
         return 0.1
@@ -47,11 +50,13 @@ def HeatMapGen(days, displayfun):
     if displayfun==SOLDHOTTNESS:
         for listing in listings:
             try:
+                if listing is None:
+                    continue
                 if listing.dateSold is None:
                     continue
             except Exception:
                 print('sdf')
-            if  days_ago <= listing.dateSold <= current_date:
+            if days_ago <= listing.dateSold <= current_date:
                 coords.append([listing.latitude, listing.longitude, HouseSoldSpeed(listing.list2pend)])
                 lat = lat + listing.latitude
                 long = long + listing.longitude
@@ -85,6 +90,10 @@ def WhereExpensiveHomes(minprice, days=60):
     long=0
     listings = dbmethods.AllListingsforHeatmap()
     for listing in listings:
+        if listing is None:
+            continue
+        if listing.dateSold is None:
+            continue
         if  days_ago <= listing.dateSold <= current_date:
             if listing.price>minprice:
                 coords.append([listing.latitude, listing.longitude])
@@ -211,7 +220,7 @@ click_template = """{% macro script(this, kwargs) %}
 {% endmacro %}"""
 Marker._template = Template(click_template)
 def alladdresseswithbuilthomecalues(value_increase=1000000):
-    addresses = dbmethods.AddressesBuiltYearsAgo()
+    addresses = dbmethods.AddressesBuiltYearsAgo(15)
 
     entries_to_update = []
     ## update every 200
@@ -220,10 +229,11 @@ def alladdresseswithbuilthomecalues(value_increase=1000000):
     long = 0
     h = 0
     markers_info = []
+    build_cost=1500000
     hackcheck=[]
     addressestoclick = []
     for address in addresses:
-        new = False
+        new = True
         print("\n")
         print(address.detailStr())
         if address.newbuild_prediction is None:
@@ -237,14 +247,14 @@ def alladdresseswithbuilthomecalues(value_increase=1000000):
 
             new=True
             address.newbuild_prediction = averagenewbuildprice
-        if address.newbuild_prediction-address.zestimate_value>value_increase:
-            buildvalue = address.newbuild_prediction-address.zestimate_value
+        if (address.newbuild_prediction-address.zestimate_value - build_cost)>value_increase:
+            buildvalue = address.newbuild_prediction-address.zestimate_value- build_cost
             if new:
                 addressestoclick.append(address)
                 pin_color = get_color(buildvalue, 1000000, 3000000)
                 icon = folium.Icon(color='white', icon_color=pin_color,  icon='home')
                 markers_info.append(([address.latitude, address.longitude],
-                                     f"{address.detailStr()}\n {str(buildvalue)}",
+                                     f"{address.price_vs_prediction_printout()}",
                                      icon))
                 coords.append([address.latitude, address.longitude])
                 lat = lat + address.latitude
@@ -255,8 +265,11 @@ def alladdresseswithbuilthomecalues(value_increase=1000000):
         if len(entries_to_update)>10:
             dbmethods.UpdateDB(entries_to_update)
             entries_to_update=[]
-        if h>20:
-            break
+        # if h>20:
+        #     break
+    if len(entries_to_update)>0:
+        dbmethods.UpdateDB(entries_to_update)
+        entries_to_update = []
     if len(coords) == 0:
         return createblankseattlemap()
     lat = lat/len(coords)
@@ -290,7 +303,7 @@ def alladdresseswithbuilthomecalues(value_increase=1000000):
         marker.add_to(m)
     map_html= m._repr_html_()
     # m = folium_map._repr_html_()
-    return map_html
+    return map_html, len(markers_info)
 
 def validateHomePredictionPrice(description):
     return createblankseattlemap()
@@ -348,3 +361,145 @@ def validateHomePredictionPrice2(description):
     #                  var customString = e.target.getPopup().getContent();
     #                  window.parent.document.getElementById('label').innerText = customString;
     #                }"""
+def highvalueMap(value_increase=1000000):
+    addresses = dbmethods.AddressesBuiltYearsAgo(15)
+
+    entries_to_update = []
+    ## update every 200
+    coords = []
+    lat = 0
+    long = 0
+    h = 0
+    markers_info = []
+    build_cost=1500000
+    hackcheck=[]
+    addressestoclick = []
+    for address in addresses:
+        print("\n")
+        print(address.detailStr())
+        if (address.newbuild_prediction-address.zestimate_value - build_cost)>value_increase:
+            buildvalue = address.newbuild_prediction-address.zestimate_value- build_cost
+            addressestoclick.append(address)
+            pin_color = get_color(buildvalue, 1000000, 3000000)
+            icon = folium.Icon(color='white', icon_color=pin_color,  icon='home')
+            markers_info.append(([address.latitude, address.longitude, buildvalue],
+                                 f"{address.price_vs_prediction_printout()}",
+                                 icon))
+            coords.append([address.latitude, address.longitude])
+            lat = lat + address.latitude
+            long = long + address.longitude
+            print('VALUE! ' + address.price_vs_prediction_printout())
+            print(h)
+
+    if len(coords)==0:
+        m = folium.Map(location=[47.608013, -122.335167], zoom_start=13)
+        HeatMap(coords).add_to(m)
+        m = m._repr_html_()
+        return m
+    lat = lat/len(coords)
+    long = long / len(coords)
+    m = folium.Map(location=[lat, long], zoom_start=13)
+
+    # Add the heat map layer to the map
+    HeatMap(coords, max_val=max(buildvalue for *_, buildvalue in coords)).add_to(m)
+    m = m._repr_html_()
+    return m
+
+
+def WaterFrontProperties():
+    waterfrontprops = dbmethods.WaterFrontProps()
+    coords = []
+    lat = 0
+    long = 0
+    count = 0
+    markers_info = []
+    build_cost=1500000
+    hackcheck=[]
+    addressestoclick = []
+    for address in waterfrontprops:
+        # print("\n")
+        # print(address.detailStr())
+
+        addressestoclick.append(address)
+
+        icon = folium.Icon(color='white',  icon='home')
+        markers_info.append(([address.latitude, address.longitude],
+                             f"{address.addr_full}",
+                             icon))
+        coords.append([address.latitude, address.longitude])
+        lat = lat + address.latitude
+        long = long + address.longitude
+        count = count +1
+        if count>1000:
+            break
+
+    if len(coords) == 0:
+        return createblankseattlemap()
+    lat = lat/len(coords)
+    long = long / len(coords)
+    m = folium.Map(location=[lat, long], zoom_start=13)
+
+    # Add the heat map layer to the map
+    HeatMap(coords).add_to(m)
+    m = m._repr_html_()
+    return m
+
+def PredictionError():
+    newbuilds = dbmethods.PropertiesBuiltAfter()
+    coords = []
+    lat = 0
+    long = 0
+    markers_info = []
+    y_pred = model.predict(newbuilds)
+    for index, row  in newbuilds.iterrows():
+        # print("\n")
+        # print(address.detailStr())
+        error= row['zestimate_value'] - y_pred[index]
+        # addressestoclick.append(address)
+        pin_color = get_color(error, 0, 3000000)
+        icon = folium.Icon(color=pin_color, icon_color=pin_color, icon='home')
+        # icon = folium.Icon(color='white',  icon='home')
+        markers_info.append(([row['latitude'], row['longitude']],
+                             f"zest {round(row['zestimate_value'])}\npred  {round(y_pred[index])}\nerror {round(error)} ",
+                             icon))
+        coords.append([row['latitude'], row['longitude']])
+        lat = lat + row['latitude']
+        long = long + row['longitude']
+        # count = count +1
+        # if count>1000:
+        #     break
+
+    if len(coords) == 0:
+        return createblankseattlemap()
+    lat = lat/len(coords)
+    long = long / len(coords)
+    m = folium.Map(location=[lat, long], zoom_start=13)
+    click_js = """function onClick(e) {}"""
+    e = folium.Element(click_js)
+    html = m.get_root()
+    html.script.get_root().render()
+    html.script._children[e.get_name()] = e
+    for coord, description,icon in markers_info:
+
+        # marker = folium.Marker(
+        #     location=coord,
+        #     # popup=folium.Popup(description),  # The popup will contain the custom string
+        #     # icon=icon
+        # )
+        # marker.add_to(m)
+        folium.Marker(
+            location=coord,
+            popup=folium.Popup(description),
+            icon=icon
+        ).add_to(m)
+    # Add the heat map layer to the map
+    # HeatMap(coords).add_to(m)
+    # for coord in coords:
+    #     folium.Marker(
+    #         location=coord,
+    #         # popup=folium.Popup(closeaddress.detailStr(), parse_html=True),
+    #         # icon=icon
+    #     ).add_to(m)
+
+    m = m._repr_html_()
+    return m

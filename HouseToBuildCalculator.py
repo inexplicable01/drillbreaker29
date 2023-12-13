@@ -1,6 +1,6 @@
 import MySQLdb
 import sshtunnel
-
+from LoadAddress import ZillowAddress
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -12,7 +12,7 @@ DB_USER = 'FatPanda1985'
 DB_PASSWORD = 'wayber_housing'
 DB_NAME = 'FatPanda1985$housingdata'
 Base = declarative_base()
-
+import pandas as pd
 from app.DBModels.BellevueTaxAddress import BellevueTaxAddress
 
 
@@ -53,51 +53,56 @@ with sshtunnel.SSHTunnelForwarder(
         entries_to_update = []
 
         # Query the total number of entries
-        total_entries = session.query(BellevueTaxAddress).count()
-        count = session.query(func.count(BellevueTaxAddress.id)).filter(BellevueTaxAddress.postalcityname=="BELLEVUE").scalar()
-        # Process in batches
-        for offset in range(0, total_entries, batch_size):
-            entries = session.query(BellevueTaxAddress).limit(batch_size).offset(offset).all()
+        # query = session.query(BellevueTaxAddress).filter(BellevueTaxAddress.year_built > 2016)
+        # df = pd.read_sql(query.statement, session.bind)
+        # csv_file_name = 'newbuild2016.csv'
+        # df.to_csv(csv_file_name, index=False)
+        # print_and_log(f"Data written to {csv_file_name}")
+        # count = session.query(BellevueTaxAddress).filter(BellevueTaxAddress.postalcityname=="BELLEVUE").scalar()
+        # # Process in batches
+        entries = session.query(BellevueTaxAddress).filter(BellevueTaxAddress.postalcityname=="BELLEVUE").all()
+        # bellevue_rows = query.all()
+        # for offset in range(0, total_entries, batch_size):
+        #     entries = session.query(BellevueTaxAddress).limit(batch_size).offset(offset).all()
 
-            for bellevueaddr in entries:
-                fileaddress = bellevueaddr.addr_full +'  ' + bellevueaddr.postalcityname
+        for bellevueaddr in entries:
+            fileaddress = bellevueaddr.addr_full +'  ' + bellevueaddr.postalcityname
+            try:
+                # if bellevueaddr.living_area is None and "R" in bellevueaddr.sitetype and bellevueaddr.postalcityname=='BELLEVUE':
+                if os.path.exists(os.path.join('addressjson',fileaddress+'.txt')):
+                    # with open(os.path.join('addressjson',fileaddress+'.txt'), 'r') as file:
+                    #     # Read the content of the file
+                    #     text_content = file.read()
+                    # propertydata = json.loads(text_content)
+                    zaddress = ZillowAddress.OpenAddresstxt(fileaddress)
+                else:
+                    addressStr=bellevueaddr.addr_full +'  ' + bellevueaddr.postalcityname + ' ' + str(bellevueaddr.zip5)
+                    propertydata = SearchProperty(addressStr)
+                    json_string = json.dumps(propertydata, indent=4)
+                    with open(os.path.join('addressjson',fileaddress+'.txt'), 'w') as f:
+                        f.write(json_string)
+                    zaddress = ZillowAddress.OpenAddresstxt(fileaddress)
+                if zaddress.resoFacts['hasWaterfrontView']:
+                    # if propertydata['zestimate'] is None or propertydata['yearBuilt'] is None:
+                    #     print_and_log(bellevueaddr.addr_full + '  is residential but doesnt have zestimate or year built')
+                    #     continue
+                    print_and_log(bellevueaddr.addr_full + '  ' + bellevueaddr.postalcityname)
+                    entries_to_update.append({
+                        'id': bellevueaddr.id,  # assuming there's an 'id' primary key
+                        'haswaterfrontview': zaddress.resoFacts['hasWaterfrontView']})
+                else:
+                    # if 'error' in propertydata.keys():
+                    #     print_and_log(bellevueaddr.addr_full + '  error:' + propertydata['error'])
+                    # else:
+                    print_and_log(bellevueaddr.addr_full + '  has no water front ')
+            except Exception as e:
+                print_and_log(f"{bellevueaddr.addr_full} +   error!!! {str(e)}")
+
+
+        #     # If there are updates to be made, do them in a bulk operation
+            if len(entries_to_update)>100:
                 try:
-                    if bellevueaddr.living_area is None and "R" in bellevueaddr.sitetype and bellevueaddr.postalcityname=='BELLEVUE':
-                        if os.path.exists(os.path.join('addressjson',fileaddress+'.txt')):
-                            with open(os.path.join('addressjson',fileaddress+'.txt'), 'r') as file:
-                                # Read the content of the file
-                                text_content = file.read()
-                            propertydata = json.loads(text_content)
-                        else:
-                            propertydata = SearchProperty(bellevueaddr)
-                            json_string = json.dumps(propertydata, indent=4)
-                            with open(os.path.join('addressjson',fileaddress+'.txt'), 'w') as f:
-                                f.write(json_string)
-
-                        if 'homeType' in propertydata.keys():
-                            # if propertydata['zestimate'] is None or propertydata['yearBuilt'] is None:
-                            #     print_and_log(bellevueaddr.addr_full + '  is residential but doesnt have zestimate or year built')
-                            #     continue
-                            print_and_log(bellevueaddr.addr_full + '  ' + bellevueaddr.postalcityname + '  ' +str(propertydata['homeType']))
-                            entries_to_update.append({
-                                'id': bellevueaddr.id,  # assuming there's an 'id' primary key
-                                'home_type': propertydata['homeType'],
-
-
-                            })
-                        else:
-                            if 'error' in propertydata.keys():
-                                print_and_log(bellevueaddr.addr_full + '  error:' + propertydata['error'])
-                            else:
-                                print_and_log(bellevueaddr.addr_full + '  error!!!!')
-                except Exception as e:
-                    print_and_log(f"{bellevueaddr.addr_full} +   error!!! {str(e)}")
-
-
-            # If there are updates to be made, do them in a bulk operation
-            if entries_to_update:
-                try:
-                    print_and_log(str(offset))
+                    # print_and_log(str(batch))
                     print_and_log('updating')
                     session.bulk_update_mappings(BellevueTaxAddress, entries_to_update)
                     print_and_log('commiting')

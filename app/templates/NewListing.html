@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Display</title>
+
+        <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+</head>
+<body>
+
+<table border="1">
+    <!-- Table headers -->
+    <thead>
+    <tr>
+        <th>zpid</th>
+        <th>price</th>
+                <th>zestimate</th>
+        <th>unit</th>
+        <th>streetAddress</th>
+        <th>city</th>
+        <th>state</th>
+        <th>zipcode</th>
+        <th>bedrooms</th>
+        <th>bathrooms</th>
+
+        <th>daysOnZillow</th>
+        <th>homeType</th>
+        <th>ListingLength</th>
+    </tr>
+    </thead>
+
+    <!-- Table data -->
+    <tbody>
+    {% for listing in listings %}
+        <tr>
+            <td>{{ listing.zpid }}</td>
+            <td>{{ listing.price }}</td>
+            <td>{{ listing.zestimate }}</td>
+            <td>{{ listing.unit }}</td>
+            <td>{{ listing.streetAddress }}</td>
+            <td>{{ listing.city }}</td>
+            <td>{{ listing.state }}</td>
+            <td>{{ listing.zipcode }}</td>
+            <td>{{ listing.bedrooms }}</td>
+            <td>{{ listing.bathrooms }}</td>
+
+            <td>{{ listing.daysOnZillow }}</td>
+            <td>{{ listing.homeType }}</td>
+            <td>{{ listing.list2pend }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+
+    {% for item, carid, images, newbuildestimate in infodump %}
+
+        {% include 'house_component.html' %}
+    {% endfor %}
+</body>
+</html>

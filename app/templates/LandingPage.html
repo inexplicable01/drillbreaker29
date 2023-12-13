@@ -3,6 +3,25 @@
 <head>
     <title>DrillBreakerApp</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            text-align: center; /* Centers text for all elements */
+        }
+        .center-table {
+            margin-left: auto;
+            margin-right: auto;
+            border-collapse: collapse; /* Collapse the border */
+            width: 50%; /* Adjust the width as needed */
+            border: 2px solid black; /* Adjust the border width and color as needed */
+        }
+        td {
+            padding: 10px; /* Adjust the padding as needed */
+            border: 1px solid black; /* Adds a border to each table cell */
+        }
+        form {
+            display: inline-block; /* Keeps the form dimensions to its content */
+        }
+    </style>
 </head>
 <body>
         <h1>Welcome to Wayber Real Estate Analysis</h1>
@@ -10,14 +29,44 @@
 {#        <a href="/beaman">be</a>#}
 {#        <a href="/showdb">showdbafdsf</a>#}
 
-        <p>New Listing goes and fetch these areas (Bellevue,Kenmore,Bothell,Kirkland): for new Listings</p>
-        <a href="/newlistings">newlistings</a>
-                <p></p>
-        <a href="/allthesoldhomes">Show Sold Homes in the Last 90 days</a>
+<table class="center-table" style="border-collapse: collapse; width: 50%;">
+  <tr>
+    <td>New Listing goes and fetch these areas (Bellevue, Kenmore, Bothell, Kirkland): for new Listings</td>
+    <td><a href="/newlistings">New Listings</a></td>
+  </tr>
+  <tr>
+    <td>Below Link Show a Heat Map of Homes Sold</td>
+    <td><a href="/heatmapexample">Homes Sold Heat Map</a></td>
+  </tr>
+  <tr>
+    <td>Potential Map Value</td>
+    <td><a href="/mappotentialValue">Potential Map Value</a></td>
+  </tr>
+  <tr>
+    <td>Where are high Value places to build?</td>
+    <td><a href="/wheretobuild">Where to Build</a></td>
+  </tr>
+      <tr>
+    <td>Where are the water front properties</td>
+    <td><a href="/waterfrontproperties">Waterfront props</a></td>
+  </tr>
+          <tr>
+    <td>Model Error</td>
+    <td><a href="/errormap">Model Error</a></td>
+  </tr>
 
-        <p>Potential Map Value</p>
-        <a href="/mappotentialValue">Potential Map Value</a>
+          <tr>
+    <td>Comparison Template</td>
+    <td><a href="/comparison_base">Comparison</a></td>
+  </tr>
+          <tr>
+    <td>New Listing</td>
+    <td><a href="/new_listing">New Listing</a></td>
+  </tr>
 
+
+
+</table>
 
 
 
@@ -28,13 +77,11 @@
 {#        <a href="/downloadpicsfromMLS">downloadpicsfromMLS</a>#}
 {#        <p>fkajdsf</p>#}
 {#        <a href="/mapexample">mapexample</a>#}
-{#        <p>Below Link Show a Heat Map of Homes Sold</p>#}
-{#        <a href="/heatmapexample">Homes Sold Heat Map</a>#}
+
 {#        <p>Where to Build</p>#}
 {#        <a href="/wheretobuild">Where to Build</a>#}
 {##}
-{#        <p>List of Bellevue Address</p>#}
-{#        <a href="/wheretobuild">Where to Build</a>#}
+
 {#        <p>Some addresses</p>#}
 {#        <a href="/abunchofBellevueAddress">Some addresses</a>#}
 {##}

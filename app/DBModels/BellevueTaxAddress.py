@@ -26,6 +26,7 @@ class BellevueTaxAddress(db.Model):
     bedrooms = db.Column(db.Float, nullable=True)  # Allows NULL values
     home_type = db.Column(db.String(20), nullable=True)  # Allows NULL values
     newbuild_prediction = db.Column(db.Float, nullable=True)  # Allows NULL values
+    haswaterfrontview = db.Column(db.Integer, default=False)
 
     def __repr__(self):
         return f"<BellevueTaxAddress {self.addr_full}>"
@@ -50,6 +51,39 @@ class BellevueTaxAddress(db.Model):
                f"Pred:{str(round(self.newbuild_prediction))}\n,"\
                f"BuildValue:{str(round(self.newbuild_prediction-self.zestimate_value))}"
 
+    @classmethod
+    def create_from_dict(cls, propertydata):
+        # Create an instance of BellevueTaxAddress
+        new_address = cls()
+        new_address.addr_full = propertydata['address']['streetAddress']
+        new_address.sitetype = propertydata['resoFacts']['zoningDescription']
+        new_address.zip5 = propertydata['zipcode']
+        new_address.postalcityname = propertydata['address']['city']
+        new_address.latitude = float(propertydata['latitude'])
+        new_address.longitude = float(propertydata['longitude'])
+        new_address.shape_area = float(propertydata['lotSize'])
+        new_address.zestimate_value = int(propertydata['zestimate'])# Allows NULL values
+        new_address.year_built = int(propertydata['yearBuilt'])  # Allows NULL values
+        new_address.living_area = int(propertydata['livingArea'])   # Allows NULL values
+        new_address.bathrooms = float(propertydata['bathrooms'])  # Allows NULL values
+        new_address.bedrooms = float(propertydata['bedrooms'])  # Allows NULL values
+        new_address.home_type = propertydata['homeType'] # Allows NULL values
+        new_address.haswaterfrontview = propertydata['resoFacts']['hasWaterfrontView']
+        # Iterate over the dictionary, assigning values to the new instance
+
+        # Add the new instance to the session and commit
+        db.session.add(new_address)
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
+        return new_address
+
+    def dictify(self):
+
+        return
     # addr_full = parts[0]
     # postalcityname = parts[1]
     # zestimate_value = int(parts[2])

@@ -82,14 +82,14 @@ def SearchNewListing(location):
         maxpage = result['totalPages']
     dbmethods.loadHouseSearchDataintoDB(houseresult, 'forSale')
 
-def SearchProperty(bellevueaddr):
+def SearchProperty(addressStr):
     # querystring = {"location":location + ", wa","page": str(lastpage),"status":"forSale","doz":"14"}
-    querystring = {"address": bellevueaddr.addr_full +'  ' + bellevueaddr.postalcityname + ' ' + str(bellevueaddr.zip5)}
+    querystring = {"address": addressStr}
     url = "https://zillow56.p.rapidapi.com/search_address"
     response = requests.get(url, headers=headers, params=querystring)
     result = response.json()
     if response.status_code==502:
-        warn('502 on ' + bellevueaddr.addr_full +'  ' + bellevueaddr.postalcityname + ' ' + str(bellevueaddr.zip5))
+        warn('502 on ' + addressStr)
     return result
 
 def SearchNewSoldHomes(location, duration="14"):
