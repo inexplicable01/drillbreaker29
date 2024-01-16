@@ -121,7 +121,7 @@ class ZillowAddress():
         if not os.path.exists(filepath):
             propertydata = SearchProperty(fileaddress)
             json_string = json.dumps(propertydata, indent=4)
-            with open(os.path.join('addressjson', fileaddress + '.txt'), 'w') as f:
+            with open(filepath, 'w') as f:
                 f.write(json_string)
         else:
             with open(filepath, 'r') as file:
