@@ -1,19 +1,20 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
 
-from SMTP_email import send_email
+from SMTP_email import send_email,send_emailstatic,send_emailtest
+from app.sendEmailUpdates import sendEmailUpdatesProcess
 # import os
 # from werkzeug.utils import secure_filename
 # import csv
-from app.ZillowSearch import UpdateListfromLocation, SearchNewListing,SearchNewSoldHomes,SearchProperty
+# from flask import current_app as app
 from app.ZillowDataProcessor import PicturesFromMLS
 from app.HeatMapProcessing import *
 import folium
 main = Blueprint('main', __name__)
 # from extensions import dbmethods
 from app.DataBaseFunc import dbmethods
-from app.NewListing import NewListing
+from app.NewListing import NewListing,NewListingInNeighbourhoods
 
-# Register routes
+
 @main.route('/')
 def index():
     # Render an HTML template with a button
@@ -35,6 +36,11 @@ def send_test_email():
     send_email('New Listing', email_content)
     # main.logger.error('got to here')
     return redirect(url_for('main.index'))
+
+@main.route('/sendEmailUpdates', methods=['POST'])
+def sendEmailUpdates():
+    send_emailtest()
+    return jsonify({'message': 'Email updates sent successfully!'}), 200
 
 @main.route('/mapexample')
 def MapExample():
@@ -72,35 +78,17 @@ def WhereToBuild():
     m = highvalueMap()
     return render_template('WhereToBuild.html', m=m, minprice=minprice, days=days)
 
-@main.route('/showdb')
-def showtable():
-    # Use a subset of your listings or dummy data for testing
-    listings = UpdateListfromLocation('Bellevue')
-    return render_template('table_template.html', listings=listings)
 
-@main.route('/newlistings')
-def newlistings():
-    # Use a subset of your listings or dummy data for testing
-    SearchNewListing('Bellevue')
-    SearchNewListing('Kenmore')
-    SearchNewListing('Bothell')
-    SearchNewListing('Kirkland')
-    # UpdateListfromLocation('Bellevue', Listing, db)
-    listings = dbmethods.ActiveListings()
-    return render_template('table_template.html', listings=listings)
+# @main.route('/newlistings')
+# def newlistings():
+#     # Use a subset of your listings or dummy data for testing
+
+#
+#     listings = dbmethods.ActiveListings()
+#     return render_template('table_template.html', listings=listings)
 
 AreasToCareAbout =['Bellevue', 'Kenmore', 'Bothell' ,'Kirkland' ,'Seattle', 'Shoreline' ,'Renton', 'Kent' ,'Mercer' ,'Island']
-@main.route('/allthesoldhomes')
-def AllSoldHomes():
-    # Use a subset of your listings or dummy data for testing
-    # SearchNewSoldHomes('Bellevue')'Kenmore')('Bothell')('Kirkland')('Ballard')('Fremont')('Phinney Ridge')('Wallingford')'Shoreline')('Renton', "12m")
-    # SearchNewSoldHomes('Clyde Hill', "12m")
-    SearchNewSoldHomes('Medina', "12m")
-    # SearchNewSoldHomes('Mercer Island', "12m")('Seattle', "12m")
-    # UpdateListfromLocation('Bellevue', Listing, db)
 
-    listings = dbmethods.AllListingsByDate()
-    return render_template('table_template.html', listings=listings)
 
 @main.route('/abunchofBellevueAddress')
 def SomeBellevueAddress():
@@ -217,30 +205,67 @@ def MapPotentialValue():
     # return render_template('MLS_Input.html')
 
 
-@main.route('/comparison_base', methods=['GET','POST'])
-def comparison_base():
-    # addresses = ["Address 1", "Address 2", "Address 3"]
-    threeaddress = dbmethods.threeaddress()
-
-    id = 0
-    infodump=[]
-    for address in threeaddress:
-        images = []
-        for photo in address.photos:
-            for jpeg in photo['mixedSources']['jpeg']:
-                if jpeg['width']==384:
-                    images.append({
-                        "url": jpeg['url'], "caption": photo['caption']
-                    })
-        infodump.append((address,f"carid{str(id)}", images))
-        id = id +1
-
-
-    return render_template('comparison_base.html', infodump=infodump)
-
-
-
+# @main.route('/comparison_base', methods=['GET','POST'])
+# def comparison_base():
+#     # addresses = ["Address 1", "Address 2", "Address 3"]
+#
+#     zaddress1 = ZillowAddress.OpenAddresstxt("2207 123RD AVE SE  BELLEVUE")
+#     zaddress2 = ZillowAddress.OpenAddresstxt("2207 123RD AVE SE  BELLEVUE")
+#     zaddress3 = ZillowAddress.OpenAddresstxt("16608 SE 17TH ST  BELLEVUE")
+#
+#     threeaddress= [zaddress1, zaddress2, zaddress3]
+#     id = 0
+#     infodump=[]
+#     for address in threeaddress:
+#         images = []
+#         for photo in address.photos:
+#             for jpeg in photo['mixedSources']['jpeg']:
+#                 if jpeg['width']==384:
+#                     images.append({
+#                         "url": jpeg['url'], "caption": photo['caption']
+#                     })
+#         infodump.append((address,f"carid{str(id)}", images))
+#         id = id +1
+#
+#
+#     return render_template('comparison_base.html', infodump=infodump)
 @main.route('/new_listing', methods=['GET','POST'])
 def new_listing():
-    listings,infodump = NewListing(request)
-    return render_template('NewListing.html', listings=listings, infodump=infodump)
+    # addresses = ["Address 1", "Address 2", "Address 3"]
+    if request.method == 'POST':
+        bedrooms = request.form.get('bedrooms')
+        bathrooms = request.form.get('bathrooms')
+        living_space = request.form.get('livingSpace')
+        location = request.form.get('location')
+        daysonzillow = request.form.get('daysonzillow')
+    elif request.method == 'GET':
+        bedrooms = 5
+        bathrooms = 5
+        living_space = 4000
+        location = 'Seattle'
+        daysonzillow = 1
+    listings,infodump = NewListing(location,daysonzillow,bedrooms,bathrooms,living_space, )
+    return render_template('NewListing.html', listings=listings, infodump=infodump,
+                           bedrooms=bedrooms,bathrooms=bathrooms,living_space=living_space)
+
+@main.route('/new_listing_in_selectneighbourhood', methods=['GET','POST'])
+def new_listing_in_selectneighbourhood():
+    # addresses = ["Address 1", "Address 2", "Address 3"]
+    if request.method == 'POST':
+        bedrooms = request.form.get('bedrooms')
+        bathrooms = request.form.get('bathrooms')
+        living_space = request.form.get('livingSpace')
+        location = request.form.get('location')
+        daysonzillow = request.form.get('daysonzillow')
+    elif request.method == 'GET':
+        bedrooms = 5
+        bathrooms = 5
+        living_space = 4000
+        location = 'Seattle'
+        daysonzillow = 1
+
+    listings,infodump = NewListingInNeighbourhoods(location,daysonzillow,
+                                                   bedrooms,bathrooms,
+                                                   living_space)
+    return render_template('NewListing.html', listings=listings, infodump=infodump,
+                           bedrooms=bedrooms,bathrooms=bathrooms,living_space=living_space)

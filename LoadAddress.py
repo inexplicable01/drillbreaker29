@@ -1,5 +1,6 @@
 import os
 import json
+from app.ZillowSearch import SearchProperty
 
 with open('keystoremove.txt', 'r') as file:
     keys_to_delete = [line.strip() for line in file]
@@ -116,10 +117,17 @@ class ZillowAddress():
 
     @classmethod
     def OpenAddresstxt(cls, fileaddress):
-        with open(os.path.join('addressjson',fileaddress+'.txt'), 'r') as file:
-            # Read the content of the file
-            text_content = file.read()
-            propertydata = json.loads(text_content)
+        filepath = os.path.join('addressjson',fileaddress+'.txt')
+        if not os.path.exists(filepath):
+            propertydata = SearchProperty(fileaddress)
+            json_string = json.dumps(propertydata, indent=4)
+            with open(os.path.join('addressjson', fileaddress + '.txt'), 'w') as f:
+                f.write(json_string)
+        else:
+            with open(filepath, 'r') as file:
+                # Read the content of the file
+                text_content = file.read()
+                propertydata = json.loads(text_content)
 
         for key in keys_to_delete:
             if key in propertydata:

@@ -54,7 +54,14 @@ def searchZillow():
     return responseobject
 
 
+def SearchListingByZPID(ZPID):
+    url = "https://zillow56.p.rapidapi.com/property"
 
+    querystring = {"zpid": ZPID}
+    response = requests.get(url, headers=headers, params=querystring)
+
+    # print(response.json())
+    return response.json()
 
 
 
@@ -65,22 +72,22 @@ def loadcsv(Listing, db):
     dbmethods.loadHouseSearchDataintoDB(data, Listing, db)
     return data
 
-def SearchNewListing(location):
-
-    lastpage = 1
+def SearchNewListing(location, daysonzillow):
+    curpage = 1
     maxpage = 2
     houseresult=[]
-    while maxpage>lastpage:
-        querystring = {"location":location + ", wa","page": str(lastpage),"status":"forSale","doz":"14"}
+    while maxpage>curpage:
+        querystring = {"location":location + ", wa","page": str(curpage),"status":"forSale","doz":str(daysonzillow)}
         response = requests.get(url, headers=headers, params=querystring)
         result = response.json()
         if response.status_code==502:
             warn('502 on ' + location)
             break
         houseresult = houseresult+ result['results']
-        lastpage=lastpage+1
+        curpage=curpage+1
         maxpage = result['totalPages']
     dbmethods.loadHouseSearchDataintoDB(houseresult, 'forSale')
+    return houseresult
 
 def SearchProperty(addressStr):
     # querystring = {"location":location + ", wa","page": str(lastpage),"status":"forSale","doz":"14"}

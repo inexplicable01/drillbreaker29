@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string, redirect, url_for,request, flash
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import os
 
@@ -9,13 +9,14 @@ from .routes import main
 from flask_mail import Mail, Message
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
-from SMTP_email import send_emailstatic
+from SMTP_email import send_emailtest
 # from dotenv import load_dotenv
 from os import getenv
 from sshtunnel import SSHTunnelForwarder
 # from app.DBModels.Listing import Listing,Base as dbBase
 # load_dotenv()  # Load the environment variables from .env
 # db = SQLAlchemy()
+# from config import Config
 # Function to load .env file manually
 def load_env(env_file=".env"):
     with open(env_file) as f:
@@ -49,7 +50,7 @@ def create_app(debug=False,config_object="config.module.path"):
     # env = os.getenv('FLASK_ENV', 'production')
     app = Flask(__name__, instance_relative_config=True)
     tunnel = None
-
+    # app.config.from_object(Config)
     if os.getenv('FLASK_ENV') == 'development':
         # Setup SSH tunnel in development
         tunnel = create_ssh_tunnel()
@@ -74,6 +75,7 @@ def create_app(debug=False,config_object="config.module.path"):
     app.debug=debug
     # Initialize extensions with app
     db.init_app(app)
+    app.secret_key ='DAMNITWAYER'
 
 
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
@@ -87,6 +89,18 @@ def create_app(debug=False,config_object="config.module.path"):
 
     app.register_blueprint(main)
 
+    # Initialize and start the scheduler
+
+    # Schedule the email sending task to run daily
+    scheduler = BackgroundScheduler()
+
+    # Pass the app instance to the scheduled job
+    scheduler.add_job(func=send_emailtest, args=[app], trigger='interval', minutes=10)
+
+    scheduler.start()
+
+    # Ensure scheduler shuts down when the app exits
+    atexit.register(lambda: scheduler.shutdown())
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):

@@ -7,62 +7,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Table Display</title>
 
-        <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+{#    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">#}
 
+    <style>
+        body {
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+
+        .half-height-container {
+            max-height: 80vh;
+            overflow: auto; /* To add scroll bar if content exceeds the container height */
+        }
+
+        .flex-25 {
+            flex: 0 0 25%;
+        }
+
+        .flex-75 {
+            flex: 0 0 75%;
+        }
+            .padding {
+        padding: 10px;
+        margin: 2px;
+    }
+
+        /* Add more custom CSS as needed */
+    </style>
 </head>
 <body>
 
-<table border="1">
-    <!-- Table headers -->
-    <thead>
-    <tr>
-        <th>zpid</th>
-        <th>price</th>
-                <th>zestimate</th>
-        <th>unit</th>
-        <th>streetAddress</th>
-        <th>city</th>
-        <th>state</th>
-        <th>zipcode</th>
-        <th>bedrooms</th>
-        <th>bathrooms</th>
 
-        <th>daysOnZillow</th>
-        <th>homeType</th>
-        <th>ListingLength</th>
-    </tr>
-    </thead>
+<div class="container">
+    <div class="row  padding">
+        <!-- Form Column -->
+        <div class="col-md-3">
+            <h2>Update Build Estimate</h2>
+            <form action="/new_listing" method="post">
+                <div class="form-group">
+                    <label for="bedrooms">Number of Bedrooms:</label>
+                    <select class="form-control" id="bedrooms" name="bedrooms">
+                        {% for i in range(1, 11) %}
+                            <option value="{{ i }}" {% if i == bedrooms %}selected{% endif %}>{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="bathrooms">Number of Bathrooms:</label>
+                    <select class="form-control" id="bathrooms" name="bathrooms">
+                        {% for i in range(1, 11) %}
+                            <option value="{{ i }}" {% if i == bathrooms %}selected{% endif %}>{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="livingSpace">Living Space (sq ft):</label>
+                    <input type="number" class="form-control" id="livingSpace" name="livingSpace"
+                           value={{ living_space }}>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Build Estimate</button>
+            </form>
+        </div>
 
-    <!-- Table data -->
-    <tbody>
-    {% for listing in listings %}
-        <tr>
-            <td>{{ listing.zpid }}</td>
-            <td>{{ listing.price }}</td>
-            <td>{{ listing.zestimate }}</td>
-            <td>{{ listing.unit }}</td>
-            <td>{{ listing.streetAddress }}</td>
-            <td>{{ listing.city }}</td>
-            <td>{{ listing.state }}</td>
-            <td>{{ listing.zipcode }}</td>
-            <td>{{ listing.bedrooms }}</td>
-            <td>{{ listing.bathrooms }}</td>
+        <!-- Table Column -->
+        <div class="col-md-9">
+            {% include 'components/listing_tables.html' %}
+        </div>
+    </div>
 
-            <td>{{ listing.daysOnZillow }}</td>
-            <td>{{ listing.homeType }}</td>
-            <td>{{ listing.list2pend }}</td>
-        </tr>
+    <div class="container">
+        <h2>Give us your email to get daily reports!</h2>
+        <form action="/sendEmailUpdates" method="post">
+            <div class="form-group">
+                <label for="email">Email address:</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+    {% for item, carid, images, newbuildestimate, price1,equitygain,makemoney,neighbourhood in infodump %}
+        {% include 'components/house_component.html' %}
     {% endfor %}
-    </tbody>
-</table>
+</div>
 
 
-    {% for item, carid, images, newbuildestimate in infodump %}
-
-        {% include 'house_component.html' %}
-    {% endfor %}
 </body>
 </html>

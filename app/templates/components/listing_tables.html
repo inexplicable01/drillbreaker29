@@ -1,0 +1,45 @@
+<table border="1">
+    <!-- Table headers -->
+    <thead>
+    <tr>
+        {#        <th>zpid</th>#}
+        <th>Listing Price</th>
+        {#                <th>zestimate</th>#}
+        {#        <th>unit</th>#}
+        <th>Address</th>
+        {#        <th>city</th>#}
+        {#        <th>state</th>#}
+        {#        <th>zipcode</th>#}
+        <th>Bedrooms</th>
+        <th>Bathrooms</th>
+        <th>Lot Size</th>
+
+        <th>Days on Zillow</th>
+        {#        <th>homeType</th>#}
+        {#        <th>ListingLength</th>#}
+    </tr>
+    </thead>
+
+    <!-- Table data -->
+    <tbody>
+    {% for listing in listings %}
+        <tr>
+            {#            <td>{{ listing.zpid }}</td>#}
+            <td>{{ listing.price }}</td>
+            {#            <td>{{ listing.zestimate }}</td>#}
+            {#            <td>{{ listing.unit }}</td>#}
+            <td>{{ listing.streetAddress }} , {{ listing.city }}</td>
+            {#            <td></td>#}
+            {#            <td>{{ listing.state }}</td>#}
+            {#            {{ listing.streetAddress }}#}
+            {#            <td>{{ listing.zipcode }}</td>#}
+            <td>{{ listing.bedrooms }}</td>
+            <td>{{ listing.bathrooms }}</td>
+            <td>{{ listing.shape_area }}</td>
+            <td>{{ listing.daysOnZillow }}</td>
+            {#            <td>{{ listing.homeType }}</td>#}
+            {#            <td>{{ listing.list2pend }}</td>#}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

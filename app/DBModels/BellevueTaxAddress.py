@@ -4,6 +4,20 @@ from datetime import datetime
 from app.extensions import db
 Base = declarative_base()
 
+def safe_float_conversion(value, default=0.0):
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
+def safe_int_conversion(value, default=0):
+    try:
+        if value is None:
+            return 0
+        return int(value)
+    except ValueError:
+        return default
 class BellevueTaxAddress(db.Model):
     __tablename__ = 'BellevueTaxAddress'  # specify your table name here
 
@@ -61,8 +75,11 @@ class BellevueTaxAddress(db.Model):
         new_address.postalcityname = propertydata['address']['city']
         new_address.latitude = float(propertydata['latitude'])
         new_address.longitude = float(propertydata['longitude'])
-        new_address.shape_area = float(propertydata['lotSize'])
-        new_address.zestimate_value = int(propertydata['zestimate'])# Allows NULL values
+        try:
+            new_address.shape_area = float(propertydata['lotSize'])
+        except:
+            print("No Lot Size")
+        new_address.zestimate_value = safe_int_conversion(propertydata.get('zestimate',0))# Allows NULL values
         new_address.year_built = int(propertydata['yearBuilt'])  # Allows NULL values
         new_address.living_area = int(propertydata['livingArea'])   # Allows NULL values
         new_address.bathrooms = float(propertydata['bathrooms'])  # Allows NULL values

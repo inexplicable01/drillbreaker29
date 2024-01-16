@@ -1,11 +1,10 @@
 from datetime import datetime
 from app.DBModels.Listing import Listing
 from app.DBModels.BellevueTaxAddress import BellevueTaxAddress
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, or_
 # from app.useful_func import haversine
 from haversine import haversine, Unit
 import pandas as pd
-from LoadAddress import ZillowAddress
 import re
 
 def safe_float_conversion(value, default=0.0):
@@ -44,11 +43,10 @@ class DBMETHOD():
     def AllListingsByDate(self):
         return self.Listing.query.order_by(self.Listing.dateSold).all()
 
-    def ActiveListings(self, daysupperlimit=14,homeType="SINGLE_FAMILY"):
-        # return self.Listing.query.filter(self.Listing.daysOnZillow <14).order_by(self.Listing.daysOnZillow).all()
+    def ActiveListings(self, daysupperlimit=14, homeTypes=["SINGLE_FAMILY"]):
         return self.Listing.query.filter(
             self.Listing.daysOnZillow.between(0, daysupperlimit),
-            self.Listing.homeType == homeType
+            or_(*[self.Listing.homeType == homeType for homeType in homeTypes])
         ).order_by(self.Listing.daysOnZillow).all()
 
     def AllListingsforHeatmap(self):
@@ -100,48 +98,19 @@ class DBMETHOD():
         for house in housearray:
             # Check if a listing with this zpid already exists.
             # filtered_house = {k: house[k] for k in keystokeep if k in house}
-            if 'datesold' not in house.keys():
-                house['dateSold'] = 0
-            try:
-                filtered_house = {
-                    'zpid': house['zpid'],
-                    'price': safe_float_conversion(house['price']),
-                    'unit': 'house',
-                    'streetAddress': house['streetAddress'],
-                    'city': house['city'],
-                    'state': house['state'],
-                    'zipcode': safe_int_conversion(house['zipcode']),
-                    'bedrooms': safe_int_conversion(house['bedrooms']),
-                    'bathrooms': safe_float_conversion(house['bathrooms']),
-                    'zestimate': safe_float_conversion(house['zestimate']),
-                    'daysOnZillow': safe_int_conversion(house['daysOnZillow']),
-                    'latitude': safe_float_conversion(house['latitude']),
-                    'longitude': safe_float_conversion(house['longitude']),
-                    'homeType': house['homeType'],
-                    'dateSold': datetime.utcfromtimestamp(int(house['dateSold']) / 1000),
-                    'status': status
-                    # ... other fields ...
-                }
-            except Exception as e:
-                continue
-
-            listing = self.Listing.query.filter_by(zpid=filtered_house['zpid']).first()
-
-            try:
-                if not listing:
-                    # Convert dictionary to a Listing object and add it to the session.
-                    new_listing = self.Listing(**filtered_house)
-                    self.db.session.add(new_listing)
-                else:
-                    # Update the existing listing with new data.
-                    for key, value in filtered_house.items():
-                        setattr(listing, key, value)
-                # db.session.add(new_listing)
-                self.db.session.commit()
-            except Exception as e:
-                # Handle the error, e.g., log it or notify the user.
-                self.db.session.rollback()
-                print(f"Error during insertion: {e}")
+            listing = self.Listing.query.filter_by(zpid=house['zpid']).first()
+            if listing is None:
+                 new_listing = Listing.CreateListing(house,status)
+                 self.db.session.add(new_listing)
+            else:
+                for key, value in house.items():
+                    setattr(listing, key, value)
+        try:
+            self.db.session.commit()
+        except Exception as e:
+            # Handle the error, e.g., log it or notify the user.
+            self.db.session.rollback()
+            print(f"Error during insertion: {e}")
 
     def find_addresses_within_distance(self, origin_lat, origin_long, distance_miles):
         distance_query = BellevueTaxAddress.query.filter(
@@ -283,20 +252,6 @@ class DBMETHOD():
     def addToBellevueTaxAddress(self,propertdata):
         return BellevueTaxAddress.create_from_dict(propertdata)
 
-
-    def threeaddress(self):
-        # results = BellevueTaxAddress.query.filter(BellevueTaxAddress.year_built > year)
-        # result_set = results.all()
-        #
-        # entries = session.query(BellevueTaxAddress).filter(BellevueTaxAddress.postalcityname == "BELLEVUE").all()
-        # bellevue_rows = query.all()
-        # for offset in range(0, total_entries, batch_size):
-        #     entries = session.query(BellevueTaxAddress).limit(batch_size).offset(offset).all()
-        zaddress1 = ZillowAddress.OpenAddresstxt("2207 123RD AVE SE  BELLEVUE")
-        zaddress2 = ZillowAddress.OpenAddresstxt("2207 123RD AVE SE  BELLEVUE")
-        zaddress3 = ZillowAddress.OpenAddresstxt("16608 SE 17TH ST  BELLEVUE")
-
-        return [zaddress1, zaddress2, zaddress3]
 
     def getBellevueTaxAddressbyAddress(self,listing):
         pattern = r"^(\d+)\s+(.*?)(?:\s+SE|\s+NE|\s+RD|\s+AVE|\s+ST|)?$"

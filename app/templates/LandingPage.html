@@ -55,15 +55,18 @@
     <td><a href="/errormap">Model Error</a></td>
   </tr>
 
-          <tr>
-    <td>Comparison Template</td>
-    <td><a href="/comparison_base">Comparison</a></td>
-  </tr>
+{#          <tr>#}
+{#    <td>Comparison Template</td>#}
+{#    <td><a href="/comparison_base">Comparison</a></td>#}
+{#  </tr>#}
           <tr>
     <td>New Listing</td>
     <td><a href="/new_listing">New Listing</a></td>
   </tr>
-
+          <tr>
+    <td>New Listing in Ballard/Fremont</td>
+    <td><a href="/new_listing_in_selectneighbourhood">New Listing</a></td>
+  </tr>
 
 
 </table>
@@ -73,7 +76,9 @@
         <form action="{{ url_for('main.send_test_email') }}" method="post">
             <button type="submit">Send Us a Question!</button>
         </form>
-
+        <form action="{{ url_for('main.sendEmailUpdates') }}" method="post">
+            <button type="submit">Send Email!</button>
+        </form>
 {#        <a href="/downloadpicsfromMLS">downloadpicsfromMLS</a>#}
 {#        <p>fkajdsf</p>#}
 {#        <a href="/mapexample">mapexample</a>#}

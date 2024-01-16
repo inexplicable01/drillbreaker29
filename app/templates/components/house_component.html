@@ -1,0 +1,120 @@
+<style>
+    .component {
+        border: 1px solid black;
+    }
+
+    .makemoney {
+        font-size: larger; /* Larger text size */
+        color: green; /* Green text color */
+    }
+
+    .losemoney {
+        font-size: larger; /* Larger text size */
+        color: red; /* Green text color */
+    }
+
+    .descriptiondiv {
+        border: 1px solid #ddd; /* Example border style */
+        padding: 15px; /* Example padding */
+        width: 100%; /* Full width */
+    }
+
+    moneytable {
+        width: 100%; /* Table occupies full width of its container */
+        margin: auto; /* Center the table */
+    }
+
+    .custom-table {
+        width: 100%; /* Full width for the table */
+        border-collapse: collapse; /* Ensures borders are neat */
+    }
+
+    .custom-table, .custom-table th, .custom-table td {
+        border: 1px solid #000; /* Solid black border for table and cells */
+        text-align: center; /* Center text in cells */
+        padding: 8px; /* Padding inside cells */
+    }
+
+    .carousel-container {
+        width: 400px;
+        margin: auto;
+    }
+
+</style>
+<div class="container padding">
+    <div class="row">
+        <div class="col-md-9">
+            <h4>
+                Address: {{ item.address.streetAddress }} , {{ item.address.city }}  , Neighbouhoord: {{ neighbourhood }}
+            </h4>
+            <p>
+                Description {{ item.description }}
+            </p>
+        </div>
+        <div class="col-md-3">
+            <h4>
+                Listing Price {{ item.price }}
+            </h4>
+
+        </div>
+    </div>
+    <div class="row component ">
+        <div class="col-md-5 component">
+            <div id="{{ carid }}" class="carousel slide carousel-container" data-ride="carousel">
+                <div class="carousel-inner">
+                    {% for image in images %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ image.url }}" class="d-block w-100" alt="{{ image.caption }}">
+                            <div class="carousel-caption d-none d-md-block">
+                                <h5>{{ image.caption }}</h5>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <a class="carousel-control-prev" href="#{{ carid }}" role="button" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="sr-only">Previous</span>
+                </a>
+                <a class="carousel-control-next" href="#{{ carid }}" role="button" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="sr-only">Next</span>
+                </a>
+            </div>
+        </div>
+        <div class="col-md-7 component">
+            <div class="descriptiondiv padding">
+                <table class="custom-table">
+                    <tr>
+                        <td>Listing Price</td>
+                        <td>$ {{ price1 }}   </td>
+                    </tr>
+                    <tr>
+                        <td>Construction Cost</td>
+                        <td>$ 1,500,000</td>
+                    </tr>
+                    <tr>
+                        <td>New Build Estimate</td>
+                        <td>$ {{ newbuildestimate }}</td>
+                    </tr>
+                    <tr class="{{ 'makemoney' if  makemoney else 'losemoney' }}">
+                        <td>Equity Gain</td>
+                        <td>$ {{ equitygain }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{#    <div class="padding">#}
+{#        {% for photo in item.photos %}#}
+{#            {% for jpeg in photo['mixedSources']['jpeg']%}#}
+{#                {% if jpeg.width==192 %}#}
+{#                    <img src="{{ jpeg.url }}" alt="Photo" width="{{ jpeg.width }}">#}
+{#                {%  endif %}#}
+{#            {% endfor %}#}
+{#        {% endfor %}#}
+{#    </div>#}
+{#    <div class="descriptiondiv padding">#}
+{#        Description: {{ item.description }}#}
+{#    </div>#}
+{##}
