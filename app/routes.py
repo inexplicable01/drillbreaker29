@@ -40,7 +40,7 @@ def send_test_email():
 @main.route('/sendEmailUpdates', methods=['POST'])
 def sendEmailUpdates():
     send_emailtest()
-    return jsonify({'message': 'Email updates sent successfully!'}), 200
+    return render_template('LandingPage.html'), 200
 
 @main.route('/mapexample')
 def MapExample():
