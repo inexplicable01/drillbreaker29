@@ -105,12 +105,12 @@ class DBMETHOD():
             else:
                 for key, value in house.items():
                     setattr(listing, key, value)
-        try:
-            self.db.session.commit()
-        except Exception as e:
-            # Handle the error, e.g., log it or notify the user.
-            self.db.session.rollback()
-            print(f"Error during insertion: {e}")
+            try:
+                self.db.session.commit()
+            except Exception as e:
+                # Handle the error, e.g., log it or notify the user.
+                self.db.session.rollback()
+                print(f"Error during insertion: {e}")
 
     def find_addresses_within_distance(self, origin_lat, origin_long, distance_miles):
         distance_query = BellevueTaxAddress.query.filter(
@@ -252,7 +252,8 @@ class DBMETHOD():
     def addToBellevueTaxAddress(self,propertdata):
         return BellevueTaxAddress.create_from_dict(propertdata)
 
-
+#this function looks for the Bellevue Tax Address where is the most comprehenisve schema in your DB.
+    ##
     def getBellevueTaxAddressbyAddress(self,listing):
         pattern = r"^(\d+)\s+(.*?)(?:\s+SE|\s+NE|\s+RD|\s+AVE|\s+ST|)?$"
         streetaddress = listing.streetAddress

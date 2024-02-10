@@ -269,3 +269,43 @@ def new_listing_in_selectneighbourhood():
                                                    living_space)
     return render_template('NewListing.html', listings=listings, infodump=infodump,
                            bedrooms=bedrooms,bathrooms=bathrooms,living_space=living_space)
+
+@main.route('/listingsInTargetAreas', methods=['GET','POST'])
+def listingsInTargetAreas():
+    # addresses = ["Address 1", "Address 2", "Address 3"]
+    if request.method == 'POST':
+        bedrooms = request.form.get('bedrooms')
+        bathrooms = request.form.get('bathrooms')
+        living_space = request.form.get('livingSpace')
+        location = request.form.get('location')
+        daysonzillow = request.form.get('daysonzillow')
+    elif request.method == 'GET':
+        bedrooms = 5
+        bathrooms = 5
+        living_space = 4000
+        location = 'Seattle'
+        daysonzillow = 1
+
+    listings,infodump = NewListingInNeighbourhoods(location,daysonzillow,
+                                                   bedrooms,bathrooms,
+                                                   living_space)
+    return render_template('NewListing.html', listings=listings)
+
+@main.route('/openhouse', methods=['GET','POST'])
+def openhouse():
+    # addresses = ["Address 1", "Address 2", "Address 3"]
+    if request.method == 'POST':
+        bedrooms = request.form.get('bedrooms')
+        bathrooms = request.form.get('bathrooms')
+        living_space = request.form.get('livingSpace')
+        location = request.form.get('location')
+        daysonzillow = request.form.get('daysonzillow')
+    elif request.method == 'GET':
+        bedrooms = 5
+        bathrooms = 5
+        living_space = 4000
+        location = 'Seattle'
+        daysonzillow = 1
+
+    map_html = SearchForOpenHouses()
+    return render_template('OpenHouse.html', m=map_html)

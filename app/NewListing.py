@@ -161,34 +161,38 @@ def NewListingInNeighbourhoods(location, daysonzillow,bedrooms=5,bathrooms=5, li
     return listings,infodump
 
 def NewListingForEmail(location, daysonzillow,bedrooms=None,bathrooms=None, living_space=None):
-
     houseresult = SearchNewListing(location,daysonzillow)
     infodump = []
     for house in houseresult:
         images=[]
         count = 0
         listingdetails = SearchListingByZPID(house['zpid'])
-
-        if listingdetails['address']['city']!='Seattle':
+        if not listingdetails:
             continue
-        print(listingdetails['address']['streetAddress'], listingdetails['address']['city'])
-        neighbourhood = get_neighborhood(listingdetails['latitude'], listingdetails['longitude'])
-        if not (neighbourhood in NEIGHBORHOODS):
-            print(neighbourhood)
-            continue
-        for photo in listingdetails['photos']:
-            for jpeg in photo['mixedSources']['jpeg']:
-                if jpeg['width']==384:
-                    images.append({
-                        "url": jpeg['url'], "caption": photo['caption']
-                    })
-                    count = count +1
-            if count>4:
-                break
+        try:
+            if listingdetails['address']['city']!='Seattle':
+                continue
+            print(listingdetails['address']['streetAddress'], listingdetails['address']['city'])
+            neighbourhood = get_neighborhood(listingdetails['latitude'], listingdetails['longitude'])
+            if not (neighbourhood in NEIGHBORHOODS):
+                print(neighbourhood)
+                continue
+            for photo in listingdetails['photos']:
+                for jpeg in photo['mixedSources']['jpeg']:
+                    if jpeg['width']==384:
+                        images.append({
+                            "url": jpeg['url'], "caption": photo['caption']
+                        })
+                        count = count +1
+                if count>4:
+                    break
 
-        infodump.append(
-            (listingdetails,f"{house['zpid']}",images,neighbourhood)
-        )
+            infodump.append(
+                (listingdetails,f"{house['zpid']}",images,neighbourhood)
+            )
+        except Exception as e:
+            print(e)
 
 
     return render_template('Email_House_List.html', infodump=infodump)
+

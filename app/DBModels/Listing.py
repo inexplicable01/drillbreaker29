@@ -56,8 +56,8 @@ class Listing(db.Model):
             new_address.zipcode = safe_int_conversion(house.get('zipcode', 90000) )
             new_address.bedrooms = safe_int_conversion(house.get('bedrooms', 0) )
             new_address.bathrooms = safe_float_conversion(house.get('bathrooms', 0) )
-            new_address.zestimate = safe_float_conversion(house.get('zestimate', 0)),
-            new_address.daysOnZillow = safe_int_conversion(house.get('daysOnZillow', 999)),
+            new_address.zestimate = safe_float_conversion(house.get('zestimate', 0))
+            new_address.daysOnZillow = safe_int_conversion(house.get('daysOnZillow', 999))
             new_address.dateSold = datetime.utcfromtimestamp(int(house.get('dateSold',datetime.now())) / 1000)
             new_address.homeType = house.get('homeType', 'Single_Family')
             new_address.latitude = safe_float_conversion(house.get('latitude',0))
@@ -67,5 +67,5 @@ class Listing(db.Model):
             new_address.status = status
             return new_address
         except Exception as e:
-            print(e)
+            print('Create Listing Error', e)
             return cls()

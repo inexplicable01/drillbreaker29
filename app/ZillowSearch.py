@@ -3,8 +3,10 @@ import json
 from datetime import datetime
 import csv
 from warnings import warn
+from app.config import Config
 # from app.models import SaveHouseSearchDataintoDB
 url = "https://zillow56.p.rapidapi.com/search"
+zpidurl = "https://zillow56.p.rapidapi.com/property"
 # from datetime import datetime
 import sqlite3
 keystokeep = ['zpid','price','unit','streetAddress',
@@ -61,8 +63,10 @@ def SearchListingByZPID(ZPID):
     response = requests.get(url, headers=headers, params=querystring)
 
     # print(response.json())
-    return response.json()
-
+    try:
+        return response.json()
+    except Exception as e:
+        return None
 
 
 def loadcsv(Listing, db):
@@ -171,3 +175,66 @@ def addHomesToDB():
     # Commit the changes and close the connection
     conn.commit()
     conn.close()
+
+def ZillowSearchForOpenHouse():
+
+    location = 'seattle'
+    curpage = 1
+    maxpage = 2
+    houseresult = []
+    daysonzillow = 30
+    while maxpage > curpage:
+        querystring = {"location": location + ", wa", "page": str(curpage), "status": "forSale",
+                       "doz": str(daysonzillow)}
+        response = requests.get(url, headers=headers, params=querystring)
+        result = response.json()
+        if response.status_code == 502:
+            warn('502 on ' + location)
+            break
+        houseresult = houseresult + result['results']
+        curpage = curpage + 1
+        print(curpage)
+        maxpage = result['totalPages']
+
+    TR = [47.71008, -122.237]
+    TL = [47.71008, -122.428]
+    BR = [47.62454, -122.237]
+    BL = [47.62454, -122.428]
+    filtered_houses = []
+    for house in houseresult:
+
+        # Check if the house's coordinates fall within the defined bounding box
+        if (BL[0] <= house['latitude'] <= TL[0]) and (TL[1] <= house['longitude'] <= TR[1]):
+
+            response = SearchListingByZPID(house['zpid'])
+
+            print('address',response['address']['streetAddress'])
+            print('isOpenHouse',response['listingSubType']['isOpenHouse'])
+            print('openHouseSchedule',response['openHouseSchedule'])
+            print('homeType', response['homeType'])
+            print('propertyCondition', response['resoFacts']['propertyCondition'])
+            print('neighborhoodRegion', response['neighborhoodRegion'])
+            # neighborhoodRegion
+            if response['homeType']=="LOT" or response['homeType']=="MULTI_FAMILY" or response['homeType']=="CONDO":
+                print('Not a proper home Type, skip')
+                continue
+            if response['resoFacts']['propertyCondition']=="Under Construction":
+                print('Under Construction, skip')
+                continue
+            if response['neighborhoodRegion']['name']  in Config.WRONGNEIGHBORHOODS:
+                print('wrong neighbourhood, skip')
+                continue
+
+
+            if not response['listingSubType']['isOpenHouse']:
+                filtered_houses.append(response)
+
+
+    # Calculate the center of your bounding box (average of the bounding box coordinates)
+    center_lat = (TL[0] + BR[0]) / 2
+    center_lon = (TL[1] + TR[1]) / 2
+
+
+
+
+    return filtered_houses,center_lat,center_lon
