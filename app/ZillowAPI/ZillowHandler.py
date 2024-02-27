@@ -130,5 +130,10 @@ def loadPropertyDataFromBrief(brieflisting:BriefListing):
             # Read the content of the file
             text_content = file.read()
             propertydata = json.loads(text_content)
+
+
+            # {
+            #     "message": "You have exceeded the rate limit per second for your plan, ULTRA, by the API provider"
+            # }
     return propertydata
 

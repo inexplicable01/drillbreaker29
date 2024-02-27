@@ -43,6 +43,7 @@ class BriefListing:
     rentZestimate: Optional[int] = None
     unit: Optional[str] = None
     videoCount: Optional[str] = None
+    isRentalWithBasePrice: Optional[bool] = None
 
 
     def ref_address(self):

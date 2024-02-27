@@ -221,7 +221,8 @@ def openhouse():
 @main.route('/areareport', methods=['GET','POST'])
 def areareport():
     # locations=['Wallingford']
-    locations=['Ballard', 'Fremont', 'Wallingford']
+    # locations=['Ballard', 'Fremont', 'Wallingford']
+    locations = ['Magnolia']
     map_html,soldhouses, housesoldpriceaverage =AreaReport(locations)
     # send_emailforOpenHouse(filtered_houses)
     return render_template('AreaReport.html',
