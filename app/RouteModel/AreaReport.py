@@ -158,7 +158,7 @@ def generateMap(soldhomes, location):
     for house in soldhomes:
         list2penddays = house['list2penddays']
         if list2penddays is None:
-            color = 'grey'
+            color = 'gray'
         else:
             if list2penddays < 7:
                 color = 'red'
