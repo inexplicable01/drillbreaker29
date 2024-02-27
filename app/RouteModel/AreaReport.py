@@ -10,51 +10,9 @@ from joblib import load
 import os
 import json
 # model = load('linear_regression_model.joblib')
-housesoldpriceaverage = {
-    "1bed1bath": {
-        "beds":1,
-        "baths":1,
-        "count":0,
-        "totalprice":0,
-        "houses":[]
-    },
-    "2bed2bath": {
-        "beds": 2,
-        "baths": 2,
-        "count": 0,
-        "totalprice":0,
-"houses":[]
-    },
-    "3bed2bath": {
-        "beds": 3,
-        "baths": 2,
-        "count": 0,
-        "totalprice":0,
-"houses":[]
-    },
-    "3bed3bath": {
-        "beds": 3,
-        "baths": 3,
-        "count": 0,
-        "totalprice":0,
-"houses":[]
-    },
-    "4bed2-bath": {
-        "beds": 4,
-        "baths": 2,
-        "count": 0,
-        "totalprice":0,
-"houses":[]
-    },
-    "4bed3+bath": {
-        "beds": 4,
-        "baths": 3,
-        "count": 0,
-        "totalprice": 0,
-"houses":[]
-    }
-}
+
 def AreaReport(locations):
+    housesoldpriceaverage = initiateSummarydata()
     soldhomes=[]
     for location in locations:
         soldhomes=  soldhomes+ FindSoldHomesByLocation(location,30)
@@ -63,8 +21,8 @@ def AreaReport(locations):
     for brieflisting in soldhomes:
         listresults = ListingLengthbyBriefListing(brieflisting)
         brieflisting.updateListingLength(listresults)
-        print(brieflisting.ref_address())
-        print(listresults)
+        # print(brieflisting.ref_address())
+        # print(listresults)
         try:
             bedbathcode = int(brieflisting.bedrooms)+float(brieflisting.bathrooms)*100
             if 101<=bedbathcode<=102:
@@ -112,6 +70,53 @@ def AreaReport(locations):
 
 
     return generateMap(soldhomes, location), soldhomes,housesoldpriceaverage
+
+
+def initiateSummarydata():
+    return{
+        "1bed1bath": {
+            "beds": 1,
+            "baths": 1,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        },
+        "2bed2bath": {
+            "beds": 2,
+            "baths": 2,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        },
+        "3bed2bath": {
+            "beds": 3,
+            "baths": 2,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        },
+        "3bed3bath": {
+            "beds": 3,
+            "baths": 3,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        },
+        "4bed2-bath": {
+            "beds": 4,
+            "baths": 2,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        },
+        "4bed3+bath": {
+            "beds": 4,
+            "baths": 3,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        }
+    }
 
 def generateMap(soldhomes, location):
     m = folium.Map(location=[47.6762, -122.3860], zoom_start=13)

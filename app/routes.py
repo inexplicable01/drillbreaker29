@@ -220,12 +220,23 @@ def openhouse():
 
 @main.route('/areareport', methods=['GET','POST'])
 def areareport():
+    locationtoinspect = ['Ballard', 'Fremont', 'Wallingford', 'Magnolia', 'Phinney Ridge']
+    if request.method == 'POST':
+        location = request.form.get('location')
+    elif request.method == 'GET':
+        location = request.args.get('location', default=None)
+        if location is None:
+            locations = locationtoinspect
+        else:
+            locations = [location]  # This makes the rest of your code work unchanged
+
     # locations=['Wallingford']
-    # locations=['Ballard', 'Fremont', 'Wallingford']
-    locations = ['Magnolia']
+
+    # locations = ['Magnolia']
     map_html,soldhouses, housesoldpriceaverage =AreaReport(locations)
     # send_emailforOpenHouse(filtered_houses)
     return render_template('AreaReport.html',
                            m=map_html,
                            soldhouses = soldhouses,
-                           housesoldpriceaverage=housesoldpriceaverage)
+                           housesoldpriceaverage=housesoldpriceaverage,
+                           locationtoinspect=locationtoinspect)

@@ -32,17 +32,65 @@
             flex: 1; /* Each section takes up half of the side section */
             overflow-y: auto; /* Enable scrolling within each section if the content overflows */
         }
+    #areaLinks {
+        display: flex;
+    }
 
+    #areaLinks a {
+        margin-right: 10px; /* Adjust the spacing between links */
+        color: blue; /* Makes the link color blue */
+        text-decoration: none; /* Removes the underline from links */
+        font-size: 16px; /* Sets the font size to 16 pixels */
+    }
         /* Add any additional styling you need for data-section and comments-section here */
     </style>
+    <script>
+        // Function to handle the form submission without reloading the page
+        // and to update maps and data based on the selected area.
+        function submitForm(selectedValue) {
+            event.preventDefault(); // Prevent the form from submitting in the traditional way
 
+            // Assuming you have functions like updateMap(selectedValue) and updateData(selectedValue)
+            // that you'd use to update the map and data on the page.
+            updateMap(selectedValue);
+            updateData(selectedValue);
+
+            // Add your AJAX call or fetch API logic here if needed to send the selectedValue
+            // to your server and receive back the data/maps to be updated on the page.
+            console.log("Selected area:", selectedValue); // For demonstration purposes
+        }
+
+        // Example functions for updating the map and data
+        function updateMap(selectedArea) {
+            // Implement your logic to update the map based on the selectedArea
+            console.log("Map updated for:", selectedArea); // Placeholder
+        }
+
+        function updateData(selectedArea) {
+            // Implement your logic to update the data displayed on the page based on the selectedArea
+            console.log("Data updated for:", selectedArea); // Placeholder
+        }
+    </script>
 </head>
 <body>
 
 <div id="main-content">
     <div id="map-container">
         <!-- Your map will go here -->
-        {{ m | safe }}
+
+
+
+        <div id="areaLinks" style="display: flex;">
+            {% for location in locationtoinspect %}
+                <a href="/areareport?location={{ location }}" style="margin-right: 10px;">{{ location }}</a>
+            {% endfor %}
+{#    <a href="/areareport?location=Location1">Location1</a>#}
+{#    <a href="/areareport?location=Location2">Location2</a>#}
+{#    <a href="/areareport?location=Location3">Location3</a>#}
+
+        </div>
+    {{ m | safe }}
+
     </div>
     <div id="side-section">
         <div id="data-section">

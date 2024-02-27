@@ -44,6 +44,7 @@ class BriefListing:
     unit: Optional[str] = None
     videoCount: Optional[str] = None
     isRentalWithBasePrice: Optional[bool] = None
+    newConstructionType: Optional[str] = None
 
 
     def ref_address(self):
