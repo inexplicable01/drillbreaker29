@@ -85,7 +85,7 @@ def SearchZillowSoldHomesByLocation(location, duration=14):
             lastpage=lastpage+1
             maxpage = result['totalPages']
         except Exception as e:
-            warn('Search Zillow failed',e)
+            warn(f"Search Zillow failed due to an exception: {e}")
     return houseresult
     # dbmethods.SaveHouseSearchDataintoDB(houseresult)
 
