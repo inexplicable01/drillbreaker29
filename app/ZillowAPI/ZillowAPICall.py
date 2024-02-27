@@ -1,7 +1,7 @@
 import requests
 import os
 from warnings import warn
-
+import time
 import sqlite3
 url = "https://zillow56.p.rapidapi.com/search"
 zpidurl = "https://zillow56.p.rapidapi.com/property"
@@ -22,6 +22,7 @@ headers = {
 def SearchZillowByZPID(ZPID):
     querystring = {"zpid": ZPID}
     response = requests.get("https://zillow56.p.rapidapi.com/property", headers=headers, params=querystring)
+    time.sleep(0.5)
     try:
         return response.json()
     except Exception as e:
@@ -32,6 +33,7 @@ def SearchZillowByAddress(addressStr):
     # querystring = {"location":location + ", wa","page": str(lastpage),"status":"forSale","doz":"14"}
     querystring = {"address": addressStr}
     response = requests.get("https://zillow56.p.rapidapi.com/search_address", headers=headers, params=querystring)
+    time.sleep(0.5)
     if response.status_code==502:
         warn('502 on ' + addressStr)
     try:
@@ -56,6 +58,7 @@ def SearchZillowNewListingByLocation(location, daysonzillow):
         querystring = {"location": location + ", wa", "page": str(curpage), "status": "forSale",
                        "doz": str(daysonzillow)}
         response = requests.get(url, headers=headers, params=querystring)
+        time.sleep(0.5)
         result = response.json()
         if response.status_code == 502:
             warn('502 on ' + location)
@@ -78,6 +81,7 @@ def SearchZillowSoldHomesByLocation(location, duration=14):
     while maxpage>lastpage:
         querystring = {"location":location + ", wa","page": str(lastpage),"status":"recentlySold","doz":str(duration)}
         response = requests.get(url, headers=headers, params=querystring)
+        time.sleep(0.5)
 
         if response.status_code==502:
             warn('502 on ' + location)
