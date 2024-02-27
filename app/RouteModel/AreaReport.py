@@ -58,7 +58,7 @@ def AreaReport(locations):
     soldhomes=[]
     for location in locations:
         soldhomes=  soldhomes+SearchZillowSoldHomesByLocation(location, 30)
-    soldhomes=soldhomes[:10]
+    # soldhomes=soldhomes[:10]
     for briefhomedata in soldhomes:
         # print(house)
         listinglength = ListingLengthbyZPID(briefhomedata)
