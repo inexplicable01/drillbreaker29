@@ -2,7 +2,7 @@ import folium
 from app.ZillowDataProcessor import SearchZillowNewListingByLocation,SearchZillowByAddress
 from app.DataBaseFunc import dbmethods
 from app.ZillowAPI.ZillowAPICall import SearchZillowSoldHomesByLocation
-from app.ZillowAPI.ZillowHandler import ListingLengthbyZPID
+from app.ZillowAPI.ZillowHandler import ListingLengthbyBriefListing, FindSoldHomesByLocation
 import pandas as pd
 from app.UsefulAPI.UseFulAPICalls import get_neighborhood
 from app.config import Config
@@ -57,38 +57,41 @@ housesoldpriceaverage = {
 def AreaReport(locations):
     soldhomes=[]
     for location in locations:
-        soldhomes=  soldhomes+SearchZillowSoldHomesByLocation(location, 30)
-    # soldhomes=soldhomes[:10]
-    for briefhomedata in soldhomes:
-        # print(house)
-        listinglength = ListingLengthbyZPID(briefhomedata)
-        briefhomedata.update(listinglength)
+        soldhomes=  soldhomes+ FindSoldHomesByLocation(location,30)
+
+
+    for brieflisting in soldhomes:
+
+        brieflisting.updateListingLength(ListingLengthbyBriefListing(brieflisting))
         # print(briefhomedata)
-        bedbathcode = int(briefhomedata['bathrooms'])+float(briefhomedata['bedrooms'])*100
-        if 101<=bedbathcode<=102:
-            housesoldpriceaverage["1bed1bath"]["count"] +=1
-            housesoldpriceaverage["1bed1bath"]["totalprice"] += briefhomedata['price']
-            housesoldpriceaverage["1bed1bath"]["houses"].append(briefhomedata)
-        elif 201.5<=bedbathcode<=202.5:
-            housesoldpriceaverage["2bed2bath"]["count"] +=1
-            housesoldpriceaverage["2bed2bath"]["totalprice"] += briefhomedata['price']
-            housesoldpriceaverage["2bed2bath"]["houses"].append(briefhomedata)
-        elif 302 <= bedbathcode <= 302.5:
-            housesoldpriceaverage["3bed2bath"]["count"] +=1
-            housesoldpriceaverage["3bed2bath"]["totalprice"] += briefhomedata['price']
-            housesoldpriceaverage["3bed2bath"]["houses"].append(briefhomedata)
-        elif 302.5 < bedbathcode <= 304:
-            housesoldpriceaverage["3bed3bath"]["count"] +=1
-            housesoldpriceaverage["3bed3bath"]["totalprice"] += briefhomedata['price']
-            housesoldpriceaverage["3bed3bath"]["houses"].append(briefhomedata)
-        elif 400 <= bedbathcode <= 402:
-            housesoldpriceaverage["4bed2-bath"]["count"] +=1
-            housesoldpriceaverage["4bed2-bath"]["totalprice"] += briefhomedata['price']
-            housesoldpriceaverage["4bed2-bath"]["houses"].append(briefhomedata)
-        elif 402 < bedbathcode <= 404:
-            housesoldpriceaverage["4bed3+bath"]["count"] +=1
-            housesoldpriceaverage["4bed3+bath"]["totalprice"] += briefhomedata['price']
-            housesoldpriceaverage["4bed3+bath"]["houses"].append(briefhomedata)
+        try:
+            bedbathcode = int(brieflisting['bathrooms'])+float(brieflisting['bedrooms'])*100
+            if 101<=bedbathcode<=102:
+                housesoldpriceaverage["1bed1bath"]["count"] +=1
+                housesoldpriceaverage["1bed1bath"]["totalprice"] += brieflisting.price
+                housesoldpriceaverage["1bed1bath"]["houses"].append(brieflisting)
+            elif 201.5<=bedbathcode<=202.5:
+                housesoldpriceaverage["2bed2bath"]["count"] +=1
+                housesoldpriceaverage["2bed2bath"]["totalprice"] += brieflisting.price
+                housesoldpriceaverage["2bed2bath"]["houses"].append(brieflisting)
+            elif 302 <= bedbathcode <= 302.5:
+                housesoldpriceaverage["3bed2bath"]["count"] +=1
+                housesoldpriceaverage["3bed2bath"]["totalprice"] += brieflisting.price
+                housesoldpriceaverage["3bed2bath"]["houses"].append(brieflisting)
+            elif 302.5 < bedbathcode <= 304:
+                housesoldpriceaverage["3bed3bath"]["count"] +=1
+                housesoldpriceaverage["3bed3bath"]["totalprice"] += brieflisting.price
+                housesoldpriceaverage["3bed3bath"]["houses"].append(brieflisting)
+            elif 400 <= bedbathcode <= 402:
+                housesoldpriceaverage["4bed2-bath"]["count"] +=1
+                housesoldpriceaverage["4bed2-bath"]["totalprice"] += brieflisting.price
+                housesoldpriceaverage["4bed2-bath"]["houses"].append(brieflisting)
+            elif 402 < bedbathcode <= 404:
+                housesoldpriceaverage["4bed3+bath"]["count"] +=1
+                housesoldpriceaverage["4bed3+bath"]["totalprice"] += brieflisting.price
+                housesoldpriceaverage["4bed3+bath"]["houses"].append(brieflisting)
+        except Exception as e:
+            print('Error with ', brieflisting)
     # Create a map centered around Ballard, Seattle
 
     for key, value in housesoldpriceaverage.items():
@@ -98,11 +101,11 @@ def AreaReport(locations):
             value['aveprice'] = 'NA'
         else:
             value['aveprice']= int(value['totalprice']/value['count'])
-        for briefhomedata in value["houses"]:
-            if briefhomedata['price']<value['minprice']:
-                value['minprice'] = briefhomedata['price']
-            if briefhomedata['price']>value['maxprice']:
-                value['maxprice'] = briefhomedata['price']
+        for brieflisting in value["houses"]:
+            if brieflisting.price<value['minprice']:
+                value['minprice'] = brieflisting.price
+            if brieflisting.price>value['maxprice']:
+                value['maxprice'] = brieflisting.price
 
 
 
@@ -158,8 +161,8 @@ def generateMap(soldhomes, location):
     html = m.get_root()
     html.script.get_root().render()
     html.script._children[e.get_name()] = e
-    for house in soldhomes:
-        list2penddays = house['list2penddays']
+    for brieflisting in soldhomes:
+        list2penddays = brieflisting.list2penddays
         if list2penddays is None:
             color = 'gray'
         else:
@@ -171,10 +174,10 @@ def generateMap(soldhomes, location):
                 color = 'green'
             else:
                 color = 'blue'
-        htmltext = f"Price {house['price']}<br/>" \
-               f"Beds {house['bedrooms']} Bath {house['bathrooms']}<br/>" \
-               f"Square ft {house['livingArea']}<br/>" \
-               f"List to Contract {house['list2penddays']}<br/>"
+        htmltext = f"Price {brieflisting.price}<br/>" \
+               f"Beds {brieflisting.bedrooms} Bath {brieflisting.bathrooms}<br/>" \
+               f"Square ft {brieflisting.livingArea}<br/>" \
+               f"List to Contract {brieflisting.list2penddays}<br/>"
 
         # f"<a href='https://www.zillow.com{house['hdpUrl']}' target='_blank'>House Link</a>" \
         # f"<br/>" \
@@ -183,7 +186,7 @@ def generateMap(soldhomes, location):
         icon = folium.Icon(color=color)
 
         folium.Marker(
-            location=[house['latitude'], house['longitude']],
+            location=[brieflisting.latitude, brieflisting.longitude],
             popup=popup,
             icon =icon
         ).add_to(m)

@@ -1,7 +1,8 @@
 HousePicsDIR = "C:/Users/waich/Dropbox/EstateFlow/DrillBreaker29/HousePics"
 from Download_Image import download_image
-from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID , SearchZillowByAddress
+from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID , SearchZillowByAddress , SearchZillowSoldHomesByLocation
 from app.ZillowAPI.ZillowAddress import ZillowAddress
+from app.ZillowAPI.ZillowBriefHomeData import BriefListing
 from os.path import join
 import os
 import json
@@ -24,9 +25,9 @@ def PicturesFromMLS(zpid):
     return False
 
 
-def ListingLengthbyZPID(briefhomedata):
+def ListingLengthbyBriefListing(brieflisting:BriefListing):
 
-    propertydata = loadPropertyDataFromBrief(briefhomedata)
+    propertydata = loadPropertyDataFromBrief(brieflisting)
     list2penddays = None
     list2solddays=None
     listprice=None
@@ -107,10 +108,20 @@ def savePropertyData(propertydata):
         with open(filepath, 'w') as f:
             f.write(json_string)
 
-def loadPropertyDataFromBrief(briefhomedata):
-    filepath = os.path.join(os.getenv('ADDRESSJSON'), briefhomedata2address(briefhomedata) + '.txt')
+
+def FindSoldHomesByLocation(location, doz):
+    soldrawdata = SearchZillowSoldHomesByLocation(location,doz)
+    soldhomes = []
+    for briefhomedata in soldrawdata:
+        soldhomes.append(BriefListing(**briefhomedata))
+    return soldhomes
+
+
+
+def loadPropertyDataFromBrief(brieflisting:BriefListing):
+    filepath = os.path.join(os.getenv('ADDRESSJSON'), brieflisting.ref_address() + '.txt')
     if not os.path.exists(filepath):
-        propertydata = SearchZillowByZPID(briefhomedata['zpid'])
+        propertydata = SearchZillowByZPID(brieflisting.zpid)
         json_string = json.dumps(propertydata, indent=4)
         with open(filepath, 'w') as f:
             f.write(json_string)
@@ -121,5 +132,3 @@ def loadPropertyDataFromBrief(briefhomedata):
             propertydata = json.loads(text_content)
     return propertydata
 
-def briefhomedata2address(briefhomedata):
-    return f"{briefhomedata['streetAddress']}_{briefhomedata['city']}_{briefhomedata['zipcode']}".replace(' ','_')
