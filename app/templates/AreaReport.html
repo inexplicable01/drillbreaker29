@@ -114,7 +114,7 @@
                 <tbody>
                 {% for house in soldhouses %}
                     <tr>
-                        <td>{{ house.streetAddress }}</td>
+                        <td><a href='https://www.zillow.com{{ house.hdpUrl }}' target='_blank'>{{ house.streetAddress }}House Link</a></td>
                         <td>{{ house.livingArea }}</td>
                         <td>{{ house.bedrooms }}</td>
                         <td>{{ house.bathrooms }}</td>

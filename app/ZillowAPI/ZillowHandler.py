@@ -25,9 +25,8 @@ def PicturesFromMLS(zpid):
     return False
 
 
-def ListingLengthbyBriefListing(brieflisting:BriefListing):
+def ListingLengthbyBriefListing(propertydata):
 
-    propertydata = loadPropertyDataFromBrief(brieflisting)
     list2penddays = None
     list2solddays=None
     listprice=None

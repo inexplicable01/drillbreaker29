@@ -2,7 +2,7 @@ import folium
 from app.ZillowDataProcessor import SearchZillowNewListingByLocation,SearchZillowByAddress
 from app.DataBaseFunc import dbmethods
 from app.ZillowAPI.ZillowAPICall import SearchZillowSoldHomesByLocation
-from app.ZillowAPI.ZillowHandler import ListingLengthbyBriefListing, FindSoldHomesByLocation
+from app.ZillowAPI.ZillowHandler import ListingLengthbyBriefListing, FindSoldHomesByLocation,loadPropertyDataFromBrief
 import pandas as pd
 from app.UsefulAPI.UseFulAPICalls import get_neighborhood
 from app.config import Config
@@ -19,8 +19,15 @@ def AreaReport(locations):
 
 
     for brieflisting in soldhomes:
-        listresults = ListingLengthbyBriefListing(brieflisting)
+        propertydata = loadPropertyDataFromBrief(brieflisting)
+        listresults = ListingLengthbyBriefListing(propertydata)
         brieflisting.updateListingLength(listresults)
+
+        try:
+            brieflisting.hdpUrl = propertydata['hdpUrl']
+        except Exception as e:
+            print(e)
+
         # print(brieflisting.ref_address())
         # print(listresults)
         try:
@@ -49,6 +56,7 @@ def AreaReport(locations):
                 housesoldpriceaverage["4bed3+bath"]["count"] +=1
                 housesoldpriceaverage["4bed3+bath"]["totalprice"] += brieflisting.price
                 housesoldpriceaverage["4bed3+bath"]["houses"].append(brieflisting)
+
         except Exception as e:
             print('Error with ', brieflisting)
     # Create a map centered around Ballard, Seattle
@@ -180,7 +188,8 @@ def generateMap(soldhomes, location):
                 color = 'green'
             else:
                 color = 'blue'
-        htmltext = f"Price {brieflisting.price}<br/>" \
+        htmltext = f"<a href='https://www.zillow.com{brieflisting.hdpUrl}' target='_blank'>House Link</a><br/>" \
+            f"Price {brieflisting.price}<br/>" \
                f"Beds {brieflisting.bedrooms} Bath {brieflisting.bathrooms}<br/>" \
                f"Square ft {brieflisting.livingArea}<br/>" \
                f"List to Contract {brieflisting.list2penddays}<br/>"

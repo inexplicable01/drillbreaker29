@@ -45,6 +45,7 @@ class BriefListing:
     videoCount: Optional[str] = None
     isRentalWithBasePrice: Optional[bool] = None
     newConstructionType: Optional[str] = None
+    hdpUrl: Optional[str] = None
 
 
     def ref_address(self):
@@ -54,6 +55,8 @@ class BriefListing:
         self.list2penddays=listinglength['list2penddays']
         self.list2solddays = listinglength['list2solddays']
         self.listprice = listinglength['listprice']
+
+
 
 # Example usage:
 response = {
