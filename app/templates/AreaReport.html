@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Area Report</title>
+    <style>
+        body, html {
+            height: 100%; /* Use the full height of the screen */
+            margin: 0; /* Remove default margin */
+            overflow: hidden; /* Disable scrolling */
+        }
+
+        #main-content {
+            display: flex; /* Use flexbox for layout */
+            height: 100%; /* Full height */
+        }
+
+        #map-container {
+            flex: 2; /* Takes up twice the space compared to each of the side sections */
+            height: 100%;
+        }
+
+        #side-section {
+            display: flex;
+            flex-direction: column; /* Stack the data and comments sections vertically */
+            flex: 1; /* The side section takes up the remaining space */
+            height: 100%;
+        }
+
+        #data-section, #comments-section {
+            flex: 1; /* Each section takes up half of the side section */
+            overflow-y: auto; /* Enable scrolling within each section if the content overflows */
+        }
+
+        /* Add any additional styling you need for data-section and comments-section here */
+    </style>
+
+</head>
+<body>
+
+<div id="main-content">
+    <div id="map-container">
+        <!-- Your map will go here -->
+        {{ m | safe }}
+    </div>
+    <div id="side-section">
+        <div id="data-section">
+            <h2>Sold Houses</h2>
+            <table border="1">
+                <!-- Table headers -->
+                <thead>
+                <tr>
+                    <th>address</th>
+                    <th>Living Sqft</th>
+                    <th>bed</th>
+                    <th>bath</th>
+                    <th>Listing Price</th>
+                    <th>Sold Price</th>
+                    <th>Days to Contract</th>
+                    {#            <th>unit</th>#}
+                </tr>
+                </thead>
+
+                <!-- Table data -->
+                <tbody>
+                {% for house in soldhouses %}
+                    <tr>
+                        <td>{{ house.streetAddress }}</td>
+                        <td>{{ house.livingArea }}</td>
+                        <td>{{ house.bedrooms }}</td>
+                        <td>{{ house.bathrooms }}</td>
+                        <td>{{ house.listprice }}</td>
+                        <td>{{ house.price }}</td>
+                        <td>{{ house.list2penddays }}</td>
+                        {#            <td>{{ address.unit }}</td>#}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+        <div id="comments-section">
+            <h2>Summary</h2>
+            <table border="1">
+                <!-- Table headers -->
+                <thead>
+                <tr>
+                    <th>Housing</th>
+                    <th>Beds</th>
+                    <th>Bath</th>
+                    <th>Count</th>
+                    <th>Min</th>
+                    <th>Average</th>
+                    <th>Max</th>
+                    {#            <th>unit</th>#}
+                </tr>
+                </thead>
+
+                <!-- Table data -->
+                <tbody>
+                {% for key,housegenre in housesoldpriceaverage.items() %}
+                    <tr>
+                        <td>{{ key }}</td>
+                        <td>{{ housegenre.beds }}</td>
+                        <td>{{ housegenre.baths }}</td>
+                        <td>{{ housegenre.count }}</td>
+                        <td>{{ housegenre.minprice }}</td>
+                        <td>{{ housegenre.aveprice }}</td>
+
+                        <td>{{ housegenre.maxprice }}</td>
+
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+n
+
+</body>
+</html>

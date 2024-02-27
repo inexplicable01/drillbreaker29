@@ -1,6 +1,5 @@
 import MySQLdb
 import sshtunnel
-from LoadAddress import ZillowAddress
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -24,9 +23,8 @@ def print_and_log(message):
 
 # Usage
 error_message = "This is an error message"
-from sqlalchemy import func
 import os
-import json
+
 if not os.path.exists('addressjson'):
     os.mkdir('addressjson')
 print_and_log(datetime.now().__str__())

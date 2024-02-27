@@ -1,10 +1,10 @@
 import MySQLdb
 import sshtunnel
-from LoadAddress import ZillowAddress
+from app.ZillowAPI.LoadAddress import ZillowAddress
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from app.ZillowSearch import SearchProperty
+from app.ZillowSearch import SearchZillowByAddress
 from datetime import datetime
 sshtunnel.SSH_TIMEOUT = 5.0
 sshtunnel.TUNNEL_TIMEOUT = 5.0
@@ -12,7 +12,6 @@ DB_USER = 'FatPanda1985'
 DB_PASSWORD = 'wayber_housing'
 DB_NAME = 'FatPanda1985$housingdata'
 Base = declarative_base()
-import pandas as pd
 from app.DBModels.BellevueTaxAddress import BellevueTaxAddress
 
 
@@ -24,7 +23,6 @@ def print_and_log(message):
 
 # Usage
 error_message = "This is an error message"
-from sqlalchemy import func
 import os
 import json
 if not os.path.exists('addressjson'):
@@ -77,7 +75,7 @@ with sshtunnel.SSHTunnelForwarder(
                     zaddress = ZillowAddress.OpenAddresstxt(fileaddress)
                 else:
                     addressStr=bellevueaddr.addr_full +'  ' + bellevueaddr.postalcityname + ' ' + str(bellevueaddr.zip5)
-                    propertydata = SearchProperty(addressStr)
+                    propertydata = SearchZillowByAddress(addressStr)
                     json_string = json.dumps(propertydata, indent=4)
                     with open(os.path.join('addressjson',fileaddress+'.txt'), 'w') as f:
                         f.write(json_string)

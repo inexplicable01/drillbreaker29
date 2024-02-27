@@ -96,15 +96,15 @@ def create_app(debug=False,config_object="config.module.path"):
     # Initialize and start the scheduler
 
     # Schedule the email sending task to run daily
-    scheduler = BackgroundScheduler()
-
-    # Pass the app instance to the scheduled job
-    scheduler.add_job(func=send_emailtest, args=[app], trigger='interval', days=1)
-
-    scheduler.start()
+    # scheduler = BackgroundScheduler()
+    #
+    # # Pass the app instance to the scheduled job
+    # # scheduler.add_job(func=send_emailtest, args=[app], trigger='interval', days=1)
+    #
+    # scheduler.start()
 
     # Ensure scheduler shuts down when the app exits
-    atexit.register(lambda: scheduler.shutdown())
+    # atexit.register(lambda: scheduler.shutdown())
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):

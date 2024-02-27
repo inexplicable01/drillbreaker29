@@ -5,7 +5,7 @@ import sshtunnel
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-# from app.ZillowSearch import SearchProperty
+# from app.ZillowSearch import SearchZillowByAddress
 from datetime import datetime
 sshtunnel.SSH_TIMEOUT = 5.0
 sshtunnel.TUNNEL_TIMEOUT = 5.0
@@ -76,7 +76,7 @@ with sshtunnel.SSHTunnelForwarder(
         #             # propertydata = json.loads(text_content)
         #             zaddress = ZillowAddress.OpenAddresstxt(fileaddress)
         #         else:
-        #             propertydata = SearchProperty(bellevueaddr)
+        #             propertydata = SearchZillowByAddress(bellevueaddr)
         #             json_string = json.dumps(propertydata, indent=4)
         #             with open(os.path.join('addressjson', fileaddress + '.txt'), 'w') as f:
         #                 f.write(json_string)

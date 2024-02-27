@@ -1,20 +1,21 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
 
-from SMTP_email import send_email,send_emailstatic,send_emailtest
-from app.sendEmailUpdates import sendEmailUpdatesProcess
+from SMTP_email import send_email,send_emailstatic,send_emailtest , send_emailforOpenHouse
+
 # import os
 # from werkzeug.utils import secure_filename
 # import csv
 # from flask import current_app as app
-from app.ZillowDataProcessor import PicturesFromMLS
+from app.ZillowAPI.ZillowHandler import PicturesFromMLS
 from app.HeatMapProcessing import *
 import folium
 main = Blueprint('main', __name__)
 # from extensions import dbmethods
 from app.DataBaseFunc import dbmethods
-from app.NewListing import NewListing,NewListingInNeighbourhoods
-
-
+from app.NewListing import NewListing
+from app.RouteModel.NewListingModel import NewListingInNeighbourhoods
+from app.RouteModel.OldHousesModel import WhereOldBuild
+from app.RouteModel.AreaReport import AreaReport
 @main.route('/')
 def index():
     # Render an HTML template with a button
@@ -53,8 +54,6 @@ def MapExample():
 
 @main.route('/heatmapexample', methods=['GET', 'POST'])
 def HeatMapExample():
-
-
     if request.method =='POST':
         days = int(request.form['days'])
         displayfun = request.form['displayfun']
@@ -90,18 +89,18 @@ def WhereToBuild():
 AreasToCareAbout =['Bellevue', 'Kenmore', 'Bothell' ,'Kirkland' ,'Seattle', 'Shoreline' ,'Renton', 'Kent' ,'Mercer' ,'Island']
 
 
-@main.route('/abunchofBellevueAddress')
-def SomeBellevueAddress():
-    addresses = dbmethods.AllBellevueAddress()
-    return render_template('table_address_template.html', addresses=addresses)
+# @main.route('/abunchofBellevueAddress')
+# def SomeBellevueAddress():
+#     addresses = dbmethods.AllBellevueAddress()
+#     return render_template('table_address_template.html', addresses=addresses)
 
 
-@main.route('/beaman', methods=['GET', 'POST'])
-def searchdb():
-    listings = dbmethods.AllListigs()
-    # for soldhouse in listings:
-    #     listinglengthdays = ListingLength(soldhouse, Listing, db)
-    return render_template('table_template.html', listings=listings)
+# @main.route('/beaman', methods=['GET', 'POST'])
+# def searchdb():
+#     listings = dbmethods.AllListigs()
+#     # for soldhouse in listings:
+#     #     listinglengthdays = ListingLength(soldhouse, Listing, db)
+#     return render_template('table_template.html', listings=listings)
 
 
 @main.route('/downloadpicsfromMLS', methods=['GET','POST'])
@@ -115,38 +114,12 @@ def download_pics():
             return jsonify(status="error", message="API call failed")
     return render_template('MLS_Input.html')
 
-
-@main.route('/givemecomps', methods=['GET','POST'])
-def GiveMeComps():
-    if request.method == 'POST':
-        ref_number = request.form.get('ref_number')
-        success = PicturesFromMLS(ref_number)
-        if success:  # Check if API was called successfully
-            return jsonify(status="success", message="API called successfully")
-        else:
-            return jsonify(status="error", message="API call failed")
-    return render_template('MLS_Input.html')
-
 @main.route('/waterfrontproperties', methods=['GET','POST'])
 def waterfrontproperties():
-    # if request.method == 'POST':
-    #     ref_number = request.form.get('ref_number')
-    #     success = PicturesFromMLS(ref_number)
-    #     if success:  # Check if API was called successfully
-    #         return jsonify(status="success", message="API called successfully")
-    #     else:
-    #         return jsonify(status="error", message="API call failed")
     maphtml = WaterFrontProperties()
     return render_template('SimpleMap.html',m=maphtml)
 @main.route('/errormap', methods=['GET','POST'])
 def errormap():
-    # if request.method == 'POST':
-    #     ref_number = request.form.get('ref_number')
-    #     success = PicturesFromMLS(ref_number)
-    #     if success:  # Check if API was called successfully
-    #         return jsonify(status="success", message="API called successfully")
-    #     else:
-    #         return jsonify(status="error", message="API call failed")
     maphtml = PredictionError()
     return render_template('SimpleMap.html',m=maphtml)
 @main.route('/newbuildlocations', methods=['GET','POST'])
@@ -195,40 +168,6 @@ def MapPotentialValue():
     return render_template('MapPotentialValue.html', map=map_html ,map2=map_html2,  description = description, buildpotentiallowerlimit=buildpotentiallowerlimit, nu_hits=nu_hits)
 
 
-    # if request.method == 'POST':
-    #     ref_number = request.form.get('ref_number')
-    #     success = PicturesFromMLS(ref_number, Listing, db)
-    #     if success:  # Check if API was called successfully
-    #         return jsonify(status="success", message="API called successfully")
-    #     else:
-    #         return jsonify(status="error", message="API call failed")
-    # return render_template('MLS_Input.html')
-
-
-# @main.route('/comparison_base', methods=['GET','POST'])
-# def comparison_base():
-#     # addresses = ["Address 1", "Address 2", "Address 3"]
-#
-#     zaddress1 = ZillowAddress.OpenAddresstxt("2207 123RD AVE SE  BELLEVUE")
-#     zaddress2 = ZillowAddress.OpenAddresstxt("2207 123RD AVE SE  BELLEVUE")
-#     zaddress3 = ZillowAddress.OpenAddresstxt("16608 SE 17TH ST  BELLEVUE")
-#
-#     threeaddress= [zaddress1, zaddress2, zaddress3]
-#     id = 0
-#     infodump=[]
-#     for address in threeaddress:
-#         images = []
-#         for photo in address.photos:
-#             for jpeg in photo['mixedSources']['jpeg']:
-#                 if jpeg['width']==384:
-#                     images.append({
-#                         "url": jpeg['url'], "caption": photo['caption']
-#                     })
-#         infodump.append((address,f"carid{str(id)}", images))
-#         id = id +1
-#
-#
-#     return render_template('comparison_base.html', infodump=infodump)
 @main.route('/new_listing', methods=['GET','POST'])
 def new_listing():
     # addresses = ["Address 1", "Address 2", "Address 3"]
@@ -270,42 +209,22 @@ def new_listing_in_selectneighbourhood():
     return render_template('NewListing.html', listings=listings, infodump=infodump,
                            bedrooms=bedrooms,bathrooms=bathrooms,living_space=living_space)
 
-@main.route('/listingsInTargetAreas', methods=['GET','POST'])
-def listingsInTargetAreas():
-    # addresses = ["Address 1", "Address 2", "Address 3"]
-    if request.method == 'POST':
-        bedrooms = request.form.get('bedrooms')
-        bathrooms = request.form.get('bathrooms')
-        living_space = request.form.get('livingSpace')
-        location = request.form.get('location')
-        daysonzillow = request.form.get('daysonzillow')
-    elif request.method == 'GET':
-        bedrooms = 5
-        bathrooms = 5
-        living_space = 4000
-        location = 'Seattle'
-        daysonzillow = 1
 
-    listings,infodump = NewListingInNeighbourhoods(location,daysonzillow,
-                                                   bedrooms,bathrooms,
-                                                   living_space)
-    return render_template('NewListing.html', listings=listings)
-
+from app.RouteModel.OpenHouseModel import SearchForOpenHouses
 @main.route('/openhouse', methods=['GET','POST'])
 def openhouse():
-    # addresses = ["Address 1", "Address 2", "Address 3"]
-    if request.method == 'POST':
-        bedrooms = request.form.get('bedrooms')
-        bathrooms = request.form.get('bathrooms')
-        living_space = request.form.get('livingSpace')
-        location = request.form.get('location')
-        daysonzillow = request.form.get('daysonzillow')
-    elif request.method == 'GET':
-        bedrooms = 5
-        bathrooms = 5
-        living_space = 4000
-        location = 'Seattle'
-        daysonzillow = 1
-
-    map_html = SearchForOpenHouses()
+    map_html, filtered_houses = SearchForOpenHouses()
+    send_emailforOpenHouse(filtered_houses)
     return render_template('OpenHouse.html', m=map_html)
+
+
+@main.route('/areareport', methods=['GET','POST'])
+def areareport():
+    # locations=['Fremont']
+    locations=['Ballard', 'Fremont', 'Wallingford']
+    map_html,soldhouses, housesoldpriceaverage =AreaReport(locations)
+    # send_emailforOpenHouse(filtered_houses)
+    return render_template('AreaReport.html',
+                           m=map_html,
+                           soldhouses = soldhouses,
+                           housesoldpriceaverage=housesoldpriceaverage)

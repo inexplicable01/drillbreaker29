@@ -2,8 +2,10 @@ import requests
 PRICEHISTORY = 'priceHistory'
 
 from datetime import datetime
-rapidapikey = "0f1a70c877msh63c2699008fda33p17811djsn4ef183cca70a"
-from Download_Image import download_image
+from app.DataBaseFunc import dbmethods
+from app.config import Config
+from app.ZillowAPI.ZillowAPICall import *
+
 HousePicsDIR = "C:/Users/waich/Dropbox/EstateFlow/DrillBreaker29/HousePics"
 
 def date_difference(date1: str, date2: str) -> int:
@@ -20,70 +22,90 @@ def date_difference(date1: str, date2: str) -> int:
     # Return the number of days
     return abs(difference.days)
 
-def ListingLength(soldhouse, Listing, db):
+# def ListingLength(soldhouse, Listing, db):
+#
+#     if soldhouse.list2pendCheck==0:
+#         url = "https://zillow56.p.rapidapi.com/property"
+#         querystring = {"zpid":soldhouse.zpid}
+#         headers = {
+#             "X-RapidAPI-Key": rapidapikey,
+#             "X-RapidAPI-Host": "zillow56.p.rapidapi.com"
+#         }
+#         response = requests.get(url, headers=headers, params=querystring)
+#         # print(response.json())
+#         houseresult = response.json()
+#         if PRICEHISTORY in houseresult.keys():
+#             soldposs =[]
+#             for event in houseresult[PRICEHISTORY]:
+#
+#                 if event['event']=='Listed for sale':
+#                     print(event['date'] + 'Listed for Sale ' + soldhouse.streetAddress)
+#                     for e in soldposs:
+#                         if e['event'] == 'Pending sale':
+#                             print(e['date'] + '  Pending  ' + soldhouse.streetAddress)
+#
+#                             list2penddays = date_difference(e['date'], event['date'])
+#                             print(soldhouse.streetAddress + ' Took ' + str(list2penddays) + ' to be UnderContract')
+#                             soldhouse.list2pend = list2penddays
+#                             soldhouse.list2pendCheck = 1
+#                             db.session.commit()
+#                         if e['event'] == 'Sold':
+#                             print(e['date'] + '  Sold  ' + soldhouse.streetAddress)
+#                             print(soldhouse.streetAddress + ' Took ' + str(date_difference(e['date'],event['date']))+ ' to sell')
+#                     break
+#                 else:
+#                     soldposs.append(event)
+#             soldhouse.list2pendCheck = 1
+#             db.session.commit()
+#         else:
+#             print('Lack of History Data for ' + soldhouse.streetAddress)
+#             soldhouse.list2pendCheck = 1
+#             db.session.commit()
 
-    if soldhouse.list2pendCheck==0:
-        url = "https://zillow56.p.rapidapi.com/property"
-        querystring = {"zpid":soldhouse.zpid}
-        headers = {
-            "X-RapidAPI-Key": rapidapikey,
-            "X-RapidAPI-Host": "zillow56.p.rapidapi.com"
-        }
-        response = requests.get(url, headers=headers, params=querystring)
-        # print(response.json())
-        houseresult = response.json()
-        if PRICEHISTORY in houseresult.keys():
-            soldposs =[]
-            for event in houseresult[PRICEHISTORY]:
+def SearchAllNewListing(location, daysonzillow):
+    houseresult = SearchZillowNewListingByLocation(location, daysonzillow)
+    dbmethods.loadHouseSearchDataintoDB(houseresult, 'forSale')
 
-                if event['event']=='Listed for sale':
-                    print(event['date'] + 'Listed for Sale ' + soldhouse.streetAddress)
-                    for e in soldposs:
-                        if e['event'] == 'Pending sale':
-                            print(e['date'] + '  Pending  ' + soldhouse.streetAddress)
+def ZillowSearchForOpenHouse(TR,TL,BR,BL):
 
-                            list2penddays = date_difference(e['date'], event['date'])
-                            print(soldhouse.streetAddress + ' Took ' + str(list2penddays) + ' to be UnderContract')
-                            soldhouse.list2pend = list2penddays
-                            soldhouse.list2pendCheck = 1
-                            db.session.commit()
-                        if e['event'] == 'Sold':
-                            print(e['date'] + '  Sold  ' + soldhouse.streetAddress)
-                            print(soldhouse.streetAddress + ' Took ' + str(date_difference(e['date'],event['date']))+ ' to sell')
-                    break
-                else:
-                    soldposs.append(event)
-            soldhouse.list2pendCheck = 1
-            db.session.commit()
-        else:
-            print('Lack of History Data for ' + soldhouse.streetAddress)
-            soldhouse.list2pendCheck = 1
-            db.session.commit()
-import os
-from os.path import *
-def PicturesFromMLS(zpid):
-
-    url = "https://zillow56.p.rapidapi.com/property"
-    querystring = {"zpid":zpid}
-    headers = {
-        "X-RapidAPI-Key": rapidapikey,
-        "X-RapidAPI-Host": "zillow56.p.rapidapi.com"
-    }
-    response = requests.get(url, headers=headers, params=querystring)
-    # print(response.json())
-    houseresult = response.json()
-
-    if 'photos' in houseresult.keys():
-        housename = houseresult['address']['streetAddress'] + ' ' + houseresult['address']['city']
-        if not os.path.exists(join(HousePicsDIR,housename)):
-            os.mkdir(join(HousePicsDIR,housename))
-        for i,el in enumerate(houseresult['photos']):
-            url = el['mixedSources']['jpeg'][-1]['url']
-            download_image(url, join(HousePicsDIR,housename))
-        return True
-    return False
+    location = 'seattle'
+    daysonzillow = 30
+    houseresult = SearchZillowNewListingByLocation(location,daysonzillow)
 
 
+    filtered_houses = []
+    for house in houseresult:
+
+        # Check if the house's coordinates fall within the defined bounding box
+        if (BL[0] <= house['latitude'] <= TL[0]) and (TL[1] <= house['longitude'] <= TR[1]):
+
+            response = SearchZillowByZPID(house['zpid'])
+
+            print('address',response['address']['streetAddress'])
+            print('isOpenHouse',response['listingSubType']['isOpenHouse'])
+            print('openHouseSchedule',response['openHouseSchedule'])
+            print('homeType', response['homeType'])
+            print('propertyCondition', response['resoFacts']['propertyCondition'])
+            print('neighborhoodRegion', response['neighborhoodRegion'])
+            # neighborhoodRegion
+            if response['homeType']=="LOT" or response['homeType']=="MULTI_FAMILY" or response['homeType']=="CONDO":
+                print('Not a proper home Type, skip')
+                continue
+            if response['resoFacts']['propertyCondition']=="Under Construction":
+                print('Under Construction, skip')
+                continue
+            if response['neighborhoodRegion']['name']  in Config.WRONGNEIGHBORHOODS:
+                print('wrong neighbourhood, skip')
+                continue
+
+
+            if not response['listingSubType']['isOpenHouse']:
+                filtered_houses.append(response)
+
+
+    # Calculate the center of your bounding box (average of the bounding box coordinates)
+
+    return filtered_houses
 
 
 

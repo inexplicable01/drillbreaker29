@@ -7,7 +7,7 @@ from jinja2 import Template
 from folium.map import Marker
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
-from app.ZillowSearch import *
+from app.ZillowDataProcessor import *
 from joblib import load
 SOLDHOTTNESS = 'SOLDHOTTNESS'
 EXPENSIVEHOME =  'EXPENSIVEHOME'
@@ -139,66 +139,6 @@ def WhereNewBuild():
     HeatMap(coords).add_to(m)
     m = m._repr_html_()
     return m
-
-
-def WhereOldBuild(selected_address=None):
-    CheapHomeValue = 500000
-    coords=[]
-    lat=0
-    long=0
-    addresses = dbmethods.AddressesBuiltYearsAgo(20)
-    addressestoclick=[]
-    for address in addresses:
-        if address.zestimate_value<CheapHomeValue:
-            addressestoclick.append(address.addr_full)
-            coords.append([address.latitude, address.longitude])
-            lat = lat + address.latitude
-            long = long + address.longitude
-            print('old' + address.addr_full, 'Bed',address.bedrooms,'Bath',address.bathrooms,
-                  'Size',address.living_area, 'Price',address.zestimate_value)
-
-
-    if len(coords)==0:
-        m = folium.Map(location=[47.608013, -122.335167], zoom_start=13)
-        HeatMap(coords).add_to(m)
-        m = m._repr_html_()
-        return m
-    lat = lat/len(coords)
-    long = long / len(coords)
-
-    # Add markers with popups to the map
-    # for address in addresses:
-    if selected_address is None:
-        address = addresses[0]
-    else:
-        for i_address in addresses:
-            if i_address.addr_full==selected_address:
-                address = i_address
-    m = folium.Map(location=(address.latitude, address.longitude), zoom_start=13)
-
-    # Add the heat map layer to the map
-    HeatMap(coords).add_to(m)
-
-
-    folium.Marker(
-        location=[address.latitude, address.longitude],
-        popup=folium.Popup(address.detailStr(), parse_html=True),
-        icon=folium.Icon(color='red', icon='info-sign')
-    ).add_to(m)
-
-    averagenewbuildprice, averagepriceitems = dbmethods.find_Average_New_Build_Prices(address)
-    for item in averagepriceitems:
-        closeaddress = item['address']
-        folium.Marker(
-            location=[closeaddress.latitude, closeaddress.longitude],
-            popup=folium.Popup(closeaddress.detailStr() + str(item['distance']), parse_html=True),
-            icon=folium.Icon(color='blue', icon='info-sign')
-        ).add_to(m)
-    # displaystring = closeaddress[0].addr_full + closeaddress[1].addr_full
-
-
-    m = m._repr_html_()
-    return m, addressestoclick, averagenewbuildprice
 
 
 
@@ -503,44 +443,3 @@ def PredictionError():
 
     m = m._repr_html_()
     return m
-def SearchForOpenHouses():
-    filtered_houses,center_lat,center_lon = ZillowSearchForOpenHouse()
-    # infodump = []
-    map = folium.Map(location=[center_lat, center_lon], zoom_start=13)
-    click_js = """function onClick(e) {}"""
-    e = folium.Element(click_js)
-    html = map.get_root()
-    html.script.get_root().render()
-    html.script._children[e.get_name()] = e
-    for house in filtered_houses:
-
-        days = house['daysOnZillow']
-        if days < 7:
-            color = 'red'
-        elif 7 <= days < 14:
-            color = 'orange'
-        elif 14 <= days < 21:
-            color = 'green'
-        else:
-            color = 'blue'
-        html = f"<a href='https://www.zillow.com{house['hdpUrl']}' target='_blank'>House Link</a>" \
-               f"<br/>" \
-               f"Price {house['price']}<br/>" \
-               f"Beds {house['bedrooms']} Bath {house['bathrooms']}<br/>" \
-               f"Square ft {house['livingArea']}<br/>" \
-               f"Days on Market {house['daysOnZillow']}<br/>" \
-               f"Agent Name {house['attributionInfo']['agentName']}<br/>" \
-               f"Agent Number {house['attributionInfo']['agentPhoneNumber']}<br/>" \
-               f"Neighbour {house['neighborhoodRegion']['name']}<br/>"
-
-        popup = folium.Popup(html, max_width=300)
-
-        icon = folium.Icon(color=color)
-
-        folium.Marker(
-            location=[house['latitude'], house['longitude']],
-            popup=popup,
-            icon =icon
-        ).add_to(map)
-    map_html = map._repr_html_()
-    return map_html
