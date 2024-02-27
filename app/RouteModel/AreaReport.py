@@ -61,9 +61,10 @@ def AreaReport(locations):
 
 
     for brieflisting in soldhomes:
-
-        brieflisting.updateListingLength(ListingLengthbyBriefListing(brieflisting))
-        # print(briefhomedata)
+        listresults = ListingLengthbyBriefListing(brieflisting)
+        brieflisting.updateListingLength(listresults)
+        print(brieflisting.ref_address())
+        print(listresults)
         try:
             bedbathcode = int(brieflisting['bathrooms'])+float(brieflisting['bedrooms'])*100
             if 101<=bedbathcode<=102:
