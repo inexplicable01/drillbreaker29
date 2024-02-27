@@ -118,19 +118,7 @@ class ZillowAddress():
         self.zestimateLowPercent = zestimateLowPercent
 
     @classmethod
-    def OpenAddresstxt(cls, fileaddress):
-        filepath = os.path.join('../../addressjson', fileaddress + '.txt')
-        if not os.path.exists(filepath):
-            propertydata = SearchZillowByAddress(fileaddress)
-            json_string = json.dumps(propertydata, indent=4)
-            with open(filepath, 'w') as f:
-                f.write(json_string)
-        else:
-            with open(filepath, 'r') as file:
-                # Read the content of the file
-                text_content = file.read()
-                propertydata = json.loads(text_content)
-
+    def LoadZFD(cls, propertydata):
         for key in keys_to_delete:
             if key in propertydata:
                 del propertydata[key]

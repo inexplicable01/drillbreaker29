@@ -1,10 +1,10 @@
 import MySQLdb
 import sshtunnel
-from app.ZillowAPI.LoadAddress import ZillowAddress
+from app.ZillowAPI.ZillowAddress import ZillowAddress
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from app.ZillowSearch import SearchZillowByAddress
+from app.ZillowAPI.ZillowHandler import loadPropertyDataFromAddress
 from datetime import datetime
 sshtunnel.SSH_TIMEOUT = 5.0
 sshtunnel.TUNNEL_TIMEOUT = 5.0
@@ -71,11 +71,11 @@ with sshtunnel.SSHTunnelForwarder(
                     # with open(os.path.join('addressjson',fileaddress+'.txt'), 'r') as file:
                     #     # Read the content of the file
                     #     text_content = file.read()
-                    # propertydata = json.loads(text_content)
-                    zaddress = ZillowAddress.OpenAddresstxt(fileaddress)
+                    propertydata = loadPropertyDataFromAddress(fileaddress)
+                    zaddress = ZillowAddress.LoadZFD(propertydata)
                 else:
                     addressStr=bellevueaddr.addr_full +'  ' + bellevueaddr.postalcityname + ' ' + str(bellevueaddr.zip5)
-                    propertydata = SearchZillowByAddress(addressStr)
+                    propertydata = loadPropertyDataFromAddress(addressStr)
                     json_string = json.dumps(propertydata, indent=4)
                     with open(os.path.join('addressjson',fileaddress+'.txt'), 'w') as f:
                         f.write(json_string)

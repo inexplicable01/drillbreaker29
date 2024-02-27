@@ -1,8 +1,10 @@
 HousePicsDIR = "C:/Users/waich/Dropbox/EstateFlow/DrillBreaker29/HousePics"
 from Download_Image import download_image
-from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID
+from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID , SearchZillowByAddress
+from app.ZillowAPI.ZillowAddress import ZillowAddress
 from os.path import join
 import os
+import json
 
 PRICEHISTORY = 'priceHistory'
 from datetime import datetime
@@ -22,28 +24,29 @@ def PicturesFromMLS(zpid):
     return False
 
 
-def ListingLengthbyZPID(zpid):
-    houseresult = SearchZillowByZPID(zpid)
+def ListingLengthbyZPID(briefhomedata):
+
+    propertydata = loadPropertyDataFromBrief(briefhomedata)
     list2penddays = None
     list2solddays=None
     listprice=None
     try:
-        if PRICEHISTORY in houseresult.keys():
+        if PRICEHISTORY in propertydata.keys():
             soldposs = []
-            for event in houseresult[PRICEHISTORY]:
+            for event in propertydata[PRICEHISTORY]:
 
                 if event['event'] == 'Listed for sale':
-                    print(event['date'] + 'Listed for Sale ' + houseresult['address']['streetAddress'])
+                    print(event['date'] + 'Listed for Sale ' + propertydata['address']['streetAddress'])
                     listprice = event['price']
                     for e in soldposs:
                         if e['event'] == 'Pending sale':
-                            print(e['date'] + '  Pending  ' + houseresult['address']['streetAddress'])
+                            print(e['date'] + '  Pending  ' + propertydata['address']['streetAddress'])
                             list2penddays = date_difference(e['date'], event['date'])
-                            print(houseresult['address']['streetAddress']+ ' Took ' + str(list2penddays) + ' to be UnderContract')
+                            print(propertydata['address']['streetAddress']+ ' Took ' + str(list2penddays) + ' to be UnderContract')
                         if e['event'] == 'Sold':
                             list2solddays = date_difference(e['date'], event['date'])
-                            print(e['date'] + '  Sold  ' + houseresult['address']['streetAddress'])
-                            print(houseresult['address']['streetAddress'] + ' Took ' + str(
+                            print(e['date'] + '  Sold  ' + propertydata['address']['streetAddress'])
+                            print(propertydata['address']['streetAddress'] + ' Took ' + str(
                                 date_difference(e['date'], event['date'])) + ' to sell')
                     break
                 else:
@@ -57,7 +60,7 @@ def ListingLengthbyZPID(zpid):
                     'listprice':listprice}
 
     except Exception as e:
-        print('Lack of History Data for ' + e)
+        print('Lack of History Data for ' + e.__str__())
         return {'list2penddays': None,
                 'list2solddays': None,
                 'listprice': listprice}
@@ -76,3 +79,47 @@ def date_difference(date1: str, date2: str) -> int:
 
     # Return the number of days
     return abs(difference.days)
+
+
+def loadPropertyDataFromAddress(fileaddress):
+    filepath = os.path.join(os.getenv('ADDRESSJSON'), fileaddress + '.txt')
+    if not os.path.exists(filepath):
+        propertydata = SearchZillowByAddress(fileaddress)
+        json_string = json.dumps(propertydata, indent=4)
+        with open(filepath, 'w') as f:
+            f.write(json_string)
+    else:
+        with open(filepath, 'r') as file:
+            # Read the content of the file
+            text_content = file.read()
+            propertydata = json.loads(text_content)
+    return propertydata
+
+
+def savePropertyData(propertydata):
+    addressStr = propertydata['address']['streetAddress'] + '  ' + \
+                 propertydata['address']['city'] + ' ' + \
+                 propertydata['address']['zipcode']
+
+    filepath = os.path.join(os.getenv('ADDRESSJSON'), addressStr + '.txt')
+    if not os.path.exists(filepath):
+        json_string = json.dumps(propertydata, indent=4)
+        with open(filepath, 'w') as f:
+            f.write(json_string)
+
+def loadPropertyDataFromBrief(briefhomedata):
+    filepath = os.path.join(os.getenv('ADDRESSJSON'), briefhomedata2address(briefhomedata) + '.txt')
+    if not os.path.exists(filepath):
+        propertydata = SearchZillowByZPID(briefhomedata['zpid'])
+        json_string = json.dumps(propertydata, indent=4)
+        with open(filepath, 'w') as f:
+            f.write(json_string)
+    else:
+        with open(filepath, 'r') as file:
+            # Read the content of the file
+            text_content = file.read()
+            propertydata = json.loads(text_content)
+    return propertydata
+
+def briefhomedata2address(briefhomedata):
+    return f"{briefhomedata['streetAddress']}_{briefhomedata['city']}_{briefhomedata['zipcode']}".replace(' ','_')

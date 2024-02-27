@@ -58,48 +58,51 @@ def AreaReport(locations):
     soldhomes=[]
     for location in locations:
         soldhomes=  soldhomes+SearchZillowSoldHomesByLocation(location, 30)
-
-    for house in soldhomes:
+    soldhomes=soldhomes[:10]
+    for briefhomedata in soldhomes:
         # print(house)
-        listinglength = ListingLengthbyZPID(house['zpid'])
-        house.update(listinglength)
-        # print(house)
-        bedbathcode = int(house['bathrooms'])+float(house['bedrooms'])*100
+        listinglength = ListingLengthbyZPID(briefhomedata)
+        briefhomedata.update(listinglength)
+        # print(briefhomedata)
+        bedbathcode = int(briefhomedata['bathrooms'])+float(briefhomedata['bedrooms'])*100
         if 101<=bedbathcode<=102:
             housesoldpriceaverage["1bed1bath"]["count"] +=1
-            housesoldpriceaverage["1bed1bath"]["totalprice"] += house['price']
-            housesoldpriceaverage["1bed1bath"]["houses"].append(house)
+            housesoldpriceaverage["1bed1bath"]["totalprice"] += briefhomedata['price']
+            housesoldpriceaverage["1bed1bath"]["houses"].append(briefhomedata)
         elif 201.5<=bedbathcode<=202.5:
             housesoldpriceaverage["2bed2bath"]["count"] +=1
-            housesoldpriceaverage["2bed2bath"]["totalprice"] += house['price']
-            housesoldpriceaverage["2bed2bath"]["houses"].append(house)
+            housesoldpriceaverage["2bed2bath"]["totalprice"] += briefhomedata['price']
+            housesoldpriceaverage["2bed2bath"]["houses"].append(briefhomedata)
         elif 302 <= bedbathcode <= 302.5:
             housesoldpriceaverage["3bed2bath"]["count"] +=1
-            housesoldpriceaverage["3bed2bath"]["totalprice"] += house['price']
-            housesoldpriceaverage["3bed2bath"]["houses"].append(house)
+            housesoldpriceaverage["3bed2bath"]["totalprice"] += briefhomedata['price']
+            housesoldpriceaverage["3bed2bath"]["houses"].append(briefhomedata)
         elif 302.5 < bedbathcode <= 304:
             housesoldpriceaverage["3bed3bath"]["count"] +=1
-            housesoldpriceaverage["3bed3bath"]["totalprice"] += house['price']
-            housesoldpriceaverage["3bed3bath"]["houses"].append(house)
+            housesoldpriceaverage["3bed3bath"]["totalprice"] += briefhomedata['price']
+            housesoldpriceaverage["3bed3bath"]["houses"].append(briefhomedata)
         elif 400 <= bedbathcode <= 402:
             housesoldpriceaverage["4bed2-bath"]["count"] +=1
-            housesoldpriceaverage["4bed2-bath"]["totalprice"] += house['price']
-            housesoldpriceaverage["4bed2-bath"]["houses"].append(house)
+            housesoldpriceaverage["4bed2-bath"]["totalprice"] += briefhomedata['price']
+            housesoldpriceaverage["4bed2-bath"]["houses"].append(briefhomedata)
         elif 402 < bedbathcode <= 404:
             housesoldpriceaverage["4bed3+bath"]["count"] +=1
-            housesoldpriceaverage["4bed3+bath"]["totalprice"] += house['price']
-            housesoldpriceaverage["4bed3+bath"]["houses"].append(house)
+            housesoldpriceaverage["4bed3+bath"]["totalprice"] += briefhomedata['price']
+            housesoldpriceaverage["4bed3+bath"]["houses"].append(briefhomedata)
     # Create a map centered around Ballard, Seattle
 
     for key, value in housesoldpriceaverage.items():
         value['minprice']=1000000000
         value['maxprice']=0
-        value['aveprice']= int(value['totalprice']/value['count'])
-        for house in value["houses"]:
-            if house['price']<value['minprice']:
-                value['minprice'] = house['price']
-            if house['price']>value['maxprice']:
-                value['maxprice'] = house['price']
+        if value['count']==0:
+            value['aveprice'] = 'NA'
+        else:
+            value['aveprice']= int(value['totalprice']/value['count'])
+        for briefhomedata in value["houses"]:
+            if briefhomedata['price']<value['minprice']:
+                value['minprice'] = briefhomedata['price']
+            if briefhomedata['price']>value['maxprice']:
+                value['maxprice'] = briefhomedata['price']
 
 
 

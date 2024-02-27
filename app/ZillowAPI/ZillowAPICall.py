@@ -25,6 +25,7 @@ def SearchZillowByZPID(ZPID):
     try:
         return response.json()
     except Exception as e:
+        warn(f"Search Zillow zpid {ZPID} failed due to an exception: {e}")
         return None
 
 def SearchZillowByAddress(addressStr):
@@ -36,6 +37,7 @@ def SearchZillowByAddress(addressStr):
     try:
         return response.json()
     except Exception as e:
+        warn(f"Search Zillow failed due to an exception: {e}")
         return None
 
 
@@ -76,11 +78,12 @@ def SearchZillowSoldHomesByLocation(location, duration=14):
     while maxpage>lastpage:
         querystring = {"location":location + ", wa","page": str(lastpage),"status":"recentlySold","doz":str(duration)}
         response = requests.get(url, headers=headers, params=querystring)
-        result = response.json()
+
         if response.status_code==502:
             warn('502 on ' + location)
             break
         try:
+            result = response.json()
             houseresult = houseresult+ result['results']
             lastpage=lastpage+1
             maxpage = result['totalPages']
