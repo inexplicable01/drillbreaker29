@@ -80,9 +80,12 @@ def SearchZillowSoldHomesByLocation(location, duration=14):
         if response.status_code==502:
             warn('502 on ' + location)
             break
-        houseresult = houseresult+ result['results']
-        lastpage=lastpage+1
-        maxpage = result['totalPages']
+        try:
+            houseresult = houseresult+ result['results']
+            lastpage=lastpage+1
+            maxpage = result['totalPages']
+        except Exception as e:
+            warn('Search Zillow failed',e)
     return houseresult
     # dbmethods.SaveHouseSearchDataintoDB(houseresult)
 
