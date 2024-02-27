@@ -63,10 +63,10 @@ def AreaReport(locations):
     for brieflisting in soldhomes:
         listresults = ListingLengthbyBriefListing(brieflisting)
         brieflisting.updateListingLength(listresults)
-        print(brieflisting.ref_address())
-        print(listresults)
+        # print(brieflisting.ref_address())
+        # print(listresults)
         try:
-            bedbathcode = int(brieflisting['bathrooms'])+float(brieflisting['bedrooms'])*100
+            bedbathcode = int(brieflisting.bedrooms)+float(brieflisting.bathrooms)*100
             if 101<=bedbathcode<=102:
                 housesoldpriceaverage["1bed1bath"]["count"] +=1
                 housesoldpriceaverage["1bed1bath"]["totalprice"] += brieflisting.price
