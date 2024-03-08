@@ -1,13 +1,12 @@
 import folium
 from folium.plugins import HeatMap
-from app.DataBaseFunc import dbmethods
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from jinja2 import Template
 from folium.map import Marker
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
-from app.ZillowDataProcessor import *
+from app.ZillowAPI.ZillowDataProcessor import *
 from joblib import load
 SOLDHOTTNESS = 'SOLDHOTTNESS'
 EXPENSIVEHOME =  'EXPENSIVEHOME'

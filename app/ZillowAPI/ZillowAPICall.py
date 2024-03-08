@@ -43,12 +43,6 @@ def SearchZillowByAddress(addressStr):
         return None
 
 
-# def loadcsv(Listing, db):
-#     with open('../../data.csv', 'r') as file:
-#         reader = csv.DictReader(file)
-#         data = list(reader)
-#     dbmethods.loadHouseSearchDataintoDB(data, Listing, db)
-#     return data
 def SearchZillowNewListingByLocation(location, daysonzillow):
     curpage = 1
     maxpage = 2

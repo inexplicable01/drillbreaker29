@@ -32,16 +32,18 @@
             flex: 1; /* Each section takes up half of the side section */
             overflow-y: auto; /* Enable scrolling within each section if the content overflows */
         }
-    #areaLinks {
-        display: flex;
-    }
 
-    #areaLinks a {
-        margin-right: 10px; /* Adjust the spacing between links */
-        color: blue; /* Makes the link color blue */
-        text-decoration: none; /* Removes the underline from links */
-        font-size: 16px; /* Sets the font size to 16 pixels */
-    }
+        #areaLinks {
+            display: flex;
+        }
+
+        #areaLinks a {
+            margin-right: 10px; /* Adjust the spacing between links */
+            color: blue; /* Makes the link color blue */
+            text-decoration: none; /* Removes the underline from links */
+            font-size: 16px; /* Sets the font size to 16 pixels */
+        }
+
         /* Add any additional styling you need for data-section and comments-section here */
     </style>
     <script>
@@ -79,22 +81,22 @@
         <!-- Your map will go here -->
 
 
-
         <div id="areaLinks" style="display: flex;">
             {% for location in locationtoinspect %}
                 <a href="/areareport?location={{ location }}" style="margin-right: 10px;">{{ location }}</a>
             {% endfor %}
-{#    <a href="/areareport?location=Location1">Location1</a>#}
-{#    <a href="/areareport?location=Location2">Location2</a>#}
-{#    <a href="/areareport?location=Location3">Location3</a>#}
+            {#    <a href="/areareport?location=Location1">Location1</a>#}
+            {#    <a href="/areareport?location=Location2">Location2</a>#}
+            {#    <a href="/areareport?location=Location3">Location3</a>#}
 
         </div>
-    {{ m | safe }}
+        {{ m | safe }}
 
     </div>
     <div id="side-section">
         <div id="data-section">
             <h2>Sold Houses</h2>
+            <img src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
             <table border="1">
                 <!-- Table headers -->
                 <thead>
@@ -106,6 +108,7 @@
                     <th>Listing Price</th>
                     <th>Sold Price</th>
                     <th>Days to Contract</th>
+                    <th>Price Delta</th>
                     {#            <th>unit</th>#}
                 </tr>
                 </thead>
@@ -114,19 +117,23 @@
                 <tbody>
                 {% for house in soldhouses %}
                     <tr>
-                        <td><a href='https://www.zillow.com{{ house.hdpUrl }}' target='_blank'>{{ house.streetAddress }}House Link</a></td>
+                        <td><a href='https://www.zillow.com{{ house.hdpUrl }}' target='_blank'>{{ house.streetAddress }}House
+                            Link</a></td>
                         <td>{{ house.livingArea }}</td>
                         <td>{{ house.bedrooms }}</td>
                         <td>{{ house.bathrooms }}</td>
                         <td>{{ house.listprice }}</td>
                         <td>{{ house.price }}</td>
                         <td>{{ house.list2penddays }}</td>
+                        <td>{{ house.pricedelta }}</td>
                         {#            <td>{{ address.unit }}</td>#}
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
 
+
+            {#            //I want a graph to go here#}
         </div>
         <div id="comments-section">
             <h2>Summary</h2>

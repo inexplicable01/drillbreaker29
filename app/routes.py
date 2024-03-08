@@ -1,12 +1,12 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
 
-from SMTP_email import send_email,send_emailstatic,send_emailtest , send_emailforOpenHouse
+
 
 # import os
 # from werkzeug.utils import secure_filename
 # import csv
 # from flask import current_app as app
-from app.ZillowAPI.ZillowHandler import PicturesFromMLS
+from app.ZillowAPI.ZillowDataProcessor import PicturesFromMLS
 from app.HeatMapProcessing import *
 import folium
 main = Blueprint('main', __name__)
@@ -15,7 +15,8 @@ from app.DataBaseFunc import dbmethods
 from app.NewListing import NewListing
 from app.RouteModel.NewListingModel import NewListingInNeighbourhoods
 from app.RouteModel.OldHousesModel import WhereOldBuild
-from app.RouteModel.AreaReport import AreaReport
+from app.RouteModel.AreaReportModel import AreaReport
+from app.RouteModel.EmailModel import sendEmailwithNewListing, sendEmailofOpenHomes
 @main.route('/')
 def index():
     # Render an HTML template with a button
@@ -41,7 +42,9 @@ def send_test_email():
 @main.route('/sendEmailUpdates', methods=['POST'])
 def sendEmailUpdates():
     send_emailtest()
-    return render_template('LandingPage.html'), 200
+
+    sendEmailwithNewListing()
+    return redirect(url_for('main.index'))
 
 @main.route('/mapexample')
 def MapExample():
@@ -213,14 +216,28 @@ def new_listing_in_selectneighbourhood():
 from app.RouteModel.OpenHouseModel import SearchForOpenHouses
 @main.route('/openhouse', methods=['GET','POST'])
 def openhouse():
-    map_html, filtered_houses = SearchForOpenHouses()
-    send_emailforOpenHouse(filtered_houses)
+
+    map_html = SearchForOpenHouses()
+
     return render_template('OpenHouse.html', m=map_html)
 
 
 @main.route('/areareport', methods=['GET','POST'])
 def areareport():
-    locationtoinspect = ['Ballard', 'Fremont', 'Wallingford', 'Magnolia', 'Phinney Ridge']
+    # locationtoinspect = ['Ballard',
+    #                      'Fremont',
+    #                      'Wallingford',
+    #                      'Magnolia',
+    #                      'Phinney Ridge',
+    #                      'Boardview',
+    #                      'Haller Lake',
+    #                      'Beacon Hill']
+    # locationtoinspect = ['North Beacon Hill Seattle', 'Beacon Hill Seattle','Downtown Seattle',
+    #                      'Chinatown Seattle','Central District Seattle',
+    #                      'Leschi Seattle','Capitol Hill'
+    #                      ]
+    locationtoinspect = ['North Beacon Hill Seattle', 'Central District Seattle',
+                         'Leschi Seattle']
     if request.method == 'POST':
         location = request.form.get('location')
     elif request.method == 'GET':
@@ -232,11 +249,14 @@ def areareport():
 
     # locations=['Wallingford']
 
-    # locations = ['Magnolia']
-    map_html,soldhouses, housesoldpriceaverage =AreaReport(locations)
+
+    # Encoding the plot as a base64 string that can be embedded in HTML
+
+    map_html,soldhouses, housesoldpriceaverage, plot_url =AreaReport(locations)
     # send_emailforOpenHouse(filtered_houses)
     return render_template('AreaReport.html',
                            m=map_html,
                            soldhouses = soldhouses,
                            housesoldpriceaverage=housesoldpriceaverage,
-                           locationtoinspect=locationtoinspect)
+                           locationtoinspect=locationtoinspect,
+                           plot_url=plot_url)

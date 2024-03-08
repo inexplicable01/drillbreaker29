@@ -1,5 +1,4 @@
-import folium
-from app.ZillowDataProcessor import SearchZillowNewListingByLocation,SearchZillowByAddress
+from app.ZillowAPI.ZillowDataProcessor import SearchZillowNewListingByLocation,SearchZillowByAddress
 from app.DataBaseFunc import dbmethods
 from app.ZillowAPI.ZillowAddress import ZillowAddress
 import pandas as pd

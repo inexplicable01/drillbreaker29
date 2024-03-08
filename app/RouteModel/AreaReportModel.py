@@ -1,28 +1,37 @@
 import folium
-from app.ZillowDataProcessor import SearchZillowNewListingByLocation,SearchZillowByAddress
-from app.DataBaseFunc import dbmethods
-from app.ZillowAPI.ZillowAPICall import SearchZillowSoldHomesByLocation
-from app.ZillowAPI.ZillowHandler import ListingLengthbyBriefListing, FindSoldHomesByLocation,loadPropertyDataFromBrief
-import pandas as pd
-from app.UsefulAPI.UseFulAPICalls import get_neighborhood
-from app.config import Config
-from joblib import load
-import os
-import json
-# model = load('linear_regression_model.joblib')
+from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
+    FindSoldHomesByLocation,\
+    loadPropertyDataFromBrief
+import matplotlib.pyplot as plt
+import base64
+from io import BytesIO
+import math
 
-def AreaReport(locations):
-    housesoldpriceaverage = initiateSummarydata()
-    soldhomes=[]
+# model = load('linear_regression_model.joblib')
+def AreaReportGatherData(locations):
     for location in locations:
         soldhomes=  soldhomes+ FindSoldHomesByLocation(location,30)
 
+
+
+
+def AreaReport(locations):
+    housesoldpriceaverage = initiateSummarydata()
+    unfiltered_soldhomes=[]
+    for location in locations:
+        unfiltered_soldhomes=  unfiltered_soldhomes+ FindSoldHomesByLocation(location,30)
+    soldhomes=[]
+    for brieflisting in unfiltered_soldhomes:
+        if brieflisting.homeType == 'SINGLE_FAMILY':
+            continue
+        soldhomes.append(brieflisting)
 
     for brieflisting in soldhomes:
         propertydata = loadPropertyDataFromBrief(brieflisting)
         listresults = ListingLengthbyBriefListing(propertydata)
         brieflisting.updateListingLength(listresults)
-
+        if brieflisting.homeType == 'SINGLE_FAMILY':
+            continue
         try:
             brieflisting.hdpUrl = propertydata['hdpUrl']
         except Exception as e:
@@ -73,11 +82,50 @@ def AreaReport(locations):
                 value['minprice'] = brieflisting.price
             if brieflisting.price>value['maxprice']:
                 value['maxprice'] = brieflisting.price
+    pricedelta=[]
+    days_to_pending=[]
 
+    plt.figure()
+    colors = ['blue', 'red',  'purple']  # Example colors for 1-5 bedrooms
+    for brieflisting in soldhomes:
+        # print('home_type',brieflisting.homeType)
+        if brieflisting.pricedelta is not None and brieflisting.list2penddays is not None:
+            if brieflisting.list2penddays > 300:
+                continue
+            days_to_pending.append(brieflisting.list2penddays)
+            # bedrooms.append(round(brieflisting.bedrooms))
+            if brieflisting.bedrooms is None:
+                continue
+            if round(brieflisting.bedrooms) > 3:
+                color = 'orange'
+            else:
+                color = colors[round(brieflisting.bedrooms)-1]
+            if (brieflisting.price-brieflisting.listprice)>600000.0:
+                print(brieflisting)
+                continue
 
+            # Use price to determine the size of the marker
+            size = (brieflisting.price / 3000000.0) * 30 +24
+            if size > 174:
+                size = 174
+            plt.scatter(brieflisting.list2penddays, brieflisting.price-brieflisting.listprice, c=color, s=size)
+    # Creating the plot
 
+    plt.title('Price Change vs. Days to Pending')
+    plt.xlabel('Days to Pending')
+    plt.ylabel('Price Change')
+    for i, color in enumerate(colors):
+        plt.scatter([], [], c=color, label=f'{i + 1} Bedrooms')
+    plt.scatter([], [], c='orange', label='>4 Bedrooms')
+    plt.legend(scatterpoints=1, frameon=False, labelspacing=1, title='Bedroom Count')
 
-    return generateMap(soldhomes, location), soldhomes,housesoldpriceaverage
+    # Saving the plot to a bytes buffer
+    buf = BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+
+    plot_url = base64.b64encode(buf.read()).decode('utf-8')
+    return generateMap(soldhomes, location), soldhomes,housesoldpriceaverage, plot_url
 
 
 def initiateSummarydata():

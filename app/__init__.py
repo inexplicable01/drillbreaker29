@@ -10,9 +10,7 @@ from .routes import main
 from flask_mail import Mail, Message
 
 import atexit
-from SMTP_email import send_emailtest
-# from dotenv import load_dotenv
-from os import getenv
+
 from sshtunnel import SSHTunnelForwarder
 # from app.DBModels.Listing import Listing,Base as dbBase
 # load_dotenv()  # Load the environment variables from .env

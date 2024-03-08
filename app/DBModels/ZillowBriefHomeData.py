@@ -1,10 +1,10 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, InitVar, fields
 from typing import Optional, Dict
 
 @dataclass
 class BriefListing:
-    bathrooms: Optional[float] = None
-    bedrooms: Optional[float] = None
+    bathrooms: Optional[float] = 1
+    bedrooms: Optional[float] = 1
     city: Optional[str] = None
     country: Optional[str] = None
     currency: Optional[str] = None
@@ -24,7 +24,7 @@ class BriefListing:
     latitude: Optional[float] = None
     livingArea: Optional[float] = None
     longitude: Optional[float] = None
-    price: Optional[float] = None
+    price: Optional[int] = None
     priceForHDP: Optional[float] = None
     shouldHighlight: Optional[bool] = None
     state: Optional[str] = None
@@ -46,7 +46,15 @@ class BriefListing:
     isRentalWithBasePrice: Optional[bool] = None
     newConstructionType: Optional[str] = None
     hdpUrl: Optional[str] = None
+    pricedelta:Optional[int] = None
+    extras: InitVar[Dict] = None
+    rentalMarketingSubType: Optional[str] = None
+    abbreviatedAddress: Optional[str] = None
 
+    def __post_init__(self, extras):
+        # This method now accepts `extras` but does nothing with it,
+        # effectively ignoring any unexpected keys.
+        pass
 
     def ref_address(self):
         return f"{self.streetAddress}_{self.city}_{self.zipcode}".replace(' ', '_')
@@ -55,6 +63,8 @@ class BriefListing:
         self.list2penddays=listinglength['list2penddays']
         self.list2solddays = listinglength['list2solddays']
         self.listprice = listinglength['listprice']
+        if self.listprice is not None:
+            self.pricedelta=self.price-self.listprice
 
 
 
@@ -99,3 +109,13 @@ response = {
 
 property_details = BriefListing(**response)
 print(property_details)
+def filter_dataclass_fields(data, dataclass_type):
+    """
+    Filter a dictionary to contain only keys that are valid fields of the specified dataclass.
+
+    :param data: Dictionary containing data to be filtered.
+    :param dataclass_type: The dataclass type to filter the data against.
+    :return: A new dictionary with only the keys that are valid fields of the dataclass.
+    """
+    valid_keys = {field.name for field in fields(dataclass_type)}
+    return {key: value for key, value in data.items() if key in valid_keys}

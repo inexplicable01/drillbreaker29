@@ -2,21 +2,12 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime
 # from datetime import Datetime
+from app.useful_func import safe_float_conversion,safe_int_conversion
+
 Base = declarative_base()
 from app.extensions import db
 from datetime import datetime
-def safe_float_conversion(value, default=0.0):
-    try:
-        return float(value)
-    except ValueError:
-        return default
 
-
-def safe_int_conversion(value, default=0):
-    try:
-        return int(value)
-    except ValueError:
-        return default
 
 class Listing(db.Model):
     __tablename__ = 'Listing'  # specify your table name here

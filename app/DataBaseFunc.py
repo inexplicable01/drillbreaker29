@@ -29,6 +29,8 @@ def print_and_log(message):
 
 
 class DBMETHOD():
+    #Should only be getters and setters
+
 
     def __init__(self, db=None, Listing=Listing):
         self.db = db

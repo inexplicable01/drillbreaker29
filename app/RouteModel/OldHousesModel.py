@@ -1,13 +1,7 @@
 import folium
-from app.ZillowDataProcessor import SearchZillowNewListingByLocation,SearchZillowByAddress
 from app.DataBaseFunc import dbmethods
-from app.ZillowAPI.ZillowAddress import ZillowAddress
-import pandas as pd
-from app.UsefulAPI.UseFulAPICalls import get_neighborhood
-from app.config import Config
 from joblib import load
-import os
-import json
+
 model = load('linear_regression_model.joblib')
 from folium.plugins import HeatMap
 
