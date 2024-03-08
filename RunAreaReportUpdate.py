@@ -1,12 +1,11 @@
+import requests
 import os
 
-import requests
-
-url = f"{os.getenv('ENDPOINT')}/sendEmailUpdates"
+url = f"{os.getenv('ENDPOINT')}/areareport"
 
 payload = {}
 headers = {}
 
-response = requests.request("POST", url, headers=headers, data=payload)
+response = requests.request("PATCH", url, headers=headers, data=payload)
 
 print(response.text)
