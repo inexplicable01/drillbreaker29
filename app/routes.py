@@ -223,18 +223,18 @@ def openhouse():
 
 @main.route('/areareport', methods=['GET','POST','PATCH'])
 def areareport():
-    locationtoinspect = ['Ballard']
-                        #  'Fremont',
-                        #  'Wallingford',
-                        #  'Magnolia',
-                        #  'Phinney Ridge',
-                        #  'Boardview',
-                        #  'Haller Lake',
-                        #  'Beacon Hill'
-                        # ,'North Beacon Hill Seattle', 'Beacon Hill Seattle','Downtown Seattle',
-                        #  'Chinatown Seattle','Central District Seattle',
-                        #  'Leschi Seattle','Capitol Hill'
-                        #  ]
+    locationtoinspect = ['Ballard',
+                         'Fremont',
+                         'Wallingford',
+                         'Magnolia',
+                         'Phinney Ridge',
+                         'Boardview',
+                         'Haller Lake',
+                         'Beacon Hill'
+                        ,'North Beacon Hill Seattle', 'Beacon Hill Seattle','Downtown Seattle',
+                         'Chinatown Seattle','Central District Seattle',
+                         'Leschi Seattle','Capitol Hill'
+                         ]
     # locationtoinspect = ['North Beacon Hill Seattle', 'Central District Seattle',
     #                      'Leschi Seattle']
 
