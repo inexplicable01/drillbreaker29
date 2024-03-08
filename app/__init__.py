@@ -9,7 +9,10 @@ from .routes import main
 
 from flask_mail import Mail, Message
 
-import atexit
+import logging
+
+# logging.basicConfig()
+# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 from sshtunnel import SSHTunnelForwarder
 # from app.DBModels.Listing import Listing,Base as dbBase
@@ -53,12 +56,12 @@ def create_app(debug=False,config_object="config.module.path"):
     if os.getenv('FLASK_ENV') == 'development':
         # Setup SSH tunnel in development
         tunnel = create_ssh_tunnel()
-        # app.config['SQLALCHEMY_DATABASE_URI'] = (
-        #     f"mysql+mysqldb://{os.getenv('DATABASE_USER')}:{os.getenv('DATABASE_PASS')}"
-        #     f"@127.0.0.1:{tunnel.local_bind_port}/{os.getenv('DATABASE_NAME')}"
-        # )
+        app.config['SQLALCHEMY_DATABASE_URI'] = (
+            f"mysql+mysqldb://{os.getenv('DATABASE_USER')}:{os.getenv('DATABASE_PASS')}"
+            f"@127.0.0.1:{tunnel.local_bind_port}/{os.getenv('DATABASE_NAME')}"
+        )
 
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mylocaldatabase.db'
+        # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mylocaldatabase.db'
     else:
         # Direct database connection in production
         # app.config['SQLALCHEMY_DATABASE_URI'] = (

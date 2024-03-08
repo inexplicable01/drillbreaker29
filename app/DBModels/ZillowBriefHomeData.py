@@ -1,55 +1,64 @@
 from dataclasses import dataclass, field, InitVar, fields
 from typing import Optional, Dict
 
-@dataclass
-class BriefListing:
-    bathrooms: Optional[float] = 1
-    bedrooms: Optional[float] = 1
-    city: Optional[str] = None
-    country: Optional[str] = None
-    currency: Optional[str] = None
-    dateSold: Optional[int] = None
-    daysOnZillow: Optional[int] = None
-    homeStatus: Optional[str] = None
-    homeStatusForHDP: Optional[str] = None
-    homeType: Optional[str] = None
-    imgSrc: Optional[str] = None
-    isFeatured: Optional[bool] = None
-    isNonOwnerOccupied: Optional[bool] = None
-    isPreforeclosureAuction: Optional[bool] = None
-    isPremierBuilder: Optional[bool] = None
-    isShowcaseListing: Optional[bool] = None
-    isUnmappable: Optional[bool] = None
-    isZillowOwned: Optional[bool] = None
-    latitude: Optional[float] = None
-    livingArea: Optional[float] = None
-    longitude: Optional[float] = None
-    price: Optional[int] = None
-    priceForHDP: Optional[float] = None
-    shouldHighlight: Optional[bool] = None
-    state: Optional[str] = None
-    streetAddress: Optional[str] = None
-    timeOnZillow: Optional[int] = None
-    zipcode: Optional[str] = None
-    zpid: Optional[int] = None
-    list2penddays: Optional[int] = None
-    list2solddays: Optional[int] = None
-    listprice: Optional[int] = None
-    zestimate: Optional[int] = None
-    taxAssessedValue: Optional[float] = None
-    lotAreaUnit: Optional[str] = None
-    lotAreaValue: Optional[float] = None
-    listing_sub_type: Optional[Dict] = field(default_factory=dict)
-    rentZestimate: Optional[int] = None
-    unit: Optional[str] = None
-    videoCount: Optional[str] = None
-    isRentalWithBasePrice: Optional[bool] = None
-    newConstructionType: Optional[str] = None
-    hdpUrl: Optional[str] = None
-    pricedelta:Optional[int] = None
-    extras: InitVar[Dict] = None
-    rentalMarketingSubType: Optional[str] = None
-    abbreviatedAddress: Optional[str] = None
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime
+Base = declarative_base()
+from app.extensions import db
+from datetime import datetime
+from app.useful_func import safe_float_conversion,safe_int_conversion
+
+class BriefListing(db.Model):
+    __tablename__= 'BriefListing'
+
+    zpid = db.Column(db.BigInteger, primary_key=True, nullable=True)
+    bathrooms = db.Column(db.Float, nullable=True, default=1.0)
+    bedrooms = db.Column(db.Float, nullable=True, default=1.0)
+    city = db.Column(db.String(255), nullable=True)  # Specify length here
+    country = db.Column(db.String(255), nullable=True)
+    # currency = db.Column(db.String(10), nullable=True)
+    dateSold = db.Column(BigInteger, nullable=True)
+    daysOnZillow = db.Column(db.Integer, nullable=True)
+    homeStatus = db.Column(db.String(100), nullable=True)
+    homeStatusForHDP = db.Column(db.String(100), nullable=True)
+    homeType = db.Column(db.String(100), nullable=True)
+    imgSrc = db.Column(db.String(255), nullable=True)
+    isFeatured = db.Column(db.Boolean, nullable=True)
+    isNonOwnerOccupied = db.Column(db.Boolean, nullable=True)
+    isPreforeclosureAuction = db.Column(db.Boolean, nullable=True)
+    isPremierBuilder = db.Column(db.Boolean, nullable=True)
+    isShowcaseListing = db.Column(db.Boolean, nullable=True)
+    isUnmappable = db.Column(db.Boolean, nullable=True)
+    isZillowOwned = db.Column(db.Boolean, nullable=True)
+    latitude = db.Column(db.Float, nullable=True)
+    livingArea = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    price = db.Column(db.BigInteger, nullable=True)
+    priceForHDP = db.Column(db.Float, nullable=True)
+    shouldHighlight = db.Column(db.Boolean, nullable=True)
+    state = db.Column(db.String(100), nullable=True)
+    streetAddress = db.Column(db.String(255), nullable=True)
+    zipcode = db.Column(db.String(20), nullable=True)
+    # zpid = db.Column(db.BigInteger, unique=True, nullable=True)
+    list2penddays = db.Column(db.Integer, nullable=True)
+    list2solddays = db.Column(db.Integer, nullable=True)
+    listprice = db.Column(db.BigInteger, nullable=True)
+    zestimate = db.Column(db.BigInteger, nullable=True)
+    taxAssessedValue = db.Column(db.Float, nullable=True)
+    lotAreaUnit = db.Column(db.String(50), nullable=True)
+    lotAreaValue = db.Column(db.Float, nullable=True)
+    # listing_sub_type = db.Column(JSON, default={})
+    rentZestimate = db.Column(db.BigInteger, nullable=True)
+    # unit = db.Column(db.String(50), nullable=True)
+    # videoCount = db.Column(db.String(50), nullable=True)
+    # isRentalWithBasePrice = db.Column(db.Boolean, nullable=True)
+    newConstructionType = db.Column(db.String(100), nullable=True)
+    hdpUrl = db.Column(db.String(255), nullable=True)
+    pricedelta = db.Column(db.BigInteger, nullable=True)
+    neighbourhood = db.Column(db.String(50), nullable=True)
+
+
+
 
     def __post_init__(self, extras):
         # This method now accepts `extras` but does nothing with it,
@@ -66,7 +75,60 @@ class BriefListing:
         if self.listprice is not None:
             self.pricedelta=self.price-self.listprice
 
+    @classmethod
+    def CreateBriefListing(cls, briefhomedata, neighbourhood=None):
+        try:
+            new_listing = cls()
+            new_listing.zpid = briefhomedata.get('zpid')
+            new_listing.neighbourhood = neighbourhood
+            new_listing.bathrooms = safe_float_conversion(briefhomedata.get('bathrooms', 1.0))
+            new_listing.bedrooms = safe_float_conversion(briefhomedata.get('bedrooms', 1.0))
+            new_listing.city = briefhomedata.get('city', 'Missing')
+            new_listing.country = briefhomedata.get('country', 'Missing')
+            # new_listing.currency = briefhomedata.get('currency', 'Missing')
+            new_listing.dateSold = safe_int_conversion(
+                briefhomedata.get('dateSold', 0))  # Consider datetime conversion if necessary
+            new_listing.daysOnZillow = safe_int_conversion(briefhomedata.get('daysOnZillow', 0))
+            new_listing.homeStatus = briefhomedata.get('homeStatus', 'Missing')
+            new_listing.homeStatusForHDP = briefhomedata.get('homeStatusForHDP', 'Missing')
+            new_listing.homeType = briefhomedata.get('homeType', 'Missing')
+            new_listing.imgSrc = briefhomedata.get('imgSrc', 'Missing')
+            new_listing.isFeatured = briefhomedata.get('isFeatured', False)
+            new_listing.isNonOwnerOccupied = briefhomedata.get('isNonOwnerOccupied', False)
+            new_listing.isPreforeclosureAuction = briefhomedata.get('isPreforeclosureAuction', False)
+            new_listing.isPremierBuilder = briefhomedata.get('isPremierBuilder', False)
+            new_listing.isShowcaseListing = briefhomedata.get('isShowcaseListing', False)
+            new_listing.isUnmappable = briefhomedata.get('isUnmappable', False)
+            new_listing.isZillowOwned = briefhomedata.get('isZillowOwned', False)
+            new_listing.latitude = safe_float_conversion(briefhomedata.get('latitude', 0.0))
+            new_listing.longitude = safe_float_conversion(briefhomedata.get('longitude', 0.0))
+            new_listing.price = safe_int_conversion(briefhomedata.get('price', 0))
+            new_listing.state = briefhomedata.get('state', 'Missing')
+            new_listing.streetAddress = briefhomedata.get('streetAddress', 'Missing')
+            new_listing.zipcode = briefhomedata.get('zipcode', 'Missing')
+            new_listing.list2penddays = safe_int_conversion(briefhomedata.get('list2penddays', 0))
+            new_listing.list2solddays = safe_int_conversion(briefhomedata.get('list2solddays', 0))
+            new_listing.listprice = safe_int_conversion(briefhomedata.get('listprice', 0))
+            new_listing.zestimate = safe_int_conversion(briefhomedata.get('zestimate', 0))
+            new_listing.taxAssessedValue = safe_float_conversion(briefhomedata.get('taxAssessedValue', 0.0))
+            new_listing.lotAreaUnit = briefhomedata.get('lotAreaUnit', 'Missing')
+            new_listing.lotAreaValue = safe_float_conversion(briefhomedata.get('lotAreaValue', 0.0))
+            # Assuming `listing_sub_type` is passed as a dictionary and directly assignable
+            new_listing.listing_sub_type = briefhomedata.get('listing_sub_type', {})
+            new_listing.rentZestimate = safe_int_conversion(briefhomedata.get('rentZestimate', 0))
+            # Assuming that for optional fields without defaults you want to use None or a sentinel value
+            new_listing.unit = briefhomedata.get('unit', None)  # Handling for 'unit' as optional
+            new_listing.videoCount = briefhomedata.get('videoCount', '0')  # Assuming '0' as default for missing
+            # new_listing.isRentalWithBasePrice = briefhomedata.get('isRentalWithBasePrice', False)
+            new_listing.newConstructionType = briefhomedata.get('newConstructionType', 'Missing')
+            new_listing.hdpUrl = briefhomedata.get('hdpUrl', 'Missing')
+            new_listing.pricedelta = safe_int_conversion(briefhomedata.get('pricedelta', 0))
 
+            return new_listing
+            return new_address
+        except Exception as e:
+            print('Create Listing Error', e)
+            return None
 
 # Example usage:
 response = {
@@ -107,8 +169,8 @@ response = {
     'zpid': 48714500
 }
 
-property_details = BriefListing(**response)
-print(property_details)
+# property_details = BriefListing(**response)
+# print(property_details)
 def filter_dataclass_fields(data, dataclass_type):
     """
     Filter a dictionary to contain only keys that are valid fields of the specified dataclass.

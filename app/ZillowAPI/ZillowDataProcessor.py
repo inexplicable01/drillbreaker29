@@ -137,7 +137,7 @@ def PicturesFromMLS(zpid):
         return True
     return False
 
-
+from datetime import datetime
 def ListingLengthbyBriefListing(propertydata):
 
     list2penddays = None
@@ -223,11 +223,17 @@ def savePropertyData(propertydata):
 
 def FindSoldHomesByLocation(location, doz):
     soldrawdata = SearchZillowSoldHomesByLocation(location,doz)
-    soldhomes = []
+    soldbriefhomedata = []
     for briefhomedata in soldrawdata:
-        soldhomes.append(BriefListing(**briefhomedata))
-    return soldhomes
+            soldbriefhomedata.append(BriefListing.CreateBriefListing(briefhomedata))
+    return soldbriefhomedata
 
+def FindSoldHomesByNeighbourhood(neighbourhood, doz):
+    soldrawdata = SearchZillowSoldHomesByLocation(neighbourhood,doz)
+    soldbrieflistingarr = []
+    for briefhomedata in soldrawdata:
+            soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, neighbourhood))
+    return soldbrieflistingarr
 
 
 def loadPropertyDataFromBrief(brieflisting:BriefListing):

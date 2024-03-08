@@ -15,8 +15,9 @@ from app.DataBaseFunc import dbmethods
 from app.NewListing import NewListing
 from app.RouteModel.NewListingModel import NewListingInNeighbourhoods
 from app.RouteModel.OldHousesModel import WhereOldBuild
-from app.RouteModel.AreaReportModel import AreaReport
+from app.RouteModel.AreaReportModel import AreaReport,AreaReportGatherData
 from app.RouteModel.EmailModel import sendEmailwithNewListing, sendEmailofOpenHomes
+from app.config import Config,SW
 @main.route('/')
 def index():
     # Render an HTML template with a button
@@ -35,13 +36,13 @@ def send_test_email():
         email_content += f"ID: {listing['id']}, Details: {listing['details']}\n"
     # main.logger.error('wtf')
     # raise('problem')
-    send_email('New Listing', email_content)
+    # send_email('New Listing', email_content)
     # main.logger.error('got to here')
     return redirect(url_for('main.index'))
 
 @main.route('/sendEmailUpdates', methods=['POST'])
 def sendEmailUpdates():
-    send_emailtest()
+    # send_emailtest()
 
     sendEmailwithNewListing()
     return redirect(url_for('main.index'))
@@ -216,47 +217,55 @@ def new_listing_in_selectneighbourhood():
 from app.RouteModel.OpenHouseModel import SearchForOpenHouses
 @main.route('/openhouse', methods=['GET','POST'])
 def openhouse():
-
     map_html = SearchForOpenHouses()
-
     return render_template('OpenHouse.html', m=map_html)
 
 
-@main.route('/areareport', methods=['GET','POST'])
+@main.route('/areareport', methods=['GET','POST','PATCH'])
 def areareport():
-    # locationtoinspect = ['Ballard',
-    #                      'Fremont',
-    #                      'Wallingford',
-    #                      'Magnolia',
-    #                      'Phinney Ridge',
-    #                      'Boardview',
-    #                      'Haller Lake',
-    #                      'Beacon Hill']
-    # locationtoinspect = ['North Beacon Hill Seattle', 'Beacon Hill Seattle','Downtown Seattle',
-    #                      'Chinatown Seattle','Central District Seattle',
-    #                      'Leschi Seattle','Capitol Hill'
-    #                      ]
-    locationtoinspect = ['North Beacon Hill Seattle', 'Central District Seattle',
-                         'Leschi Seattle']
+    locationtoinspect = ['Ballard',
+                         'Fremont',
+                         'Wallingford',
+                         'Magnolia',
+                         'Phinney Ridge',
+                         'Boardview',
+                         'Haller Lake',
+                         'Beacon Hill'
+                        ,'North Beacon Hill Seattle', 'Beacon Hill Seattle','Downtown Seattle',
+                         'Chinatown Seattle','Central District Seattle',
+                         'Leschi Seattle','Capitol Hill'
+                         ]
+    # locationtoinspect = ['North Beacon Hill Seattle', 'Central District Seattle',
+    #                      'Leschi Seattle']
+
     if request.method == 'POST':
-        location = request.form.get('location')
+        selectedhometypes = request.form.getlist('home_type')
+        selectedlocations = request.form.getlist('location')
+        # Process the selections as needed
     elif request.method == 'GET':
-        location = request.args.get('location', default=None)
-        if location is None:
-            locations = locationtoinspect
-        else:
-            locations = [location]  # This makes the rest of your code work unchanged
 
-    # locations=['Wallingford']
+        selectedlocations = locationtoinspect
+        selectedhometypes = Config.HOMETYPES
+
+    elif request.method == 'PATCH':
+        try:
+            AreaReportGatherData(locationtoinspect)
+            # If the function successfully completes, return a success message
+            return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200
+        except Exception as e:
+            # If the function fails, return a failure message with details
+            return jsonify({'status': 'failure', 'message': 'Data gathering failed.', 'details': str(e)}), 500
 
 
-    # Encoding the plot as a base64 string that can be embedded in HTML
 
-    map_html,soldhouses, housesoldpriceaverage, plot_url =AreaReport(locations)
+    map_html,soldhouses, housesoldpriceaverage, plot_url =AreaReport(selectedlocations, selectedhometypes)
     # send_emailforOpenHouse(filtered_houses)
     return render_template('AreaReport.html',
                            m=map_html,
+                           HOMETYPES=Config.HOMETYPES,
+                           selectedhometypes= selectedhometypes,
+                           LOCATIONS=locationtoinspect,
                            soldhouses = soldhouses,
                            housesoldpriceaverage=housesoldpriceaverage,
-                           locationtoinspect=locationtoinspect,
+                           selected_locations=selectedlocations,
                            plot_url=plot_url)

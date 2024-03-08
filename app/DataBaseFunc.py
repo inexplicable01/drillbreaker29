@@ -6,26 +6,7 @@ from sqlalchemy.sql import func, or_
 from haversine import haversine, Unit
 import pandas as pd
 import re
-
-def safe_float_conversion(value, default=0.0):
-    try:
-        return float(value)
-    except ValueError:
-        return default
-
-
-def safe_int_conversion(value, default=0):
-    try:
-        return int(value)
-    except ValueError:
-        return default
-
-
-def print_and_log(message):
-    log_file_path = 'logfile.txt'  # Specify your log file name here
-    print(message)
-    with open(log_file_path, 'a') as file:
-        file.write(message + '\n')
+from app.useful_func import safe_float_conversion,safe_int_conversion,print_and_log
 
 
 class DBMETHOD():

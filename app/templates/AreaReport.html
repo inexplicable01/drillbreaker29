@@ -81,14 +81,39 @@
         <!-- Your map will go here -->
 
 
-        <div id="areaLinks" style="display: flex;">
-            {% for location in locationtoinspect %}
-                <a href="/areareport?location={{ location }}" style="margin-right: 10px;">{{ location }}</a>
-            {% endfor %}
-            {#    <a href="/areareport?location=Location1">Location1</a>#}
-            {#    <a href="/areareport?location=Location2">Location2</a>#}
-            {#    <a href="/areareport?location=Location3">Location3</a>#}
+        <div style="display: flex;flex-grow: 1; height: 200px;overflow-y: auto;">
+            <form method="POST">
+                <div style="display: flex;flex-grow: 1;width:800px;  flex-direction: row;justify-content: space-around;">
+                    <div style="display: flex; flex: 4;flex-direction: column; margin-right: auto;">
+                        <h3>Select Locations:</h3>
+                        {% for location in LOCATIONS %}
+                            <div>
+                                <label>
+                                    <input type="checkbox" name="location" value="{{ location }}"
+                                           {% if location in selected_locations %}checked{% endif %}>
+                                    {{ location }}
+                                </label>
+                            </div>
+                        {% endfor %}
 
+                    </div>
+
+                    <div style="display: flex; flex: 1;flex-direction: column; margin-left: auto;">
+                        <h3>Select Home Types:</h3>
+                        {% for home_type in HOMETYPES %}
+                            <div>
+                                <label>
+                                    <input type="checkbox" name="home_type" value="{{ home_type }}"
+                                           {% if home_type in selectedhometypes %}checked{% endif %}>
+                                    {{ home_type }}
+                                </label>
+                            </div>
+                        {% endfor %}
+
+                        <button type="submit">Search</button>
+                    </div>
+                </div>
+            </form>
         </div>
         {{ m | safe }}
 

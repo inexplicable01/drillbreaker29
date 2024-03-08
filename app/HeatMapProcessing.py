@@ -6,8 +6,10 @@ from jinja2 import Template
 from folium.map import Marker
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
-from app.ZillowAPI.ZillowDataProcessor import *
+
+from app.DataBaseFunc import dbmethods
 from joblib import load
+import datetime
 SOLDHOTTNESS = 'SOLDHOTTNESS'
 EXPENSIVEHOME =  'EXPENSIVEHOME'
 min_price=1000000

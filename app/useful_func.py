@@ -10,3 +10,8 @@ def safe_int_conversion(value, default=0):
     except ValueError:
         return default
 
+def print_and_log(message):
+    log_file_path = 'logfile.txt'  # Specify your log file name here
+    print(message)
+    with open(log_file_path, 'a') as file:
+        file.write(message + '\n')

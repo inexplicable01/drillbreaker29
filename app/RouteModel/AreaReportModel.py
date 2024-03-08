@@ -1,44 +1,48 @@
 import folium
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
     FindSoldHomesByLocation,\
-    loadPropertyDataFromBrief
+    loadPropertyDataFromBrief,FindSoldHomesByNeighbourhood
 import matplotlib.pyplot as plt
 import base64
 from io import BytesIO
+from app.DBFunc.BriefListingController import brieflistingcontroller
 import math
 
 # model = load('linear_regression_model.joblib')
-def AreaReportGatherData(locations):
-    for location in locations:
-        soldhomes=  soldhomes+ FindSoldHomesByLocation(location,30)
+def AreaReportGatherData(neighbourhoods):
+    soldbrieflistingarr=[]
+    for neighbourhood in neighbourhoods:
+        soldbrieflistingarr=  soldbrieflistingarr+ FindSoldHomesByNeighbourhood(neighbourhood,30)
 
-
-
-
-def AreaReport(locations):
-    housesoldpriceaverage = initiateSummarydata()
-    unfiltered_soldhomes=[]
-    for location in locations:
-        unfiltered_soldhomes=  unfiltered_soldhomes+ FindSoldHomesByLocation(location,30)
-    soldhomes=[]
-    for brieflisting in unfiltered_soldhomes:
-        if brieflisting.homeType == 'SINGLE_FAMILY':
-            continue
-        soldhomes.append(brieflisting)
-
-    for brieflisting in soldhomes:
+    for brieflisting in soldbrieflistingarr:
         propertydata = loadPropertyDataFromBrief(brieflisting)
         listresults = ListingLengthbyBriefListing(propertydata)
         brieflisting.updateListingLength(listresults)
-        if brieflisting.homeType == 'SINGLE_FAMILY':
-            continue
         try:
             brieflisting.hdpUrl = propertydata['hdpUrl']
         except Exception as e:
             print(e)
+    brieflistingcontroller.SaveBriefListingArr(soldbrieflistingarr)
 
-        # print(brieflisting.ref_address())
-        # print(listresults)
+
+def AreaReport(neighbourhoods, selectedhometypes):
+    ## Calls zillow data Process
+    ## Zillow Data Process puts listing in BriefListing Array
+    housesoldpriceaverage = initiateSummarydata()
+    unfiltered_soldhomes = []
+    for neighbourhood in neighbourhoods:
+        ## Gathering the Locations
+        unfiltered_soldhomes = unfiltered_soldhomes + brieflistingcontroller.ListingsByNeighbourhood(neighbourhood, 30)
+    ## Gets List of briefhomedataraw
+
+
+    soldhomes=[]
+    for brieflisting in unfiltered_soldhomes:
+        if brieflisting.homeType not in selectedhometypes:
+            continue
+        soldhomes.append(brieflisting)
+
+    for brieflisting in soldhomes:
         try:
             bedbathcode = int(brieflisting.bedrooms)+float(brieflisting.bathrooms)*100
             if 101<=bedbathcode<=102:
@@ -125,96 +129,19 @@ def AreaReport(locations):
     buf.seek(0)
 
     plot_url = base64.b64encode(buf.read()).decode('utf-8')
-    return generateMap(soldhomes, location), soldhomes,housesoldpriceaverage, plot_url
+    return generateMap(soldhomes, neighbourhoods), soldhomes,housesoldpriceaverage, plot_url
 
 
-def initiateSummarydata():
-    return{
-        "1bed1bath": {
-            "beds": 1,
-            "baths": 1,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        },
-        "2bed2bath": {
-            "beds": 2,
-            "baths": 2,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        },
-        "3bed2bath": {
-            "beds": 3,
-            "baths": 2,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        },
-        "3bed3bath": {
-            "beds": 3,
-            "baths": 3,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        },
-        "4bed2-bath": {
-            "beds": 4,
-            "baths": 2,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        },
-        "4bed3+bath": {
-            "beds": 4,
-            "baths": 3,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        }
-    }
 
-def generateMap(soldhomes, location):
+
+from app.MapTools.SeattleNeighCoord import *
+def generateMap(soldhomes, neighbourhoods):
     m = folium.Map(location=[47.6762, -122.3860], zoom_start=13)
-    ballard_coordinates = [
-        (47.69062, -122.36616),  # Example coordinate 4
-        (47.67608, -122.36608),  # Example coordinate 4
-        (47.67601, -122.36072),
-        (47.66145, -122.36072),
-        (47.66484, -122.39476),
-        (47.66869, -122.40460),
-        (47.67661, -122.40994),
-        (47.69051, -122.40387),
-    ]
+
     # Create a polygon over Ballard and add it to the map
     folium.Polygon(locations=ballard_coordinates, color='blue', fill=True, fill_color='blue').add_to(m)
-    fremont_coordinates = [
-        (47.66685, -122.36071),
-        (47.66216, -122.35405),
-        (47.66509, -122.35387),
-        (47.66505, -122.34708),
-        (47.65659, -122.34738),
-        (47.65655, -122.34238),
-        (47.64809, -122.34238),
-        (47.65659, -122.36714),
-        (47.66136, -122.36625),
-        (47.66148, -122.36089),
-
-    ]
     # Create a polygon over Ballard and add it to the map
     folium.Polygon(locations=fremont_coordinates, color='green', fill=True, fill_color='green').add_to(m)
-    wallingford_coordinates = [
-        (47.66504, -122.34709),
-        (47.66516, -122.34014),
-        (47.67018, -122.33971),
-        (47.67244, -122.33370),
-        (47.67227, -122.32169),
-        (47.65365, -122.32280),
-        (47.64787, -122.34246),
-        (47.65677, -122.34229),
-        (47.66516, -122.34014),
-        (47.65654, -122.34709),
-    ]
     # Create a polygon over Ballard and add it to the map
     folium.Polygon(locations=wallingford_coordinates, color='green', fill=True, fill_color='green').add_to(m)
     # map = folium.Map(location=[center_lat, center_lon], zoom_start=13)
@@ -261,3 +188,48 @@ def generateMap(soldhomes, location):
 #
 #     if soldhouse.list2pendCheck==0
 
+def initiateSummarydata():
+    return{
+        "1bed1bath": {
+            "beds": 1,
+            "baths": 1,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        },
+        "2bed2bath": {
+            "beds": 2,
+            "baths": 2,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        },
+        "3bed2bath": {
+            "beds": 3,
+            "baths": 2,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        },
+        "3bed3bath": {
+            "beds": 3,
+            "baths": 3,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        },
+        "4bed2-bath": {
+            "beds": 4,
+            "baths": 2,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        },
+        "4bed3+bath": {
+            "beds": 4,
+            "baths": 3,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        }
+    }
