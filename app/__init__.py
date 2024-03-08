@@ -69,7 +69,7 @@ def create_app(debug=False,config_object="config.module.path"):
             f"@{os.getenv('DATABASE_HOST')}/{os.getenv('DATABASE_NAME')}"
         )
         # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mylocaldatabase.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     # Apply config or any other settings
     # app.config['SQLALCHEMY_DATABASE_URI'] = (
     #     f"mysql+mysqldb://{getenv('DATABASE_USER')}:{getenv('DATABASE_PASS')}"
