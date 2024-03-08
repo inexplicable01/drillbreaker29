@@ -23,7 +23,8 @@ def AreaReportGatherData(neighbourhoods):
         except Exception as e:
             print(e)
         count+=1
-        return
+        if count>10:
+            return
 
     brieflistingcontroller.SaveBriefListingArr(soldbrieflistingarr)
 
