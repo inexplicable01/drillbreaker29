@@ -64,11 +64,11 @@ def create_app(debug=False,config_object="config.module.path"):
         # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mylocaldatabase.db'
     else:
         # Direct database connection in production
-        # app.config['SQLALCHEMY_DATABASE_URI'] = (
-        #     f"mysql+mysqldb://{os.getenv('DATABASE_USER')}:{os.getenv('DATABASE_PASS')}"
-        #     f"@{os.getenv('DATABASE_HOST')}/{os.getenv('DATABASE_NAME')}"
-        # )
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mylocaldatabase.db'
+        app.config['SQLALCHEMY_DATABASE_URI'] = (
+            f"mysql+mysqldb://{os.getenv('DATABASE_USER')}:{os.getenv('DATABASE_PASS')}"
+            f"@{os.getenv('DATABASE_HOST')}/{os.getenv('DATABASE_NAME')}"
+        )
+        # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mylocaldatabase.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     # Apply config or any other settings
     # app.config['SQLALCHEMY_DATABASE_URI'] = (
