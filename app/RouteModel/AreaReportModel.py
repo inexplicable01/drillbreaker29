@@ -11,9 +11,9 @@ import math
 # model = load('linear_regression_model.joblib')
 def AreaReportGatherData(neighbourhoods):
     soldbrieflistingarr=[]
+    count =0
     for neighbourhood in neighbourhoods:
         soldbrieflistingarr=  soldbrieflistingarr+ FindSoldHomesByNeighbourhood(neighbourhood,30)
-    return
     for brieflisting in soldbrieflistingarr:
         propertydata = loadPropertyDataFromBrief(brieflisting)
         listresults = ListingLengthbyBriefListing(propertydata)
@@ -22,6 +22,9 @@ def AreaReportGatherData(neighbourhoods):
             brieflisting.hdpUrl = propertydata['hdpUrl']
         except Exception as e:
             print(e)
+        count+=1
+        return
+
     brieflistingcontroller.SaveBriefListingArr(soldbrieflistingarr)
 
 
