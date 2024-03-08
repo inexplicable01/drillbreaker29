@@ -249,10 +249,9 @@ def areareport():
 
     elif request.method == 'PATCH':
         try:
-            bl = AreaReportGatherData(locationtoinspect)
+            AreaReportGatherData(locationtoinspect)
             # If the function successfully completes, return a success message
-            return jsonify({'status': 'success', 'message': 'Data gathering complete.',
-                            'count':bl.streetAddress}), 200
+            return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200
         except Exception as e:
             # If the function fails, return a failure message with details
             return jsonify({'status': 'failure', 'message': 'Data gathering failed.', 'details': str(e)}), 500

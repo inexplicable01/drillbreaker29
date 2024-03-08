@@ -22,11 +22,11 @@ def AreaReportGatherData(neighbourhoods):
             brieflisting.hdpUrl = propertydata['hdpUrl']
         except Exception as e:
             print(e)
-        count+=1
-        if count>10:
-            print(brieflisting)
+        # count+=1
+        # if count>10:
+        #     print(brieflisting)
 
-    return brieflistingcontroller.SaveBriefListingArr(soldbrieflistingarr)
+    brieflistingcontroller.SaveBriefListingArr(soldbrieflistingarr)
 
 
 def AreaReport(neighbourhoods, selectedhometypes):
