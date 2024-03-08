@@ -13,7 +13,7 @@ class BriefListingController():
         for brieflisting in brieflistingarr:
             try:
                 existing_listing = self.db.session.query(BriefListing).filter_by(zpid=brieflisting.zpid).first()
-
+                return existing_listing
                 if existing_listing:
                     print_and_log('Updating existing listing for ' + brieflisting.streetAddress)
                     # # Update all relevant fields

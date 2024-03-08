@@ -25,8 +25,8 @@ def AreaReportGatherData(neighbourhoods):
         count+=1
         if count>10:
             print(brieflisting)
-    return count
-    brieflistingcontroller.SaveBriefListingArr(soldbrieflistingarr)
+
+    return brieflistingcontroller.SaveBriefListingArr(soldbrieflistingarr)
 
 
 def AreaReport(neighbourhoods, selectedhometypes):
