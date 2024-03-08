@@ -13,7 +13,7 @@ def AreaReportGatherData(neighbourhoods):
     soldbrieflistingarr=[]
     for neighbourhood in neighbourhoods:
         soldbrieflistingarr=  soldbrieflistingarr+ FindSoldHomesByNeighbourhood(neighbourhood,30)
-
+    return
     for brieflisting in soldbrieflistingarr:
         propertydata = loadPropertyDataFromBrief(brieflisting)
         listresults = ListingLengthbyBriefListing(propertydata)

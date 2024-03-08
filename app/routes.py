@@ -249,7 +249,7 @@ def areareport():
 
     elif request.method == 'PATCH':
         try:
-            # AreaReportGatherData(locationtoinspect)
+            AreaReportGatherData(locationtoinspect)
             # If the function successfully completes, return a success message
             return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200
         except Exception as e:
