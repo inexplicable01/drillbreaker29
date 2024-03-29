@@ -1,7 +1,7 @@
 import requests
 import os
 
-url = f"{os.getenv('ENDPOINT')}/areareport"
+url = f"https://www.drillbreaker29.com/soldhomes/areareport"
 
 payload = {}
 headers = {}

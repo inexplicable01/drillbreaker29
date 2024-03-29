@@ -1,8 +1,9 @@
 import requests
+import os
 
 # The URL you want to make a POST request to
-url = "https://www.drillbreaker29.com/sendEmailUpdates"
-
+# url = "https://www.drillbreaker29.com/sendEmailUpdates"
+url = f"https://www.drillbreaker29.com/listingalerts/clientalerts"
 # Any data you want to send in the POST request
 # This is optional and depends on what your endpoint expects
 data = {
@@ -16,7 +17,7 @@ headers = {
 }
 
 # Making the POST request
-response = requests.post(url, json=data, headers=headers)
+response = requests.get(url, json=data, headers=headers)
 
 # Checking if the request was successful
 if response.status_code == 200:
