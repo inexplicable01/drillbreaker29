@@ -59,15 +59,9 @@ def SendEmailOfListings(changebrieflistingarr,oldbrieflistingarr):
                html_content=html_content,
                recipient =defaultrecipient)
 
-def sendEmailofOpenHomes():
-    # subject, body, recipient = defaultrecipient, html_content = None
-    map_html, filtered_houses = SearchForOpenHouses()
-
-
-
-
-    send_emailforOpenHouse(filtered_houses)
-
-
-    return map_html
+# def sendEmailofOpenHomes():
+#     # subject, body, recipient = defaultrecipient, html_content = None
+#     map_html, filtered_houses = SearchForOpenHouses()
+#     send_emailforOpenHouse(filtered_houses)
+#     return map_html
 

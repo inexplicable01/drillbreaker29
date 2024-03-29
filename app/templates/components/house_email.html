@@ -45,6 +45,7 @@
     <div class="row">
         <div class="col-md-9">
             <h4>
+                Listing Price {{ listingdetails.price }}
                 Address: {{ listingdetails.address.streetAddress }} , {{ listingdetails.address.city }}
                 Neighour: {{ neighbourhood }}
             </h4>
@@ -52,11 +53,7 @@
                 {{ listingdetails.description }}
             </p>
         </div>
-        <div class="col-md-3">
-            <h4>
-                Listing Price {{ listingdetails.price }}
-            </h4>
-        </div>
+
     </div>
     <div class="row component ">
         <div class="col-md-5 component">
@@ -76,4 +73,6 @@
             </div>
         </div>
     </div>
+<br/>
+<br/>
 </div>
