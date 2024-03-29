@@ -79,7 +79,7 @@ def displayModel(neighbourhoods, selectedhometypes):
 
     return base64.b64encode(buf2.read()).decode('utf-8')
 
-def AreaReport(neighbourhoods, selectedhometypes):
+def AreaReportModelRun(neighbourhoods, selectedhometypes):
     ## Calls zillow data Process
     ## Zillow Data Process puts listing in BriefListing Array
     housesoldpriceaverage = initiateSummarydata()

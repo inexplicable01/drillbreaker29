@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
-from app.RouteModel.AreaReportModel import displayModel,AreaReport,AreaReportGatherData,ListAllNeighhourhoodsByCities
-from app.config import Config,SW
+# from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,AreaReportGatherData,ListAllNeighhourhoodsByCities
+# from app.config import Config,SW
 from app.RouteModel.OpenHouseModel import SearchForOpenHouses
 
 openhouse_bp = Blueprint('openhouse', __name__,url_prefix='/openhouse')

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
-from app.RouteModel.AreaReportModel import displayModel,AreaReport,AreaReportGatherData,ListAllNeighhourhoodsByCities
+from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,AreaReportGatherData,ListAllNeighhourhoodsByCities
 from app.config import Config,SW
 soldhomes_bp = Blueprint('soldhomes_bp', __name__,url_prefix='/soldhomes')
 @soldhomes_bp.route('/update-graph', methods=['POST'])
@@ -39,7 +39,7 @@ def AreaReport():
 
 
 
-    map_html,soldhouses, housesoldpriceaverage, plot_url,plot_url2 =AreaReport(selectedlocations, selectedhometypes)
+    map_html,soldhouses, housesoldpriceaverage, plot_url,plot_url2 =AreaReportModelRun(selectedlocations, selectedhometypes)
     # send_emailforOpenHouse(filtered_houses)
     return render_template('AreaReport.html',
                            m=map_html,
