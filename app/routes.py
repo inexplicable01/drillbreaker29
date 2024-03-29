@@ -15,37 +15,27 @@ from app.DataBaseFunc import dbmethods
 from app.NewListing import NewListing
 from app.RouteModel.NewListingModel import NewListingInNeighbourhoods
 from app.RouteModel.OldHousesModel import WhereOldBuild
-from app.RouteModel.AreaReportModel import AreaReport,AreaReportGatherData
-from app.RouteModel.EmailModel import sendEmailwithNewListing, sendEmailofOpenHomes
-from app.config import Config,SW
-@main.route('/')
-def index():
-    # Render an HTML template with a button
-    return render_template('LandingPage.html')
 
-@main.route('/send-email', methods=['POST'])
-def send_test_email():
-    # Use a subset of your listings or dummy data for testing
-    test_listings = [{'id': 1,
-                      'details': 'Can you see this'},
-                     {'id': 2,
-                      'details': 'tyjkhggg'}]
 
-    email_content = "New Listings:\n"
-    for listing in test_listings:
-        email_content += f"ID: {listing['id']}, Details: {listing['details']}\n"
-    # main.logger.error('wtf')
-    # raise('problem')
-    # send_email('New Listing', email_content)
-    # main.logger.error('got to here')
-    return redirect(url_for('main.index'))
 
-@main.route('/sendEmailUpdates', methods=['POST'])
-def sendEmailUpdates():
-    # send_emailtest()
 
-    sendEmailwithNewListing()
-    return redirect(url_for('main.index'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# +++++++++++++++++++++++++++++
+
+
 
 @main.route('/mapexample')
 def MapExample():
@@ -55,6 +45,74 @@ def MapExample():
     m = m._repr_html_()
     return render_template('MapTest.html', m=m)
 
+
+
+
+
+@main.route('/new_listing', methods=['GET','POST'])
+def new_listing():
+    # addresses = ["Address 1", "Address 2", "Address 3"]
+    if request.method == 'POST':
+        bedrooms = request.form.get('bedrooms')
+        bathrooms = request.form.get('bathrooms')
+        living_space = request.form.get('livingSpace')
+        location = request.form.get('location')
+        daysonzillow = request.form.get('daysonzillow')
+    elif request.method == 'GET':
+        bedrooms = 5
+        bathrooms = 5
+        living_space = 4000
+        location = 'Seattle'
+        daysonzillow = 1
+    listings,infodump = NewListing(location,daysonzillow,bedrooms,bathrooms,living_space, )
+    return render_template('NewListing.html', listings=listings, infodump=infodump,
+                           bedrooms=bedrooms,bathrooms=bathrooms,living_space=living_space)
+
+@main.route('/new_listing_in_selectneighbourhood', methods=['GET','POST'])
+def new_listing_in_selectneighbourhood():
+    # addresses = ["Address 1", "Address 2", "Address 3"]
+    if request.method == 'POST':
+        bedrooms = request.form.get('bedrooms')
+        bathrooms = request.form.get('bathrooms')
+        living_space = request.form.get('livingSpace')
+        location = request.form.get('location')
+        daysonzillow = request.form.get('daysonzillow')
+    elif request.method == 'GET':
+        bedrooms = 5
+        bathrooms = 5
+        living_space = 4000
+        location = 'Seattle'
+        daysonzillow = 1
+
+    listings,infodump = NewListingInNeighbourhoods(location,daysonzillow,
+                                                   bedrooms,bathrooms,
+                                                   living_space)
+    return render_template('NewListing.html', listings=listings, infodump=infodump,
+                           bedrooms=bedrooms,bathrooms=bathrooms,living_space=living_space)
+@main.route('/mappotentialValue', methods=['GET', 'POST','PUT'])
+def MapPotentialValue():
+    # addresses = ["Address 1", "Address 2", "Address 3"]
+
+    if request.method =='POST':
+        days = 60
+        description = request.form['description']
+        # displayfun = request.form['displayfun']
+
+        map_html2 = validateHomePredictionPrice2(description)
+        return jsonify({'map_html2': map_html2, 'report': "Future Justification of Value"})
+    elif request.method =='PUT':
+        buildpotentiallowerlimit = request.form['buildpotentiallowerlimit']
+        map_html, nu_hits = alladdresseswithbuilthomecalues(float(buildpotentiallowerlimit))
+        return jsonify({'map_html': map_html, 'buildpotentiallowerlimit': buildpotentiallowerlimit, 'nu_hits':nu_hits})
+    else:
+        description = None
+        buildpotentiallowerlimit=2000000
+        averagenewbuildprice = None
+        map_html2 = 'Display for Property details'
+        # displayfun = SOLDHOTTNESS
+    map_html, nu_hits = alladdresseswithbuilthomecalues(buildpotentiallowerlimit)
+
+    return render_template('MapPotentialValue.html', map=map_html ,map2=map_html2,  description = description, buildpotentiallowerlimit=buildpotentiallowerlimit, nu_hits=nu_hits)
 
 @main.route('/heatmapexample', methods=['GET', 'POST'])
 def HeatMapExample():
@@ -90,7 +148,7 @@ def WhereToBuild():
 #     listings = dbmethods.ActiveListings()
 #     return render_template('table_template.html', listings=listings)
 
-AreasToCareAbout =['Bellevue', 'Kenmore', 'Bothell' ,'Kirkland' ,'Seattle', 'Shoreline' ,'Renton', 'Kent' ,'Mercer' ,'Island']
+# AreasToCareAbout =['Bellevue', 'Kenmore', 'Bothell' ,'Kirkland' ,'Seattle', 'Shoreline' ,'Renton', 'Kent' ,'Mercer' ,'Island']
 
 
 # @main.route('/abunchofBellevueAddress')
@@ -145,127 +203,3 @@ def GiveMeComps2():
                            addresses=addressestoclick,
                            selected_address=selected_address,
                            averagenewbuildprice=averagenewbuildprice)
-
-@main.route('/mappotentialValue', methods=['GET', 'POST','PUT'])
-def MapPotentialValue():
-    # addresses = ["Address 1", "Address 2", "Address 3"]
-
-    if request.method =='POST':
-        days = 60
-        description = request.form['description']
-        # displayfun = request.form['displayfun']
-
-        map_html2 = validateHomePredictionPrice2(description)
-        return jsonify({'map_html2': map_html2, 'report': "Future Justification of Value"})
-    elif request.method =='PUT':
-        buildpotentiallowerlimit = request.form['buildpotentiallowerlimit']
-        map_html, nu_hits = alladdresseswithbuilthomecalues(float(buildpotentiallowerlimit))
-        return jsonify({'map_html': map_html, 'buildpotentiallowerlimit': buildpotentiallowerlimit, 'nu_hits':nu_hits})
-    else:
-        description = None
-        buildpotentiallowerlimit=2000000
-        averagenewbuildprice = None
-        map_html2 = 'Display for Property details'
-        # displayfun = SOLDHOTTNESS
-    map_html, nu_hits = alladdresseswithbuilthomecalues(buildpotentiallowerlimit)
-
-    return render_template('MapPotentialValue.html', map=map_html ,map2=map_html2,  description = description, buildpotentiallowerlimit=buildpotentiallowerlimit, nu_hits=nu_hits)
-
-
-@main.route('/new_listing', methods=['GET','POST'])
-def new_listing():
-    # addresses = ["Address 1", "Address 2", "Address 3"]
-    if request.method == 'POST':
-        bedrooms = request.form.get('bedrooms')
-        bathrooms = request.form.get('bathrooms')
-        living_space = request.form.get('livingSpace')
-        location = request.form.get('location')
-        daysonzillow = request.form.get('daysonzillow')
-    elif request.method == 'GET':
-        bedrooms = 5
-        bathrooms = 5
-        living_space = 4000
-        location = 'Seattle'
-        daysonzillow = 1
-    listings,infodump = NewListing(location,daysonzillow,bedrooms,bathrooms,living_space, )
-    return render_template('NewListing.html', listings=listings, infodump=infodump,
-                           bedrooms=bedrooms,bathrooms=bathrooms,living_space=living_space)
-
-@main.route('/new_listing_in_selectneighbourhood', methods=['GET','POST'])
-def new_listing_in_selectneighbourhood():
-    # addresses = ["Address 1", "Address 2", "Address 3"]
-    if request.method == 'POST':
-        bedrooms = request.form.get('bedrooms')
-        bathrooms = request.form.get('bathrooms')
-        living_space = request.form.get('livingSpace')
-        location = request.form.get('location')
-        daysonzillow = request.form.get('daysonzillow')
-    elif request.method == 'GET':
-        bedrooms = 5
-        bathrooms = 5
-        living_space = 4000
-        location = 'Seattle'
-        daysonzillow = 1
-
-    listings,infodump = NewListingInNeighbourhoods(location,daysonzillow,
-                                                   bedrooms,bathrooms,
-                                                   living_space)
-    return render_template('NewListing.html', listings=listings, infodump=infodump,
-                           bedrooms=bedrooms,bathrooms=bathrooms,living_space=living_space)
-
-
-from app.RouteModel.OpenHouseModel import SearchForOpenHouses
-@main.route('/openhouse', methods=['GET','POST'])
-def openhouse():
-    map_html = SearchForOpenHouses()
-    return render_template('OpenHouse.html', m=map_html)
-
-
-@main.route('/areareport', methods=['GET','POST','PATCH'])
-def areareport():
-    locationtoinspect = ['Ballard',
-                         'Fremont',
-                         'Wallingford',
-                         'Magnolia',
-                         'Phinney Ridge',
-                         'Boardview',
-                         'Haller Lake',
-                         'Beacon Hill'
-                        ,'North Beacon Hill Seattle', 'Beacon Hill Seattle','Downtown Seattle',
-                         'Chinatown Seattle','Central District Seattle',
-                         'Leschi Seattle','Capitol Hill'
-                         ]
-    # locationtoinspect = ['North Beacon Hill Seattle', 'Central District Seattle',
-    #                      'Leschi Seattle']
-
-    if request.method == 'POST':
-        selectedhometypes = request.form.getlist('home_type')
-        selectedlocations = request.form.getlist('location')
-        # Process the selections as needed
-    elif request.method == 'GET':
-
-        selectedlocations = locationtoinspect
-        selectedhometypes = Config.HOMETYPES
-
-    elif request.method == 'PATCH':
-        try:
-            AreaReportGatherData(locationtoinspect)
-            # If the function successfully completes, return a success message
-            return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200
-        except Exception as e:
-            # If the function fails, return a failure message with details
-            return jsonify({'status': 'failure', 'message': 'Data gathering failed.', 'details': str(e)}), 500
-
-
-
-    map_html,soldhouses, housesoldpriceaverage, plot_url =AreaReport(selectedlocations, selectedhometypes)
-    # send_emailforOpenHouse(filtered_houses)
-    return render_template('AreaReport.html',
-                           m=map_html,
-                           HOMETYPES=Config.HOMETYPES,
-                           selectedhometypes= selectedhometypes,
-                           LOCATIONS=locationtoinspect,
-                           soldhouses = soldhouses,
-                           housesoldpriceaverage=housesoldpriceaverage,
-                           selected_locations=selectedlocations,
-                           plot_url=plot_url)

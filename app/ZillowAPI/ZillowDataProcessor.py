@@ -9,7 +9,9 @@ from Download_Image import download_image
 from app.ZillowAPI.ZillowAPICall import SearchZillowNewListingByLocation,\
     SearchZillowByZPID , \
     SearchZillowByAddress , \
-    SearchZillowSoldHomesByLocation
+    SearchZillowSoldHomesByLocation,\
+    SearchZillowNewListingByInterest
+
 from app.DBModels.ZillowBriefHomeData import BriefListing, filter_dataclass_fields
 from os.path import join
 import os
@@ -82,8 +84,8 @@ def ZillowSearchForOpenHouse(TR,TL,BR,BL):
     briefhomedataarr = SearchZillowNewListingByLocation(location,daysonzillow)
     openbrieflisting=[]
     for briefhomedata in briefhomedataarr:
-        filtered_data = filter_dataclass_fields(briefhomedata, BriefListing)
-        openbrieflisting.append(BriefListing(**filtered_data))
+        # filtered_data = filter_dataclass_fields(briefhomedata, BriefListing)
+        openbrieflisting.append(BriefListing.CreateBriefListing(briefhomedata))
         # soldhomes=  soldhomes+ FindSoldHomesByLocation(location,30)
 
     filtered_houses = []
@@ -117,7 +119,23 @@ def ZillowSearchForOpenHouse(TR,TL,BR,BL):
     return filtered_houses
 
 
+def ZillowSearchForForSaleHomes(clientinterest):
+    forsalehomesarr = []
+    for area in clientinterest['area']:
+        location = area + ' seattle'
+        homesbeingsoldraw = SearchZillowNewListingByInterest(location=location,
+                                                        beds_min=clientinterest['bedrooms_min'],
+                                                        beds_max=clientinterest['bedrooms_max'],
+                                                        baths_min=clientinterest['bathrooms_min'],
+                                                        price_max=clientinterest['pricemax'],
+                                                        daysonzillow=7)
+        for raw in homesbeingsoldraw:
+            forsalehomesarr.append(BriefListing.CreateBriefListing(raw, None, location))
 
+    # for forsalebriefdata in forsalehomesarr:
+    #     print(forsalebriefdata)
+    return forsalehomesarr
+    # return filtered_houses
 
 
 # Test the function
@@ -149,18 +167,18 @@ def ListingLengthbyBriefListing(propertydata):
             for event in propertydata[PRICEHISTORY]:
 
                 if event['event'] == 'Listed for sale':
-                    print(event['date'] + 'Listed for Sale ' + propertydata['address']['streetAddress'])
+                    # print(event['date'] + 'Listed for Sale ' + propertydata['address']['streetAddress'])
                     listprice = event['price']
                     for e in soldposs:
                         if e['event'] == 'Pending sale':
-                            print(e['date'] + '  Pending  ' + propertydata['address']['streetAddress'])
+                            # print(e['date'] + '  Pending  ' + propertydata['address']['streetAddress'])
                             list2penddays = date_difference(e['date'], event['date'])
-                            print(propertydata['address']['streetAddress']+ ' Took ' + str(list2penddays) + ' to be UnderContract')
+                            # print(propertydata['address']['streetAddress']+ ' Took ' + str(list2penddays) + ' to be UnderContract')
                         if e['event'] == 'Sold':
                             list2solddays = date_difference(e['date'], event['date'])
-                            print(e['date'] + '  Sold  ' + propertydata['address']['streetAddress'])
-                            print(propertydata['address']['streetAddress'] + ' Took ' + str(
-                                date_difference(e['date'], event['date'])) + ' to sell')
+                            # print(e['date'] + '  Sold  ' + propertydata['address']['streetAddress'])
+                            # print(propertydata['address']['streetAddress'] + ' Took ' + str(
+                            #     date_difference(e['date'], event['date'])) + ' to sell')
                     break
                 else:
                     soldposs.append(event)
@@ -237,7 +255,7 @@ def FindSoldHomesByNeighbourhood(neighbourhood, doz):
 
 
 def loadPropertyDataFromBrief(brieflisting:BriefListing):
-    filepath = os.path.join(os.getenv('ADDRESSJSON'), brieflisting.ref_address() + '.txt')
+    filepath = os.path.join(os.getenv('ADDRESSJSON'), brieflisting.ref_address().replace('/','div') + '.txt')
     if not os.path.exists(filepath):
         propertydata = SearchZillowByZPID(brieflisting.zpid)
         json_string = json.dumps(propertydata, indent=4)

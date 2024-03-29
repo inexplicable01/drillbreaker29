@@ -69,20 +69,20 @@
 {#  </tr>#}
 {#          <tr>#}
     <td>Openhouse</td>
-    <td><a href="/openhouse">Open House</a></td>
+    <td><a href="{{ url_for('openhouse.SearchForOpenHouseRoute') }}">Open House</a></td>
   </tr>
         <td>Area Report on Fremont, Ballard</td>
-    <td><a href="/areareport">Area Report</a></td>
+    <td><a href="{{ url_for('soldhomes_bp.AreaReport') }}">Area Report</a></td>
   </tr>
 
 </table>
 
 
-
-        <form action="{{ url_for('main.send_test_email') }}" method="post">
-            <button type="submit">Send Us a Question!</button>
-        </form>
-        <form action="{{ url_for('main.sendEmailUpdates') }}" method="post">
+{##}
+{#        <form action="{{ url_for('main.send_test_email') }}" method="post">#}
+{#            <button type="submit">Send Us a Question!</button>#}
+{#        </form>#}
+        <form action="{{ url_for('email.sendEmailUpdates') }}" method="post">
             <button type="submit">Send Email!</button>
         </form>
 {#        <a href="/downloadpicsfromMLS">downloadpicsfromMLS</a>#}

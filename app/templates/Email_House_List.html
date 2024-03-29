@@ -4,14 +4,19 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
 </head>
 <body>
-    {% for listingdetails, carid, images,neighbourhood in infodump %}
-        {% include 'components/house_email.html' %}
-    {% endfor %}
+<h1>Updated or New Listings</h1>
+{% for listingdetails, carid, images,neighbourhood in neworupdatedlistings %}
+    {% include 'components/house_email.html' %}
+{% endfor %}
+<h1>Past Listings</h1>
+{% for listingdetails, carid, images,neighbourhood in pastlistings %}
+    {% include 'components/house_email.html' %}
+{% endfor %}
 </body>
 </html>

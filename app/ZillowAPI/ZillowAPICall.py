@@ -63,7 +63,38 @@ def SearchZillowNewListingByLocation(location, daysonzillow):
             print(curpage)
             maxpage = result['totalPages']
         except Exception as e:
-            warn(e)
+            warn(e.__str__())
+            return houseresult
+    return houseresult
+
+def SearchZillowNewListingByInterest(location, beds_min,beds_max,baths_min,price_max,daysonzillow):
+    curpage = 1
+    maxpage = 2
+    houseresult = []
+    while maxpage > curpage:
+
+        querystring = {"location": location + ", wa", "page": str(curpage),
+                       "status": "forSale",
+                       "price_max": price_max,
+                       "beds_min": beds_min,
+                       "beds_max":beds_max,
+                       "baths_min": baths_min,
+                       # "doz": str(daysonzillow)
+                       }
+
+        response = requests.get(url, headers=headers, params=querystring)
+        time.sleep(0.5)
+        result = response.json()
+        if response.status_code == 502:
+            warn('502 on ' + location)
+            return houseresult
+        try:
+            houseresult = houseresult + result['results']
+            print(location, curpage)
+            curpage = curpage + 1
+            maxpage = result['totalPages']
+        except Exception as e:
+            warn(e.__str__())
             return houseresult
     return houseresult
 
@@ -72,6 +103,7 @@ def SearchZillowSoldHomesByLocation(location, duration=14):
     lastpage = 1
     maxpage = 2
     houseresult=[]
+    print('Search in location: ', location)
     while maxpage>lastpage:
         querystring = {"location":location + ", wa","page": str(lastpage),"status":"recentlySold","doz":str(duration)}
         response = requests.get(url, headers=headers, params=querystring)
@@ -87,6 +119,8 @@ def SearchZillowSoldHomesByLocation(location, duration=14):
             maxpage = result['totalPages']
         except Exception as e:
             print(f"Search Zillow failed due to an exception")
+            break
+    print('found ', len(houseresult), ' results')
     return houseresult
     # dbmethods.SaveHouseSearchDataintoDB(houseresult)
 

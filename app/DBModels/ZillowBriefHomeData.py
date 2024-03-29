@@ -2,12 +2,12 @@ from dataclasses import dataclass, field, InitVar, fields
 from typing import Optional, Dict
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime
+from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime , Numeric
 Base = declarative_base()
 from app.extensions import db
 from datetime import datetime
 from app.useful_func import safe_float_conversion,safe_int_conversion
-
+import decimal
 class BriefListing(db.Model):
     __tablename__= 'BriefListing'
 
@@ -30,9 +30,9 @@ class BriefListing(db.Model):
     isShowcaseListing = db.Column(db.Boolean, nullable=True)
     isUnmappable = db.Column(db.Boolean, nullable=True)
     isZillowOwned = db.Column(db.Boolean, nullable=True)
-    latitude = db.Column(db.Float, nullable=True)
+    latitude = db.Column(Numeric(precision=10,scale=7), nullable=True)
     livingArea = db.Column(db.Float, nullable=True)
-    longitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(Numeric(precision=10,scale=7), nullable=True)
     price = db.Column(db.BigInteger, nullable=True)
     priceForHDP = db.Column(db.Float, nullable=True)
     shouldHighlight = db.Column(db.Boolean, nullable=True)
@@ -56,6 +56,8 @@ class BriefListing(db.Model):
     hdpUrl = db.Column(db.String(255), nullable=True)
     pricedelta = db.Column(db.BigInteger, nullable=True)
     neighbourhood = db.Column(db.String(50), nullable=True)
+    gapis_neighbourhood=db.Column(db.String(50), nullable=True)
+    zillowapi_neighbourhood = db.Column(db.String(50), nullable=True)
 
 
 
@@ -75,17 +77,22 @@ class BriefListing(db.Model):
         if self.listprice is not None:
             self.pricedelta=self.price-self.listprice
 
+    def __str__(self):
+        return str(self.zpid)
+
     @classmethod
-    def CreateBriefListing(cls, briefhomedata, neighbourhood=None):
+    def CreateBriefListing(cls, briefhomedata, neighbourhood=None, zillowapi_neighbourhood=None):
         try:
             new_listing = cls()
             new_listing.zpid = briefhomedata.get('zpid')
             new_listing.neighbourhood = neighbourhood
+            new_listing.zillowapi_neighbourhood = zillowapi_neighbourhood
             new_listing.bathrooms = safe_float_conversion(briefhomedata.get('bathrooms', 1.0))
             new_listing.bedrooms = safe_float_conversion(briefhomedata.get('bedrooms', 1.0))
             new_listing.city = briefhomedata.get('city', 'Missing')
             new_listing.country = briefhomedata.get('country', 'Missing')
             # new_listing.currency = briefhomedata.get('currency', 'Missing')
+            new_listing.livingArea=safe_float_conversion(briefhomedata.get('livingArea', 1.0))
             new_listing.dateSold = safe_int_conversion(
                 briefhomedata.get('dateSold', 0))  # Consider datetime conversion if necessary
             new_listing.daysOnZillow = safe_int_conversion(briefhomedata.get('daysOnZillow', 0))
@@ -100,8 +107,8 @@ class BriefListing(db.Model):
             new_listing.isShowcaseListing = briefhomedata.get('isShowcaseListing', False)
             new_listing.isUnmappable = briefhomedata.get('isUnmappable', False)
             new_listing.isZillowOwned = briefhomedata.get('isZillowOwned', False)
-            new_listing.latitude = safe_float_conversion(briefhomedata.get('latitude', 0.0))
-            new_listing.longitude = safe_float_conversion(briefhomedata.get('longitude', 0.0))
+            new_listing.latitude = decimal.Decimal(briefhomedata.get('latitude', '0.0000000'))
+            new_listing.longitude = decimal.Decimal(briefhomedata.get('longitude', '0.0000000'))
             new_listing.price = safe_int_conversion(briefhomedata.get('price', 0))
             new_listing.state = briefhomedata.get('state', 'Missing')
             new_listing.streetAddress = briefhomedata.get('streetAddress', 'Missing')
@@ -125,7 +132,7 @@ class BriefListing(db.Model):
             new_listing.pricedelta = safe_int_conversion(briefhomedata.get('pricedelta', 0))
 
             return new_listing
-            return new_address
+
         except Exception as e:
             print('Create Listing Error', e)
             return None

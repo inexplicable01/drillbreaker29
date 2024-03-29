@@ -72,6 +72,33 @@
             // Implement your logic to update the data displayed on the page based on the selectedArea
             console.log("Data updated for:", selectedArea); // Placeholder
         }
+
+        function updateGraph() {
+            // Example data to send; adjust based on your actual form/data structure
+            const data = new FormData();
+            // For home types
+            document.querySelectorAll('input[name="home_type"]:checked').forEach((checkbox) => {
+                data.append('home_type', checkbox.value);
+            });
+
+            // For locations
+            document.querySelectorAll('input[name="location"]:checked').forEach((checkbox) => {
+                data.append('location', checkbox.value);
+            });
+
+            fetch('{{url_for('soldhomes_bp.update_graph') }}', {
+                method: 'POST',
+                body: data,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Update the image src with the new graph data
+                    document.getElementById('graphImage').src = 'data:image/png;base64,' + data.new_plot_url;
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }
     </script>
 </head>
 <body>
@@ -121,7 +148,9 @@
     <div id="side-section">
         <div id="data-section">
             <h2>Sold Houses</h2>
-            <img src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
+            <img id="graphImage" src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
+
+            <button onclick="updateGraph()">Update Graph</button>
             <table border="1">
                 <!-- Table headers -->
                 <thead>
@@ -157,8 +186,9 @@
                 </tbody>
             </table>
 
-
+            <img src="data:image/png;base64,{{ plot_url2 }}" alt="House Price vs. Days to Pending">
             {#            //I want a graph to go here#}
+
         </div>
         <div id="comments-section">
             <h2>Summary</h2>

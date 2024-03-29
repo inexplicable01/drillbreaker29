@@ -4,9 +4,8 @@ from email.mime.multipart import MIMEMultipart
 # from run import app
 import os
 from app.NewListing import NewListing,NewListingForEmail
-
 fromemail = os.getenv('FROMEMAIL')
-
+defaultrecipient='waichak.luk@gmail.com'
 def send_email( subject, recipient,html_content=None,):
     msg = MIMEMultipart()
     msg['From'] = fromemail
@@ -16,12 +15,13 @@ def send_email( subject, recipient,html_content=None,):
     # msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
     if html_content:
-        msg.attach(MIMEText(html_content, 'html'))
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+        # msg.attach(MIMEText(html_content, 'html'))
 
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+    with smtplib.SMTP('smtppro.zoho.com', 587) as server:
         server.starttls()
         server.login(fromemail, os.getenv('EMAILCODE'))
-        text = msg.as_string()
+        text = msg.as_string().encode('utf-8')
         server.sendmail(fromemail, recipient, text)
     print('email sent')
 

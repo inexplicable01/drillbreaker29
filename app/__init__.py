@@ -5,7 +5,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 # Ensure the upload folder exists
 # from app.models import Listing
-from .routes import main
+from .routes import register_blueprints
 
 from flask_mail import Mail, Message
 
@@ -92,7 +92,7 @@ def create_app(debug=False,config_object="config.module.path"):
     with app.app_context():
         db.create_all()
 
-    app.register_blueprint(main)
+    register_blueprints(app)
 
     # Initialize and start the scheduler
 

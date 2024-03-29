@@ -3,10 +3,14 @@ from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
     FindSoldHomesByLocation,\
     loadPropertyDataFromBrief,FindSoldHomesByNeighbourhood
 import matplotlib.pyplot as plt
+
 import base64
 from io import BytesIO
 from app.DBFunc.BriefListingController import brieflistingcontroller
 import math
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
 
 # model = load('linear_regression_model.joblib')
 def AreaReportGatherData(neighbourhoods):
@@ -15,19 +19,65 @@ def AreaReportGatherData(neighbourhoods):
     for neighbourhood in neighbourhoods:
         soldbrieflistingarr=  soldbrieflistingarr+ FindSoldHomesByNeighbourhood(neighbourhood,30)
     for brieflisting in soldbrieflistingarr:
-        propertydata = loadPropertyDataFromBrief(brieflisting)
-        listresults = ListingLengthbyBriefListing(propertydata)
-        brieflisting.updateListingLength(listresults)
+
         try:
+            # if brieflisting.neighbourhood == 'North Delridge Seattle':
+            #     print('pause')
+            propertydata = loadPropertyDataFromBrief(brieflisting)
+            listresults = ListingLengthbyBriefListing(propertydata)
+            brieflisting.updateListingLength(listresults)
             brieflisting.hdpUrl = propertydata['hdpUrl']
         except Exception as e:
-            print(e)
-        # count+=1
-        # if count>10:
-        #     print(brieflisting)
+            print(e, brieflisting)
+
 
     brieflistingcontroller.SaveBriefListingArr(soldbrieflistingarr)
 
+
+def ListAllNeighhourhoodsByCities(cities):
+    return brieflistingcontroller.UniqueNeighbourhoodsByCities(cities)
+
+def displayModel(neighbourhoods, selectedhometypes):
+    unfiltered_soldhomes=brieflistingcontroller.ListingsByNeighbourhoodsAndHomeTypes(neighbourhoods, selectedhometypes, 30)
+    df = pd.DataFrame([brieflisting.__dict__ for brieflisting in unfiltered_soldhomes])
+    df = df.select_dtypes(include=['number'])
+    print(df)
+    features = df[['bathrooms', 'bedrooms', 'lotAreaValue','taxAssessedValue',]]  # Adjust based on your model
+    target = df['price']
+    X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+    # Fit the model
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+
+    living_area = X_test['taxAssessedValue']
+    actual_prices = y_test
+    predicted_prices = predictions
+    errors = predicted_prices - actual_prices
+
+    fig, ax1 = plt.subplots()
+
+    color = 'tab:red'
+    ax1.set_xlabel('Living Area (sqft)')
+    ax1.set_ylabel('Actual Price', color=color)
+    ax1.scatter(living_area, actual_prices, color=color, label='Actual Price', alpha=0.6)
+    ax1.tick_params(axis='y', labelcolor=color)
+
+    # Instantiate a second y-axis to plot the error
+    ax2 = ax1.twinx()
+    color = 'tab:blue'
+    ax2.set_ylabel('Error ($)', color=color)  # we already handled the x-label with ax1
+    ax2.scatter(living_area, errors, color=color, label='Error', alpha=0.6)
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    # Show plot
+    fig.tight_layout()  # To ensure there's no clipping of y-label
+    plt.title('Actual Price vs. Living Area and Prediction Error')
+    buf2 = BytesIO()
+    plt.savefig(buf2, format='png')
+    buf2.seek(0)
+
+    return base64.b64encode(buf2.read()).decode('utf-8')
 
 def AreaReport(neighbourhoods, selectedhometypes):
     ## Calls zillow data Process
@@ -133,8 +183,50 @@ def AreaReport(neighbourhoods, selectedhometypes):
     buf.seek(0)
 
     plot_url = base64.b64encode(buf.read()).decode('utf-8')
-    return generateMap(soldhomes, neighbourhoods), soldhomes,housesoldpriceaverage, plot_url
 
+
+    plt.figure()
+    colors = ['blue', 'red',  'purple']  # Example colors for 1-5 bedrooms
+    for brieflisting in soldhomes:
+        # print('home_type',brieflisting.homeType)
+        if brieflisting.pricedelta is not None and brieflisting.list2penddays is not None:
+            if brieflisting.list2penddays > 300:
+                continue
+            days_to_pending.append(brieflisting.list2penddays)
+            # bedrooms.append(round(brieflisting.bedrooms))
+            if brieflisting.bedrooms is None:
+                continue
+            if round(brieflisting.bedrooms) > 3:
+                color = 'orange'
+            else:
+                color = colors[round(brieflisting.bedrooms)-1]
+            if abs(brieflisting.price-brieflisting.listprice)>600000.0:
+                print(brieflisting)
+                continue
+
+            # Use price to determine the size of the marker
+            size = (brieflisting.price / 3000000.0) * 30 +24
+            if size > 174:
+                size = 174
+            plt.scatter(brieflisting.list2penddays, brieflisting.price, c=color, s=size)
+    # Creating the plot
+
+    plt.title('Price  vs. Days to Pending')
+    plt.xlabel('Days to Pending')
+    plt.ylabel('Price')
+    for i, color in enumerate(colors):
+        plt.scatter([], [], c=color, label=f'{i + 1} Bedrooms')
+    plt.scatter([], [], c='orange', label='>4 Bedrooms')
+    plt.legend(scatterpoints=1, frameon=False, labelspacing=1, title='Bedroom Count')
+
+    # Saving the plot to a bytes buffer
+    buf2 = BytesIO()
+    plt.savefig(buf2, format='png')
+    buf2.seek(0)
+
+    plot_url2 = base64.b64encode(buf2.read()).decode('utf-8')
+
+    return generateMap(soldhomes, neighbourhoods), soldhomes,housesoldpriceaverage, plot_url, plot_url2
 
 
 
@@ -158,6 +250,7 @@ def generateMap(soldhomes, neighbourhoods):
         list2penddays = brieflisting.list2penddays
         if list2penddays is None:
             color = 'gray'
+            list2penddays=999
         else:
             if list2penddays < 7:
                 color = 'red'
@@ -167,11 +260,16 @@ def generateMap(soldhomes, neighbourhoods):
                 color = 'green'
             else:
                 color = 'blue'
-        htmltext = f"<a href='https://www.zillow.com{brieflisting.hdpUrl}' target='_blank'>House Link</a><br/>" \
-            f"Price {brieflisting.price}<br/>" \
-               f"Beds {brieflisting.bedrooms} Bath {brieflisting.bathrooms}<br/>" \
-               f"Square ft {brieflisting.livingArea}<br/>" \
-               f"List to Contract {brieflisting.list2penddays}<br/>"
+        try:
+            htmltext = f"<a href='https://www.zillow.com{brieflisting.hdpUrl}' target='_blank'>House Link</a><br/>" \
+                       f"Neigh {brieflisting.neighbourhood}<br/>" \
+                       f"Sold Price {brieflisting.price}<br/>" \
+                       f"$Change {brieflisting.price-brieflisting.listprice}<br/>" \
+                       f"Beds {brieflisting.bedrooms} Bath {brieflisting.bathrooms}<br/>" \
+                   f"Square ft {brieflisting.livingArea}<br/>" \
+                   f"List to Contract {list2penddays}<br/>"
+        except Exception as e:
+            htmltext=''
 
         # f"<a href='https://www.zillow.com{house['hdpUrl']}' target='_blank'>House Link</a>" \
         # f"<br/>" \

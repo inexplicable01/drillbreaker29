@@ -100,7 +100,7 @@ def NewListingForEmail(location, daysonzillow,bedrooms=None,bathrooms=None, livi
                             "url": jpeg['url'], "caption": photo['caption']
                         })
                         count = count +1
-                if count>4:
+                if count>2:
                     break
 
             infodump.append(
