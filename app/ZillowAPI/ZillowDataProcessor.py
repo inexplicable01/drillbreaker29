@@ -200,14 +200,11 @@ def ListingLengthbyBriefListing(propertydata):
 def date_difference(date1: str, date2: str) -> int:
     # Define the date format
     date_format = "%Y-%m-%d"
-
     # Convert the string dates to datetime objects
     date1_obj = datetime.strptime(date1, date_format)
     date2_obj = datetime.strptime(date2, date_format)
-
     # Find the difference between the two dates
     difference = date2_obj - date1_obj
-
     # Return the number of days
     return abs(difference.days)
 

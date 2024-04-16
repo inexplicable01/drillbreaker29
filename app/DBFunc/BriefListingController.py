@@ -110,15 +110,27 @@ class BriefListingController():
 
         return unfiltered_soldhomes
 
-    def ListingsByNeighbourhoodsAndHomeTypes(self, neighbourhoods, homeTypes, days_ago):
+    def ListingsByNeighbourhoodsAndHomeTypes(self, neighbourhoods, homeTypes, days_ago,homeStatus):
         date_threshold = datetime.now() - timedelta(days=days_ago)
         date_threshold_ms = int(date_threshold.timestamp() * 1000)
 
         unfiltered_soldhomes = BriefListing.query.filter(
             BriefListing.neighbourhood.in_(neighbourhoods),
             # BriefListing.homeType.in_(homeTypes),
-            BriefListing.homeStatus == 'RECENTLY_SOLD',
+            BriefListing.homeStatus == homeStatus,
             BriefListing.dateSold >= date_threshold_ms
+        ).all()
+
+        return unfiltered_soldhomes
+
+    def ForSaleListingsByNeighbourhoodsAndHomeTypes(self, neighbourhoods, homeTypes, days_ago,homeStatus):
+        date_threshold = datetime.now() - timedelta(days=days_ago)
+        date_threshold_ms = int(date_threshold.timestamp() * 1000)
+
+        unfiltered_soldhomes = BriefListing.query.filter(
+            BriefListing.neighbourhood.in_(neighbourhoods),
+            # BriefListing.homeType.in_(homeTypes),
+            BriefListing.homeStatus == homeStatus,
         ).all()
 
         return unfiltered_soldhomes

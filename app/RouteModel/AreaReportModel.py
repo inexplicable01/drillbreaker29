@@ -38,7 +38,7 @@ def ListAllNeighhourhoodsByCities(cities):
     return brieflistingcontroller.UniqueNeighbourhoodsByCities(cities)
 
 def displayModel(neighbourhoods, selectedhometypes):
-    unfiltered_soldhomes=brieflistingcontroller.ListingsByNeighbourhoodsAndHomeTypes(neighbourhoods, selectedhometypes, 30)
+    unfiltered_soldhomes=brieflistingcontroller.ListingsByNeighbourhoodsAndHomeTypes(neighbourhoods, selectedhometypes, 30, 'RECENTLY_SOLD')
     df = pd.DataFrame([brieflisting.__dict__ for brieflisting in unfiltered_soldhomes])
     df = df.select_dtypes(include=['number'])
     print(df)
@@ -144,7 +144,7 @@ def AreaReportModelRun(neighbourhoods, selectedhometypes):
     days_to_pending=[]
 
     plt.figure()
-    colors = ['blue', 'red',  'purple']  # Example colors for 1-5 bedrooms
+    colors = ['grey', 'olive',  'magenta']  # Example colors for 1-5 bedrooms
     for brieflisting in soldhomes:
         # print('home_type',brieflisting.homeType)
         if brieflisting.pricedelta is not None and brieflisting.list2penddays is not None:
@@ -155,7 +155,7 @@ def AreaReportModelRun(neighbourhoods, selectedhometypes):
             if brieflisting.bedrooms is None:
                 continue
             if round(brieflisting.bedrooms) > 3:
-                color = 'orange'
+                color = 'purple'
             else:
                 color = colors[round(brieflisting.bedrooms)-1]
             if (brieflisting.price-brieflisting.listprice)>600000.0:
@@ -174,7 +174,7 @@ def AreaReportModelRun(neighbourhoods, selectedhometypes):
     plt.ylabel('Price Change')
     for i, color in enumerate(colors):
         plt.scatter([], [], c=color, label=f'{i + 1} Bedrooms')
-    plt.scatter([], [], c='orange', label='>4 Bedrooms')
+    plt.scatter([], [], c='purple', label='>4 Bedrooms')
     plt.legend(scatterpoints=1, frameon=False, labelspacing=1, title='Bedroom Count')
 
     # Saving the plot to a bytes buffer
@@ -186,7 +186,7 @@ def AreaReportModelRun(neighbourhoods, selectedhometypes):
 
 
     plt.figure()
-    colors = ['blue', 'red',  'purple']  # Example colors for 1-5 bedrooms
+    colors = ['blue', 'yellow',  'magenta']  # Example colors for 1-5 bedrooms
     for brieflisting in soldhomes:
         # print('home_type',brieflisting.homeType)
         if brieflisting.pricedelta is not None and brieflisting.list2penddays is not None:
@@ -197,7 +197,7 @@ def AreaReportModelRun(neighbourhoods, selectedhometypes):
             if brieflisting.bedrooms is None:
                 continue
             if round(brieflisting.bedrooms) > 3:
-                color = 'orange'
+                color = 'purple'
             else:
                 color = colors[round(brieflisting.bedrooms)-1]
             if abs(brieflisting.price-brieflisting.listprice)>600000.0:
@@ -216,7 +216,7 @@ def AreaReportModelRun(neighbourhoods, selectedhometypes):
     plt.ylabel('Price')
     for i, color in enumerate(colors):
         plt.scatter([], [], c=color, label=f'{i + 1} Bedrooms')
-    plt.scatter([], [], c='orange', label='>4 Bedrooms')
+    plt.scatter([], [], c='purple', label='>4 Bedrooms')
     plt.legend(scatterpoints=1, frameon=False, labelspacing=1, title='Bedroom Count')
 
     # Saving the plot to a bytes buffer
@@ -239,7 +239,7 @@ def generateMap(soldhomes, neighbourhoods):
     # Create a polygon over Ballard and add it to the map
     folium.Polygon(locations=fremont_coordinates, color='green', fill=True, fill_color='green').add_to(m)
     # Create a polygon over Ballard and add it to the map
-    folium.Polygon(locations=wallingford_coordinates, color='green', fill=True, fill_color='green').add_to(m)
+    folium.Polygon(locations=wallingford_coordinates, color='yellow', fill=True, fill_color='green').add_to(m)
     # map = folium.Map(location=[center_lat, center_lon], zoom_start=13)
     click_js = """function onClick(e) {}"""
     e = folium.Element(click_js)

@@ -12,7 +12,12 @@
         font-size: larger; /* Larger text size */
         color: red; /* Green text color */
     }
-
+    .container {
+        border: 1px solid #ddd; /* Example border style */
+        padding: 15px; /* Example padding */
+        width: 100%; /* Full width */
+        margin: 30px;
+    }
     .descriptiondiv {
         border: 1px solid #ddd; /* Example border style */
         padding: 15px; /* Example padding */
@@ -32,7 +37,7 @@
     .custom-table, .custom-table th, .custom-table td {
         border: 1px solid #000; /* Solid black border for table and cells */
         text-align: center; /* Center text in cells */
-        padding: 8px; /* Padding inside cells */
+        padding: 20px; /* Padding inside cells */
     }
 
     .carousel-container {
@@ -45,11 +50,13 @@
     <div class="row">
         <div class="col-md-9">
             <h4>
-                Address: {{ item.address.streetAddress }} , {{ item.address.city }}  , Neighbouhoord: {{ neighbourhood }}
+                Address: {{ item.address.streetAddress }} , {{ item.address.city }}
             </h4>
-            <p>
-                Description {{ item.description }}
-            </p>
+            <h4>
+                Bed: {{ brieflisting.bedrooms }} , Bath: {{ brieflisting.bathrooms }} ,
+                Neighborhood: {{ brieflisting.gapis_neighbourhood }}
+            </h4>
+
         </div>
         <div class="col-md-3">
             <h4>
@@ -57,9 +64,16 @@
             </h4>
 
         </div>
+
+    </div>
+    <div class="row">
+        <p>
+            Description {{ item.description }}
+        </p>
+
     </div>
     <div class="row component ">
-        <div class="col-md-5 component">
+        <div class="col-md-8 component">
             <div id="{{ carid }}" class="carousel slide carousel-container" data-ride="carousel">
                 <div class="carousel-inner">
                     {% for image in images %}
@@ -81,24 +95,21 @@
                 </a>
             </div>
         </div>
-        <div class="col-md-7 component">
+        <div class="col-md-4 component">
             <div class="descriptiondiv padding">
+                <h4>Wayber Estimate </h4>
                 <table class="custom-table">
                     <tr>
-                        <td>Listing Price</td>
-                        <td>$ {{ price1 }}   </td>
+                        <td>Likely to Sell in {{ estimatelistingdays }} day</td>
+                    </tr>
+                                        <tr>
+                        <td>Likely to be Sold at {{ estimatesoldprice }}</td>
                     </tr>
                     <tr>
-                        <td>Construction Cost</td>
-                        <td>$ 1,500,000</td>
+                        <td>Likely to be {{competitiveness}}</td>
                     </tr>
                     <tr>
-                        <td>New Build Estimate</td>
-                        <td>$ {{ newbuildestimate }}</td>
-                    </tr>
-                    <tr class="{{ 'makemoney' if  makemoney else 'losemoney' }}">
-                        <td>Equity Gain</td>
-                        <td>$ {{ equitygain }}</td>
+                        <td>Learn More how Wayber can help you</td>
                     </tr>
                 </table>
             </div>
