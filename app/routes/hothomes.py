@@ -16,7 +16,7 @@ def showHotHomes():
     unfiltered_forsale=brieflistingcontroller.ForSaleListingsByNeighbourhoodsAndHomeTypes(neighbourhoods, selectedhometypes, 30, 'FOR_SALE')
     # for forsalehome in unfiltered_forsale:
     #     print(forsalehome)
-    competivenessoption=['Low', 'A few offers', 'Bidding War']
+    competivenessoption=['Not Very Competitive', 'to have a few Competing offers', 'Highly Competitive : Bidding War']
     infodump = []
     house_c=0
     for house in unfiltered_forsale:
