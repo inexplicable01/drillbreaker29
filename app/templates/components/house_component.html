@@ -12,16 +12,22 @@
         font-size: larger; /* Larger text size */
         color: red; /* Green text color */
     }
+
     .container {
         border: 1px solid #ddd; /* Example border style */
         padding: 15px; /* Example padding */
+        color: #ffffff;
+        background-color: #19211A;
         width: 100%; /* Full width */
         margin: 30px;
     }
+
     .descriptiondiv {
         border: 1px solid #ddd; /* Example border style */
         padding: 15px; /* Example padding */
         width: 100%; /* Full width */
+        text-align: center; /* Center text in cells */
+        border-radius: 10px; /* Rounded corners with a radius of 10px */
     }
 
     moneytable {
@@ -32,12 +38,14 @@
     .custom-table {
         width: 100%; /* Full width for the table */
         border-collapse: collapse; /* Ensures borders are neat */
+
     }
 
     .custom-table, .custom-table th, .custom-table td {
-        border: 1px solid #000; /* Solid black border for table and cells */
+        {#border: 1px solid #000; /* Solid black border for table and cells */#}
         text-align: center; /* Center text in cells */
-        padding: 20px; /* Padding inside cells */
+        padding: 5px; /* Padding inside cells */
+        font-size: 20px; /* Sets the font size to 16 pixels */
     }
 
     .carousel-container {
@@ -45,6 +53,34 @@
         margin: auto;
     }
 
+    .button-link {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 10px 0;
+        border: 1px solid #BADA55; /* Solid black border for table and cells */
+        background-color: #19211A; /* Bootstrap primary color */
+        color: #BADA55;
+        text-align: center;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .button-link:hover {
+        background-color: #BADA55; /* Bootstrap primary color */
+        color: #19211A;
+    }
+
+
+        .thickborder {
+            border: 3px solid antiquewhite;
+        }
+
+    .padding {
+        padding:20px;
+    }
 </style>
 <div class="container padding">
     <div class="row">
@@ -60,21 +96,21 @@
         </div>
         <div class="col-md-3">
             <h4>
-                Listing Price {{ item.price }}
+                Listing Price ${{ "{:,.0f}".format(item.price) }}
             </h4>
 
         </div>
 
     </div>
-    <div class="row">
+    <div class="row padding">
         <p>
             Description {{ item.description }}
         </p>
 
     </div>
-    <div class="row component ">
-        <div class="col-md-8 component">
-            <div id="{{ carid }}" class="carousel slide carousel-container" data-ride="carousel">
+    <div class="row">
+        <div class="col-md-5">
+            <div id="{{ carid }}" class="carousel slide carousel-container  thickborder" data-ride="carousel">
                 <div class="carousel-inner">
                     {% for image in images %}
                         <div class="carousel-item {% if loop.first %}active{% endif %}">
@@ -95,21 +131,26 @@
                 </a>
             </div>
         </div>
-        <div class="col-md-4 component">
+        <div class="col-md-7">
             <div class="descriptiondiv padding">
-                <h4>Wayber Estimate </h4>
+                <h4>Wayber Estimate</h4>
                 <table class="custom-table">
                     <tr>
-                        <td>Likely to Sell in {{ estimatelistingdays }} day</td>
-                    </tr>
-                                        <tr>
-                        <td>Likely to be Sold at {{ estimatesoldprice }}</td>
+                        <td>Likely to Sell
+                            in {{ estimatelistingdays }} {{ 'day' if estimatelistingdays == 1 else 'days' }}</td>
                     </tr>
                     <tr>
-                        <td>Likely to be {{competitiveness}}</td>
+                        <td>Likely to be Sold at ${{ "{:,.0f}".format(estimatesoldprice) }}</td>
                     </tr>
                     <tr>
-                        <td>Learn More how Wayber can help you</td>
+                        <td>Likely to be {{ competitiveness }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="https://www.wayber.net/property-talk"
+                               class="button-link">Learn More how Wayber can
+                                help you</a>
+                        </td>
                     </tr>
                 </table>
             </div>

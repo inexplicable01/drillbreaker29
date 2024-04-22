@@ -30,11 +30,7 @@ def showHotHomes():
         try:
             if listingdetails['address']['city']!='Seattle':
                 continue
-            print(listingdetails['address']['streetAddress'], listingdetails['address']['city'])
-            # neighbourhood = get_neighborhood(listingdetails['latitude'], listingdetails['longitude'])
-            # if not (neighbourhood in Config.NEIGHBORHOODS):
-            #     print(neighbourhood)
-            #     continue
+
             for photo in listingdetails['photos']:
                 for jpeg in photo['mixedSources']['jpeg']:
                     if jpeg['width']==384:

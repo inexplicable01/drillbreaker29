@@ -251,6 +251,7 @@ def generateMap(soldhomes, neighbourhoods):
         if list2penddays is None:
             color = 'gray'
             list2penddays=999
+            brieflisting.listprice=999999
         else:
             if list2penddays < 7:
                 color = 'red'

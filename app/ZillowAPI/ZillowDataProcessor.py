@@ -95,24 +95,27 @@ def ZillowSearchForOpenHouse(TR,TL,BR,BL):
         if (BL[0] <= brieflisting.latitude <= TL[0]) and (TL[1] <= brieflisting.longitude <= TR[1]):
 
             propertydata = loadPropertyDataFromBrief(brieflisting)
-            print('address',propertydata['address']['streetAddress'])
-            # print('isOpenHouse',response['listingSubType']['isOpenHouse'])
-            # print('openHouseSchedule',response['openHouseSchedule'])
-            # print('homeType', response['homeType'])
-            # print('propertyCondition', response['resoFacts']['propertyCondition'])
-            # print('neighborhoodRegion', response['neighborhoodRegion'])
-            # neighborhoodRegion
-            if propertydata['homeType']=="LOT" or propertydata['homeType']=="MULTI_FAMILY" or propertydata['homeType']=="CONDO":
-                print('Not a proper home Type, skip')
+            try:
+                print('address',propertydata['address']['streetAddress'])
+                # print('isOpenHouse',response['listingSubType']['isOpenHouse'])
+                # print('openHouseSchedule',response['openHouseSchedule'])
+                # print('homeType', response['homeType'])
+                # print('propertyCondition', response['resoFacts']['propertyCondition'])
+                # print('neighborhoodRegion', response['neighborhoodRegion'])
+                # neighborhoodRegion
+                if propertydata['homeType']=="LOT" or propertydata['homeType']=="MULTI_FAMILY" or propertydata['homeType']=="CONDO":
+                    print('Not a proper home Type, skip')
+                    continue
+                if propertydata['resoFacts']['propertyCondition']=="Under Construction":
+                    print('Under Construction, skip')
+                    continue
+                if propertydata['neighborhoodRegion']['name']  in Config.WRONGNEIGHBORHOODS:
+                    print('wrong neighbourhood, skip')
+                    continue
+                if not propertydata['listingSubType']['isOpenHouse']:
+                    filtered_houses.append(propertydata)
+            except:
                 continue
-            if propertydata['resoFacts']['propertyCondition']=="Under Construction":
-                print('Under Construction, skip')
-                continue
-            if propertydata['neighborhoodRegion']['name']  in Config.WRONGNEIGHBORHOODS:
-                print('wrong neighbourhood, skip')
-                continue
-            if not propertydata['listingSubType']['isOpenHouse']:
-                filtered_houses.append(propertydata)
 
     # Calculate the center of your bounding box (average of the bounding box coordinates)
 
