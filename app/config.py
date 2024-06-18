@@ -65,24 +65,7 @@ class Config(object):
         'Junction':'West Seattle',
         'South Delridge': 'West Seattle',
         'North Admiral': 'West Seattle',
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        'Maple Valley': 'Maple Valley',
     }
 
     HOMETYPES=[SW.CONDO,SW.TOWNHOUSE,SW.SINGLE_FAMILY]

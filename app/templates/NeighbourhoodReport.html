@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<style>
+    .map-container {
+        width: 33.33vw; /* 1/3 of the viewport width */
+        height: 25vh;   /* 1/4 of the viewport height */
+        overflow: auto; /* Adds scrollbars if content overflows */
+        /* Optional styles for better visibility */
+        border: 1px solid #000;
+        box-sizing: border-box; /* Includes padding and border in the element's size */
+    }
+</style>
+</head>
+<body style="background-color: white">
+{% for neighbourhood, averageprice,housesoldpriceaverage, map in neighdata %}
+    <h1>
+    {{ neighbourhood }} : average price : {{ averageprice }}
+    </h1>
+{#    {% include 'components/house_component.html' %}#}
+    <div class="map-container">
+    {{ map | safe }}
+    </div>
+
+            <div id="comments-section">
+            <h2>Summary</h2>
+            <table border="1">
+                <!-- Table headers -->
+                <thead>
+                <tr>
+                    <th>Housing</th>
+                    <th>Beds</th>
+                    <th>Bath</th>
+                    <th>Count</th>
+                    <th>Min</th>
+                    <th>Average</th>
+                    <th>Max</th>
+                    {#            <th>unit</th>#}
+                </tr>
+                </thead>
+
+                <!-- Table data -->
+                <tbody>
+                {% for key,housegenre in housesoldpriceaverage.items() %}
+                    <tr>
+                        <td>{{ key }}</td>
+                        <td>{{ housegenre.beds }}</td>
+                        <td>{{ housegenre.baths }}</td>
+                        <td>{{ housegenre.count }}</td>
+                        <td>{{ housegenre.minprice }}</td>
+                        <td>{{ housegenre.aveprice }}</td>
+
+                        <td>{{ housegenre.maxprice }}</td>
+
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+{% endfor %}
+</body>
+</html>

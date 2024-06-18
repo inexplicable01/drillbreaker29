@@ -6,6 +6,9 @@ from .email import email_bp
 from .listingalerts import alert_bp
 from .main import main
 from .hothomes import hothomes_bp
+from .neighbourhoodreport import neighbourhoodreport_bp
+from .maintanance import maintanance_bp
+from .sellersupport import sellersupport_bp
 
 def register_blueprints(app: Flask):
     app.register_blueprint(alert_bp)
@@ -14,3 +17,6 @@ def register_blueprints(app: Flask):
     app.register_blueprint(email_bp)
     app.register_blueprint(main)
     app.register_blueprint(hothomes_bp)
+    app.register_blueprint(neighbourhoodreport_bp)
+    app.register_blueprint(maintanance_bp)
+    app.register_blueprint(sellersupport_bp)

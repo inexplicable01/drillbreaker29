@@ -58,6 +58,7 @@ class BriefListing(db.Model):
     neighbourhood = db.Column(db.String(50), nullable=True)
     gapis_neighbourhood=db.Column(db.String(50), nullable=True)
     zillowapi_neighbourhood = db.Column(db.String(50), nullable=True)
+    search_neigh = db.Column(db.String(50), nullable=True)
 
 
 
@@ -81,12 +82,13 @@ class BriefListing(db.Model):
         return str(self.zpid)
 
     @classmethod
-    def CreateBriefListing(cls, briefhomedata, neighbourhood=None, zillowapi_neighbourhood=None):
+    def CreateBriefListing(cls, briefhomedata, neighbourhood, zillowapi_neighbourhood, search_neigh):
         try:
             new_listing = cls()
             new_listing.zpid = briefhomedata.get('zpid')
             new_listing.neighbourhood = neighbourhood
             new_listing.zillowapi_neighbourhood = zillowapi_neighbourhood
+            new_listing.search_neigh = search_neigh
             new_listing.bathrooms = safe_float_conversion(briefhomedata.get('bathrooms', 1.0))
             new_listing.bedrooms = safe_float_conversion(briefhomedata.get('bedrooms', 1.0))
             new_listing.city = briefhomedata.get('city', 'Missing')

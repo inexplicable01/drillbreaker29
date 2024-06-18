@@ -1,23 +1,21 @@
-import folium
+from app.MapTools.MappingTools import generateMap
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
-    FindSoldHomesByLocation,\
     loadPropertyDataFromBrief,FindSoldHomesByNeighbourhood
 import matplotlib.pyplot as plt
 
 import base64
 from io import BytesIO
 from app.DBFunc.BriefListingController import brieflistingcontroller
-import math
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 
 # model = load('linear_regression_model.joblib')
-def AreaReportGatherData(neighbourhoods):
+def AreaReportGatherData(neighbourhoods, doz):
     soldbrieflistingarr=[]
     count =0
     for neighbourhood in neighbourhoods:
-        soldbrieflistingarr=  soldbrieflistingarr+ FindSoldHomesByNeighbourhood(neighbourhood,30)
+        soldbrieflistingarr=  soldbrieflistingarr+ FindSoldHomesByNeighbourhood(neighbourhood,doz)
     for brieflisting in soldbrieflistingarr:
 
         try:
@@ -62,7 +60,8 @@ def displayModel(neighbourhoods, selectedhometypes):
     ax1.set_ylabel('Actual Price', color=color)
     ax1.scatter(living_area, actual_prices, color=color, label='Actual Price', alpha=0.6)
     ax1.tick_params(axis='y', labelcolor=color)
-
+    ax1.set_xlim(0, 100)
+    ax1.grid(which='major', linestyle='-', linewidth='0.5', color='blue')
     # Instantiate a second y-axis to plot the error
     ax2 = ax1.twinx()
     color = 'tab:blue'
@@ -79,20 +78,28 @@ def displayModel(neighbourhoods, selectedhometypes):
 
     return base64.b64encode(buf2.read()).decode('utf-8')
 
-def AreaReportModelRun(neighbourhoods, selectedhometypes):
+def AreaReportModelRun(neighbourhoods, selectedhometypes,doz):
     ## Calls zillow data Process
     ## Zillow Data Process puts listing in BriefListing Array
     housesoldpriceaverage = initiateSummarydata()
     unfiltered_soldhomes = []
     for neighbourhood in neighbourhoods:
         ## Gathering the Locations
-        unfiltered_soldhomes = unfiltered_soldhomes + brieflistingcontroller.ListingsByNeighbourhood(neighbourhood, 30)
+        unfiltered_soldhomes = unfiltered_soldhomes + brieflistingcontroller.ListingsByNeighbourhood(neighbourhood, doz)
     ## Gets List of briefhomedataraw
-
+    # for neighbourhood in neighbourhoods:
+        ## Gathering the Locations
+        # unfiltered_soldhomes = unfiltered_soldhomes + brieflistingcontroller.ListingsByCities(neighbourhood, 30)
+    ## Gets List of briefhomedataraw
 
     soldhomes=[]
     for brieflisting in unfiltered_soldhomes:
         if brieflisting.homeType not in selectedhometypes:
+            continue
+        # if brieflisting.latitude
+        if brieflisting.latitude<47.3842:
+            continue
+        if brieflisting.longitude<-122.03385:
             continue
         soldhomes.append(brieflisting)
 
@@ -176,6 +183,9 @@ def AreaReportModelRun(neighbourhoods, selectedhometypes):
         plt.scatter([], [], c=color, label=f'{i + 1} Bedrooms')
     plt.scatter([], [], c='purple', label='>4 Bedrooms')
     plt.legend(scatterpoints=1, frameon=False, labelspacing=1, title='Bedroom Count')
+    plt.grid(which='major', linestyle='-', linewidth='0.5', color='gray')
+    plt.minorticks_on()
+    plt.grid(which='minor', linestyle=':', linewidth='0.5', color='lightgray')
 
     # Saving the plot to a bytes buffer
     buf = BytesIO()
@@ -226,66 +236,8 @@ def AreaReportModelRun(neighbourhoods, selectedhometypes):
 
     plot_url2 = base64.b64encode(buf2.read()).decode('utf-8')
 
-    return generateMap(soldhomes, neighbourhoods), soldhomes,housesoldpriceaverage, plot_url, plot_url2
+    return generateMap(soldhomes, neighbourhoods, True), soldhomes,housesoldpriceaverage, plot_url, plot_url2
 
-
-
-from app.MapTools.SeattleNeighCoord import *
-def generateMap(soldhomes, neighbourhoods):
-    m = folium.Map(location=[47.6762, -122.3860], zoom_start=13)
-
-    # Create a polygon over Ballard and add it to the map
-    folium.Polygon(locations=ballard_coordinates, color='blue', fill=True, fill_color='blue').add_to(m)
-    # Create a polygon over Ballard and add it to the map
-    folium.Polygon(locations=fremont_coordinates, color='green', fill=True, fill_color='green').add_to(m)
-    # Create a polygon over Ballard and add it to the map
-    folium.Polygon(locations=wallingford_coordinates, color='yellow', fill=True, fill_color='green').add_to(m)
-    # map = folium.Map(location=[center_lat, center_lon], zoom_start=13)
-    click_js = """function onClick(e) {}"""
-    e = folium.Element(click_js)
-    html = m.get_root()
-    html.script.get_root().render()
-    html.script._children[e.get_name()] = e
-    for brieflisting in soldhomes:
-        list2penddays = brieflisting.list2penddays
-        if list2penddays is None:
-            color = 'gray'
-            list2penddays=999
-            brieflisting.listprice=999999
-        else:
-            if list2penddays < 7:
-                color = 'red'
-            elif 7 <= list2penddays < 14:
-                color = 'orange'
-            elif 14 <= list2penddays < 21:
-                color = 'green'
-            else:
-                color = 'blue'
-        try:
-            htmltext = f"<a href='https://www.zillow.com{brieflisting.hdpUrl}' target='_blank'>House Link</a><br/>" \
-                       f"Neigh {brieflisting.neighbourhood}<br/>" \
-                       f"Sold Price {brieflisting.price}<br/>" \
-                       f"$Change {brieflisting.price-brieflisting.listprice}<br/>" \
-                       f"Beds {brieflisting.bedrooms} Bath {brieflisting.bathrooms}<br/>" \
-                   f"Square ft {brieflisting.livingArea}<br/>" \
-                   f"List to Contract {list2penddays}<br/>"
-        except Exception as e:
-            htmltext=''
-
-        # f"<a href='https://www.zillow.com{house['hdpUrl']}' target='_blank'>House Link</a>" \
-        # f"<br/>" \
-        popup = folium.Popup(htmltext, max_width=300)
-
-        icon = folium.Icon(color=color)
-
-        folium.Marker(
-            location=[brieflisting.latitude, brieflisting.longitude],
-            popup=popup,
-            icon =icon
-        ).add_to(m)
-
-    map_html = m._repr_html_()
-    return map_html
 
 # def ListingLength(soldhouse, Listing, db):
 #

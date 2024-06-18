@@ -16,9 +16,8 @@ def update_graph():
 
 @soldhomes_bp.route('/areareport', methods=['GET','POST','PATCH'])
 def AreaReport():
-
-
-    citiestoinspect = ['Seattle']
+    doz=180
+    citiestoinspect = ['Maple Valley','Bonney Lake', 'Buckley','Enumclaw']
     AllNeighbourhoods = ListAllNeighhourhoodsByCities(citiestoinspect)
     if request.method == 'POST':
         selectedhometypes = request.form.getlist('home_type')
@@ -30,7 +29,7 @@ def AreaReport():
     elif request.method == 'PATCH':
         try:
 
-            AreaReportGatherData(citiestoinspect)
+            AreaReportGatherData(citiestoinspect,doz)
             # If the function successfully completes, return a success message
             return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200
         except Exception as e:
@@ -39,7 +38,7 @@ def AreaReport():
 
 
 
-    map_html,soldhouses, housesoldpriceaverage, plot_url,plot_url2 =AreaReportModelRun(selectedlocations, selectedhometypes)
+    map_html,soldhouses, housesoldpriceaverage, plot_url,plot_url2 =AreaReportModelRun(selectedlocations, selectedhometypes,doz)
     # send_emailforOpenHouse(filtered_houses)
     return render_template('AreaReport.html',
                            m=map_html,

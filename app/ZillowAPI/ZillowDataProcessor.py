@@ -85,7 +85,7 @@ def ZillowSearchForOpenHouse(TR,TL,BR,BL):
     openbrieflisting=[]
     for briefhomedata in briefhomedataarr:
         # filtered_data = filter_dataclass_fields(briefhomedata, BriefListing)
-        openbrieflisting.append(BriefListing.CreateBriefListing(briefhomedata))
+        openbrieflisting.append(BriefListing.CreateBriefListing(briefhomedata, None, None, location))
         # soldhomes=  soldhomes+ FindSoldHomesByLocation(location,30)
 
     filtered_houses = []
@@ -133,7 +133,7 @@ def ZillowSearchForForSaleHomes(clientinterest):
                                                         price_max=clientinterest['pricemax'],
                                                         daysonzillow=7)
         for raw in homesbeingsoldraw:
-            forsalehomesarr.append(BriefListing.CreateBriefListing(raw, None, location))
+            forsalehomesarr.append(BriefListing.CreateBriefListing(raw, None, None,location))
 
     # for forsalebriefdata in forsalehomesarr:
     #     print(forsalebriefdata)
@@ -243,19 +243,20 @@ def FindSoldHomesByLocation(location, doz):
     soldrawdata = SearchZillowSoldHomesByLocation(location,doz)
     soldbriefhomedata = []
     for briefhomedata in soldrawdata:
-            soldbriefhomedata.append(BriefListing.CreateBriefListing(briefhomedata))
+            soldbriefhomedata.append(BriefListing.CreateBriefListing(briefhomedata,None,None,location))
     return soldbriefhomedata
 
 def FindSoldHomesByNeighbourhood(neighbourhood, doz):
     soldrawdata = SearchZillowSoldHomesByLocation(neighbourhood,doz)
     soldbrieflistingarr = []
     for briefhomedata in soldrawdata:
-            soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, neighbourhood))
+            soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,neighbourhood))
     return soldbrieflistingarr
 
 
 def loadPropertyDataFromBrief(brieflisting:BriefListing):
     filepath = os.path.join(os.getenv('ADDRESSJSON'), brieflisting.ref_address().replace('/','div') + '.txt')
+    print('Load property : ',brieflisting)
     if not os.path.exists(filepath):
         propertydata = SearchZillowByZPID(brieflisting.zpid)
         json_string = json.dumps(propertydata, indent=4)

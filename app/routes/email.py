@@ -22,3 +22,5 @@ def sendEmailUpdates():
     # Assuming sendEmailwithNewListing() is a function that sends an email with new listings.
     sendEmailwithNewListing()
     return redirect(url_for('main.index'))
+
+

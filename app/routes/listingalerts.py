@@ -19,9 +19,7 @@ def sendalerts():
         'pricemax': 700000
     }
     forsalebriefdata = ZillowSearchForForSaleHomes(clientinterest)
-
     for brieflisting in forsalebriefdata:
-
         try:
             propertydata = loadPropertyDataFromBrief(brieflisting)
             brieflisting.hdpUrl = propertydata['hdpUrl']
@@ -30,9 +28,9 @@ def sendalerts():
 
     changebrieflistingarr,oldbrieflistingarr=brieflistingcontroller.SaveBriefListingArr(forsalebriefdata)
 
-
     for brieflisting in changebrieflistingarr:
         print(brieflisting)
     SendEmailOfListings(changebrieflistingarr,oldbrieflistingarr)
 
     return redirect(url_for('main.index'))
+

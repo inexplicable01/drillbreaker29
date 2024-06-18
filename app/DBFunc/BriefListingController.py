@@ -6,6 +6,10 @@ from datetime import  datetime, timedelta
 from app.UsefulAPI.UseFulAPICalls import get_neighborhood
 from app.config import Config
 import decimal
+from sqlalchemy import distinct
+from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
+
+
 def is_equal_with_tolerance(val1, val2, tolerance=1e-4):
     return abs(val1 - val2) <= tolerance
 class BriefListingController():
@@ -30,9 +34,12 @@ class BriefListingController():
                     if gapis_neighbourhood in Config.SEATTLE_GAPIS_TO_NEIGH.keys():
                         neighbourhood=Config.SEATTLE_GAPIS_TO_NEIGH[gapis_neighbourhood]
                     else:
+                        if brieflisting.city=='Maple Valley':
+                            neighbourhood='Maple Valley'
                         # warnings.warn('missing neighbourhood')
-                        print('FIX ME ', gapis_neighbourhood)
-                        neighbourhood='FIX ME'
+                        else:
+                            print('FIX ME ', gapis_neighbourhood)
+                            neighbourhood='FIX ME'
                     brieflisting.neighbourhood=neighbourhood
                     # print_and_log('Updating existing listing for ' + brieflisting.streetAddress)
                     if brieflisting.neighbourhood != existing_listing.neighbourhood:
@@ -80,8 +87,12 @@ class BriefListingController():
                     if gapis_neighbourhood in Config.SEATTLE_GAPIS_TO_NEIGH.keys():
                         neighbourhood=Config.SEATTLE_GAPIS_TO_NEIGH[gapis_neighbourhood]
                     else:
+                        if brieflisting.city=='Maple Valley':
+                            neighbourhood='Maple Valley'
                         # warnings.warn('missing neighbourhood')
-                        neighbourhood='FIX ME'
+                        else:
+                            print('FIX ME ', gapis_neighbourhood)
+                            neighbourhood='FIX ME'
                     brieflisting.neighbourhood=neighbourhood
                     print_and_log('Adding new listing for ' + brieflisting.ref_address())
                     self.db.session.add(brieflisting)
@@ -92,6 +103,23 @@ class BriefListingController():
                 print_and_log(f"Error during update or insert: {str(e)}")
                 self.db.session.rollback()
         return changebrieflistingarr,oldbrieflistingarr
+
+    def listingsN_Cleanup(self):
+        # Query to find all listings with 'FIX ME' as the neighborhood
+        FIXMEListingsQuery = self.db.session.query(BriefListing).filter_by(neighbourhood='FIX ME')
+        for fixmelisting in FIXMEListingsQuery:
+            print(fixmelisting)
+            fixmelisting.gapis_neighbourhood = get_neighborhood(fixmelisting.latitude, fixmelisting.longitude)
+            self.db.session.merge(fixmelisting)
+            print(fixmelisting.zpid)
+            loadPropertyDataFromBrief(fixmelisting)
+        self.db.session.commit()
+
+        # Execute the query and count the results
+        FIXMEListingsCount = FIXMEListingsQuery.count()
+
+        # Return the count of listings needing cleanup
+        return f'cleanup FIXME count {FIXMEListingsCount}'
 
     def ListingsByNeighbourhood(self, neighbourhood, days_ago):
         # Calculate the date for the given days ago from today
@@ -110,6 +138,28 @@ class BriefListingController():
 
         return unfiltered_soldhomes
 
+    def uniqueNeighbourhood(self, city):
+        # Calculate the date for the given days ago from today
+        unique_neighbourhoods_query=BriefListing.query.with_entities(
+            BriefListing.neighbourhood
+        ).filter(
+            BriefListing.city == city
+        ).distinct().all()
+        unique_neighbourhoods = [neighbourhood[0] for neighbourhood in unique_neighbourhoods_query]
+        return unique_neighbourhoods
+
+    def SoldHomesinNeighbourhood(self, neighbourhood, days_ago):
+        date_threshold = datetime.now() - timedelta(days=days_ago)
+        date_threshold_ms = int(date_threshold.timestamp() * 1000)
+
+        unfiltered_soldhomes = BriefListing.query.filter(
+            BriefListing.neighbourhood==neighbourhood,
+            BriefListing.homeStatus == 'RECENTLY_SOLD',
+            BriefListing.dateSold >= date_threshold_ms
+        ).all()
+
+        return unfiltered_soldhomes
+
     def ListingsByNeighbourhoodsAndHomeTypes(self, neighbourhoods, homeTypes, days_ago,homeStatus):
         date_threshold = datetime.now() - timedelta(days=days_ago)
         date_threshold_ms = int(date_threshold.timestamp() * 1000)
@@ -122,7 +172,6 @@ class BriefListingController():
         ).all()
 
         return unfiltered_soldhomes
-
     def ForSaleListingsByNeighbourhoodsAndHomeTypes(self, neighbourhoods, homeTypes, days_ago,homeStatus):
         date_threshold = datetime.now() - timedelta(days=days_ago)
         date_threshold_ms = int(date_threshold.timestamp() * 1000)

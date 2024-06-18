@@ -10,4 +10,7 @@ def get_neighborhood(lat, lon):
     for component in data['results'][0]['address_components']:
         if 'neighborhood' in component['types']:
             return component['long_name']
+    for component in data['results'][0]['address_components']:
+        if 'locality' in component['types']:
+            return component['long_name']
     return None
