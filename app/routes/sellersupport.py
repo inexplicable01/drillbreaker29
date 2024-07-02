@@ -19,14 +19,16 @@ def neighcleanup():
         bathrooms = propertydata["bathrooms"]
         livingArea = propertydata["livingArea"]
         zestimate = propertydata["zestimate"]
+        imgSrc = propertydata["'desktopWebHdpImageLink'"]
+
     except Exception as e:
         bedrooms = 999
         bathrooms = 999
         livingArea = 9
         zestimate = 9
+        imgSrc = ''
 
-
-    return {'bedrooms': bedrooms, 'bathrooms': bathrooms, 'livingArea': livingArea ,'zestimate':zestimate}, 200
+    return {'bedrooms': bedrooms, 'bathrooms': bathrooms, 'livingArea': livingArea ,'zestimate':zestimate, 'imgSrc':imgSrc}, 200
 
 
 
