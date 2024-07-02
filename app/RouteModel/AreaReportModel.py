@@ -1,6 +1,6 @@
 from app.MapTools.MappingTools import generateMap
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
-    loadPropertyDataFromBrief,FindSoldHomesByNeighbourhood
+    loadPropertyDataFromBrief,FindHomesByNeighbourhood, ListingStatus
 import matplotlib.pyplot as plt
 
 import base64
@@ -12,24 +12,72 @@ from sklearn.linear_model import LinearRegression
 
 # model = load('linear_regression_model.joblib')
 def AreaReportGatherData(neighbourhoods, doz):
-    soldbrieflistingarr=[]
+    # soldbriefarr=[]
+    # forsalebriefarr=[]
     count =0
-    for neighbourhood in neighbourhoods:
-        soldbrieflistingarr=  soldbrieflistingarr+ FindSoldHomesByNeighbourhood(neighbourhood,doz)
-    for brieflisting in soldbrieflistingarr:
+    for search_neigh in neighbourhoods:
+        soldbrieflistingarr, forsalebrieflistingarr = FindHomesByNeighbourhood(search_neigh,doz)
+        # soldbriefarr=  soldbriefarr
+        # forsalebrieflistingarr.pop()
+        # forsalebriefarr = forsalebriefarr+forsalebrieflistingarr
+        forsalebrief_ids = [listing.zpid for listing in forsalebrieflistingarr]
+        for_sale_DB = brieflistingcontroller.forSaleInNeighbourhood(search_neigh,doz)
 
-        try:
-            # if brieflisting.neighbourhood == 'North Delridge Seattle':
-            #     print('pause')
-            propertydata = loadPropertyDataFromBrief(brieflisting)
-            listresults = ListingLengthbyBriefListing(propertydata)
-            brieflisting.updateListingLength(listresults)
-            brieflisting.hdpUrl = propertydata['hdpUrl']
-        except Exception as e:
-            print(e, brieflisting)
+        #
+        # # Finding IDs in forsaleinarea that are not in forsalebrief_ids
+        # no_longer_selling_ids = [zpid for zpid in forsaleinarea_ids if zpid not in forsalebrief_ids]
+
+        for brieflisting in for_sale_DB:
+            if brieflisting.zpid in forsalebrief_ids:
+                print(brieflisting.__str__() + ' is still for sale.')
+                continue
+            try:
+                status = ListingStatus(brieflisting)
+                if status =='PENDING' or status =='RECENTLY_SOLD':
+                    brieflisting.homeStatus=status
+                    print(brieflisting.__str__() + ' has changed from Selling to Pending or Sold!!!')
+                    brieflistingcontroller.updateBriefListing(brieflisting)
+                else:
+                    brieflisting.homeStatus = status
+                    print('Looking into this status '+  status + '  : ' + brieflisting.__str__())
+
+            except Exception as e:
+                print(e, brieflisting)
 
 
-    brieflistingcontroller.SaveBriefListingArr(soldbrieflistingarr)
+
+    # #Updating the Sold Properties
+        solddb = brieflistingcontroller.SoldHomesinNeighbourhood(search_neigh,120)
+        solddb_ids = [listing.zpid for listing in solddb]
+        newsoldbriefs=[]
+        for brieflisting in soldbrieflistingarr:
+            if brieflisting.zpid in solddb_ids:
+                ##code to remove brieflisting from soldbriefarr
+                continue
+            try:
+                propertydata = loadPropertyDataFromBrief(brieflisting)
+                listresults = ListingLengthbyBriefListing(propertydata)
+                brieflisting.updateListingLength(listresults)
+                brieflisting.hdpUrl = propertydata['hdpUrl']
+                newsoldbriefs.append(brieflisting)
+            except Exception as e:
+                print(e, brieflisting)
+        brieflistingcontroller.SaveBriefListingArr(newsoldbriefs)
+
+        newsalebriefs = []
+        for brieflisting in forsalebrieflistingarr:
+            if brieflisting.zpid in forsalebrief_ids:
+                ##code to remove brieflisting from soldbriefarr
+                continue
+            ## write code here to do this:  forsaleinarea is a list of ids that are for sale in the database, the forsalebriefarr is a list of brieflistings that are currently on sale as extracted by the API.
+            ## if any id in forsaleinarea is not in forsalebriefarr, then that means that id is no longer selling and I have to create an array of that.
+            try:
+                propertydata = loadPropertyDataFromBrief(brieflisting)
+                brieflisting.hdpUrl = propertydata['hdpUrl']
+                newsalebriefs.append(brieflisting)
+            except Exception as e:
+                print(e, brieflisting)
+        brieflistingcontroller.SaveBriefListingArr(newsalebriefs)
 
 
 def ListAllNeighhourhoodsByCities(cities):
@@ -96,11 +144,11 @@ def AreaReportModelRun(neighbourhoods, selectedhometypes,doz):
     for brieflisting in unfiltered_soldhomes:
         if brieflisting.homeType not in selectedhometypes:
             continue
-        # if brieflisting.latitude
-        if brieflisting.latitude<47.3842:
-            continue
-        if brieflisting.longitude<-122.03385:
-            continue
+        # # if brieflisting.latitude
+        # if brieflisting.latitude<47.3842:
+        #     continue
+        # if brieflisting.longitude<-122.03385:
+        #     continue
         soldhomes.append(brieflisting)
 
     for brieflisting in soldhomes:

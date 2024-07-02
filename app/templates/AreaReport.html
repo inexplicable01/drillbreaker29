@@ -124,7 +124,17 @@
                         {% endfor %}
 
                     </div>
-
+                    <!-- Dropdown Button Section -->
+                    <div style="display: flex; flex: 1; flex-direction: column; margin: 0 20px;">
+                        <h3>Select Option:</h3>
+                        <select name="selected_doz">
+                            {% for doz in doz_options %}
+                                <option value="{{ doz }}" {% if doz == selected_doz %}selected{% endif %}>
+                                    {{ doz }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div style="display: flex; flex: 1;flex-direction: column; margin-left: auto;">
                         <h3>Select Home Types:</h3>
                         {% for home_type in HOMETYPES %}

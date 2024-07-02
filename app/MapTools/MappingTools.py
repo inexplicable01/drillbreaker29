@@ -1,5 +1,71 @@
 import folium
+from shapely.geometry import shape, Point
+import fiona
 
+def load_geojson(geojson_path):
+    with fiona.open(geojson_path, 'r') as src:
+        features = [feature for feature in src]
+    return features
+file_path='app/MapTools/Neighborhood_Map_Atlas_Neighborhoods.geojson'
+geojson_features = load_geojson(file_path)
+def get_neighborhood(lat, lon, features):
+    point = Point(lon, lat)
+    for feature in features:
+        polygon = shape(feature['geometry'])
+        if polygon.contains(point):
+            return feature['properties']['L_HOOD']  # Using 'L_HOOD' for neighborhood name
+    return None
+
+
+
+def findNeighbourhoodfromCoord(city,xcoord,ycoord):
+    # get_neighborhood(sample_lat,sample_lon)
+    cities2Neigh = {
+
+        'Shoreline': 'Shoreline',
+        'Seattle': get_neighborhood(ycoord, xcoord, geojson_features),
+        'Bothell': 'Bothell',
+        'Kenmore': 'Kenmore',
+        'Kirkland': 'Kirkland',
+        'Woodinville': 'Woodinville',
+        'Redmond': 'Redmond',
+        'Duvall': 'Duvall',
+        'Carnation': 'Carnation',
+        'Auburn': 'Auburn',
+        'Bellevue': 'Bellevue',
+        'Black Diamond': 'Black Diamond',
+        'Burien': 'Burien',
+        'Clyde Hill': 'Clyde Hill',
+        'Covington': 'Covington',
+        'Des Moines': 'Des Moines',
+        'Enumclaw': 'Enumclaw',
+        'Federal Way': 'Federal Way',
+        'Hunts Point': 'Hunts Point',
+        'Issaquah': 'Issaquah',
+        'Kenmore': 'Kenmore',
+        'Kent': 'Kent',
+        'Lake Forest Park': 'Lake Forest Park',
+        'Maple Valley': 'Maple Valley',
+        'Medina': 'Medina',
+        'Mercer Island': 'Mercer Island',
+        'Milton': 'Milton',
+        'Newcastle': 'Newcastle',
+        'Normandy Park': 'Normandy Park',
+        'North Bend': 'North Bend',
+        'Pacific': 'Pacific',
+        'Renton': 'Renton',
+        'Sammamish': 'Sammamish',
+        'SeaTac': 'SeaTac',
+        'Skykomish': 'Skykomish',
+        'Snoqualmie': 'Snoqualmie',
+        'Tukwila': 'Tukwila',
+        'Yarrow Point': 'Yarrow Point'
+    }
+
+    if city in cities2Neigh.keys():
+        return cities2Neigh[city]
+    else:
+        return 'FIXME'
 
 
 def generateMap(brieflistings, neighbourhoods,showneighbounds):

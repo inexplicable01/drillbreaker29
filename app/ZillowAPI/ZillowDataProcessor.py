@@ -9,8 +9,8 @@ from Download_Image import download_image
 from app.ZillowAPI.ZillowAPICall import SearchZillowNewListingByLocation,\
     SearchZillowByZPID , \
     SearchZillowByAddress , \
-    SearchZillowSoldHomesByLocation,\
-    SearchZillowNewListingByInterest
+    SearchZillowNewListingByInterest,\
+    SearchZillowHomesByLocation
 
 from app.DBModels.ZillowBriefHomeData import BriefListing, filter_dataclass_fields
 from os.path import join
@@ -211,6 +211,10 @@ def date_difference(date1: str, date2: str) -> int:
     # Return the number of days
     return abs(difference.days)
 
+def ListingStatus(brieflisting):
+    propertydetails = SearchZillowByZPID(brieflisting.zpid)
+    return propertydetails['homeStatus']
+
 
 def loadPropertyDataFromAddress(fileaddress):
     filepath = os.path.join(os.getenv('ADDRESSJSON'), fileaddress + '.txt')
@@ -239,19 +243,23 @@ def savePropertyData(propertydata):
             f.write(json_string)
 
 
-def FindSoldHomesByLocation(location, doz):
-    soldrawdata = SearchZillowSoldHomesByLocation(location,doz)
+def FindSoldHomesByLocation(search_neigh, doz):
+    soldrawdata = SearchZillowHomesByLocation(search_neigh,"recentlySold",doz)
     soldbriefhomedata = []
     for briefhomedata in soldrawdata:
-            soldbriefhomedata.append(BriefListing.CreateBriefListing(briefhomedata,None,None,location))
+            soldbriefhomedata.append(BriefListing.CreateBriefListing(briefhomedata,None,None,search_neigh))
     return soldbriefhomedata
 
-def FindSoldHomesByNeighbourhood(neighbourhood, doz):
-    soldrawdata = SearchZillowSoldHomesByLocation(neighbourhood,doz)
+def FindHomesByNeighbourhood(search_neigh, doz):
+    soldrawdata = SearchZillowHomesByLocation(search_neigh,"recentlySold",doz)
     soldbrieflistingarr = []
     for briefhomedata in soldrawdata:
-            soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,neighbourhood))
-    return soldbrieflistingarr
+            soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
+    forsalerawdata = SearchZillowHomesByLocation(search_neigh,"forSale","any")
+    forsalebrieflistingarr = []
+    for briefhomedata in forsalerawdata:
+            forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
+    return soldbrieflistingarr,forsalebrieflistingarr
 
 
 def loadPropertyDataFromBrief(brieflisting:BriefListing):
@@ -259,9 +267,9 @@ def loadPropertyDataFromBrief(brieflisting:BriefListing):
     print('Load property : ',brieflisting)
     if not os.path.exists(filepath):
         propertydata = SearchZillowByZPID(brieflisting.zpid)
-        json_string = json.dumps(propertydata, indent=4)
-        with open(filepath, 'w') as f:
-            f.write(json_string)
+        # json_string = json.dumps(propertydata, indent=4)
+        # with open(filepath, 'w') as f:
+        #     f.write(json_string)
     else:
         with open(filepath, 'r') as file:
             # Read the content of the file

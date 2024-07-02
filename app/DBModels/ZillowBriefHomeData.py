@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime , Numeric
 Base = declarative_base()
 from app.extensions import db
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.useful_func import safe_float_conversion,safe_int_conversion
 import decimal
 class BriefListing(db.Model):
@@ -59,6 +59,9 @@ class BriefListing(db.Model):
     gapis_neighbourhood=db.Column(db.String(50), nullable=True)
     zillowapi_neighbourhood = db.Column(db.String(50), nullable=True)
     search_neigh = db.Column(db.String(50), nullable=True)
+    listday = db.Column(BigInteger, nullable=True)
+    pendday = db.Column(BigInteger, nullable=True)
+    listtime = db.Column(BigInteger, nullable=True)
 
 
 
@@ -79,7 +82,7 @@ class BriefListing(db.Model):
             self.pricedelta=self.price-self.listprice
 
     def __str__(self):
-        return str(self.zpid)
+        return str(self.zpid) + ' ' + self.streetAddress + ' ' + self.city
 
     @classmethod
     def CreateBriefListing(cls, briefhomedata, neighbourhood, zillowapi_neighbourhood, search_neigh):
@@ -132,6 +135,9 @@ class BriefListing(db.Model):
             new_listing.newConstructionType = briefhomedata.get('newConstructionType', 'Missing')
             new_listing.hdpUrl = briefhomedata.get('hdpUrl', 'Missing')
             new_listing.pricedelta = safe_int_conversion(briefhomedata.get('pricedelta', 0))
+
+            listing_time = datetime.utcnow() - timedelta(seconds=safe_int_conversion(briefhomedata.get('timeOnZillow', 0))/1000)
+            new_listing.listtime = int(listing_time.timestamp())
 
             return new_listing
 

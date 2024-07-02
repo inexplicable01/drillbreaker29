@@ -98,14 +98,14 @@ def SearchZillowNewListingByInterest(location, beds_min,beds_max,baths_min,price
             return houseresult
     return houseresult
 
-def SearchZillowSoldHomesByLocation(location, duration=14):
+def SearchZillowHomesByLocation(location, status="recentlySold", duration=14):
 
     lastpage = 1
     maxpage = 2
     houseresult=[]
-    print('Search in location: ', location)
+    print('Search in location ' + status + ' : ', location)
     while maxpage>lastpage:
-        querystring = {"location":location + ", wa","page": str(lastpage),"status":"recentlySold","doz":str(duration)}
+        querystring = {"location":location + ", wa","page": str(lastpage),"status":status,"doz":str(duration)}
         response = requests.get(url, headers=headers, params=querystring)
         time.sleep(0.5)
 
@@ -122,9 +122,6 @@ def SearchZillowSoldHomesByLocation(location, duration=14):
             break
     print('found ', len(houseresult), ' results')
     return houseresult
-    # dbmethods.SaveHouseSearchDataintoDB(houseresult)
-
-
 # def UpdateListfromLocation(location):
 #     querystring = {"location":location + ", wa","status":"recentlySold","doz":"30"}
 #     response = requests.get(url, headers=headers, params=querystring)

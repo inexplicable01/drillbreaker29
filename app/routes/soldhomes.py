@@ -16,20 +16,22 @@ def update_graph():
 
 @soldhomes_bp.route('/areareport', methods=['GET','POST','PATCH'])
 def AreaReport():
-    doz=180
-    citiestoinspect = ['Maple Valley','Bonney Lake', 'Buckley','Enumclaw']
-    AllNeighbourhoods = ListAllNeighhourhoodsByCities(citiestoinspect)
+
+    doz_options = Config.doz_options
+    AllNeighbourhoods = ListAllNeighhourhoodsByCities(Config.CITIES)
     if request.method == 'POST':
         selectedhometypes = request.form.getlist('home_type')
         selectedlocations = request.form.getlist('location')
+        selected_doz = int(request.form.get('selected_doz'))
         # Process the selections as needed
     elif request.method == 'GET':
         selectedlocations = []
         selectedhometypes = Config.HOMETYPES
+        selected_doz = 30
     elif request.method == 'PATCH':
         try:
-
-            AreaReportGatherData(citiestoinspect,doz)
+            selected_doz =  int(request.form.get('doz'))
+            AreaReportGatherData(Config.CITIES,selected_doz)
             # If the function successfully completes, return a success message
             return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200
         except Exception as e:
@@ -38,11 +40,13 @@ def AreaReport():
 
 
 
-    map_html,soldhouses, housesoldpriceaverage, plot_url,plot_url2 =AreaReportModelRun(selectedlocations, selectedhometypes,doz)
+    map_html,soldhouses, housesoldpriceaverage, plot_url,plot_url2 =AreaReportModelRun(selectedlocations, selectedhometypes,selected_doz)
     # send_emailforOpenHouse(filtered_houses)
     return render_template('AreaReport.html',
                            m=map_html,
                            HOMETYPES=Config.HOMETYPES,
+                           doz_options=doz_options,
+                           selected_doz=selected_doz,
                            selectedhometypes= selectedhometypes,
                            LOCATIONS=AllNeighbourhoods,
                            soldhouses = soldhouses,
