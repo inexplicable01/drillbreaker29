@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clickable Map with Leaflet</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map { height: 600px; }
+        #label { font-size: 24px; margin-top: 10px; }
+        #result { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="label">Click on a shape</div>
+    <div id="result"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        var map = L.map('map').setView([47.6062, -122.3321], 10); // Centered on Seattle
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var seattleCoords = [
+            [47.734145, -122.435978], // Example coordinates for Seattle
+            [47.499525, -122.435978],
+            [47.499525, -122.224433],
+            [47.734145, -122.224433]
+        ];
+
+        var bellevueCoords = [
+            [47.700553, -122.229959], // Example coordinates for Bellevue
+            [47.520478, -122.229959],
+            [47.520478, -122.092909],
+            [47.700553, -122.092909]
+        ];
+
+        var seattlePolygon = L.polygon(seattleCoords, {color: 'blue'}).addTo(map);
+        var bellevuePolygon = L.polygon(bellevueCoords, {color: 'red'}).addTo(map);
+
+        function handleClick(region) {
+            document.getElementById('label').innerHTML = region;
+
+            $.ajax({
+                url: '/clickablemap/process',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({region: region}),
+                success: function(response) {
+                    document.getElementById('result').innerHTML = response.message;
+                    // Here you can add code to display graphs or other processed data
+                },
+                error: function(error) {
+                    console.log('Error:', error);
+                }
+            });
+        }
+
+        seattlePolygon.on('click', function() {
+            handleClick('Seattle');
+        });
+
+        bellevuePolygon.on('click', function() {
+            handleClick('Bellevue');
+        });
+    </script>
+</body>
+</html>
