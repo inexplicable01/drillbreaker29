@@ -1,7 +1,8 @@
 # email_bp.py
-from flask import Blueprint, redirect, url_for,request
+from flask import Blueprint, redirect, url_for,request, jsonify
 from datetime import datetime, timedelta
 from app.ZillowAPI.ZillowAPICall import SearchZillowByAddress
+from app.DBFunc.CleanerController import cleanercontroller
 
 sellersupport_bp = Blueprint('sellersupport_bp', __name__, url_prefix='/sellersupport')
 
@@ -83,6 +84,12 @@ def schedule():
         current_date = task_end_date + timedelta(days=1)
 
     return {"schedule":schedule , "taxes":50000}, 200
+
+
+@sellersupport_bp.route('/cleaners_all', methods=['GET'])
+def get_cleaners():
+    cleaners = cleanercontroller.getAllCleaners()
+    return jsonify([cleaner.as_dict() for cleaner in cleaners])
 
 
 # Example usage
