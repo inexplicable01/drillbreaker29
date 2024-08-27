@@ -4,6 +4,7 @@ from warnings import warn
 import time
 import sqlite3
 url = "https://zillow56.p.rapidapi.com/search"
+# url ="https://zillow-com4.p.rapidapi.com/properties/search"
 zpidurl = "https://zillow56.p.rapidapi.com/property"
 keystokeep = ['zpid','price','unit','streetAddress',
               'city','state','zipcode','bedrooms',
@@ -14,6 +15,12 @@ headers = {
     "X-RapidAPI-Key": os.getenv('RAPID_API_KEY'),
     "X-RapidAPI-Host": "zillow56.p.rapidapi.com"
 }
+
+# headers = {
+# 	"x-rapidapi-key": os.getenv('RAPID_API_KEY'),
+# 	"x-rapidapi-host": "zillow-com4.p.rapidapi.com"
+# }
+
 # from app.DataBaseFunc import dbmethods
 
 
@@ -98,25 +105,35 @@ def SearchZillowNewListingByInterest(location, beds_min,beds_max,baths_min,price
             return houseresult
     return houseresult
 
-def SearchZillowHomesByLocation(location, status="recentlySold", duration=14):
+def SearchZillowHomesByLocation(location, status="recentlySold", duration=14,minhomesize=0,maxhomesize=4000):
 
-    lastpage = 1
-    maxpage = 2
+
     houseresult=[]
     print('Search in location ' + status + ' : ', location)
+    lastpage = 1
+    maxpage = 2
     while maxpage>lastpage:
-        querystring = {"location":location + ", wa","page": str(lastpage),"status":status,"doz":str(duration)}
+        querystring = {"location":location + ", wa","page": str(lastpage),"status": status,
+         "isMultiFamily": "false",
+         "isApartment": "false",
+                       "isCondo": "false",
+                       "timeOnZillow": str(duration),
+                       "sqft_min": str(minhomesize),
+                       "sqft_max": str(maxhomesize)}
+        #
+        # querystring = {"location": "houston, tx", "output": "json", "status": "forSale",
+        #                "sortSelection": "priorityscore", "listing_type": "by_agent", "doz": "any", }
         response = requests.get(url, headers=headers, params=querystring)
         time.sleep(0.5)
-
         if response.status_code==502:
             warn('502 on ' + location)
             break
         try:
             result = response.json()
             houseresult = houseresult+ result['results']
-            lastpage=lastpage+1
             maxpage = result['totalPages']
+            print('lastpage:' + str(lastpage) + ' out of ' + str(maxpage))
+            lastpage = lastpage + 1
         except Exception as e:
             print(f"Search Zillow failed due to an exception")
             break

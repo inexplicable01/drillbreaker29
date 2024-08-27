@@ -3,9 +3,9 @@ from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.MapTools.MappingTools import generateMap
 
 
-def NeighbourhoodReportDetails(neighbourhood):
+def NeighbourhoodReportDetails(neighbourhood, daysOfInterest):
     # soldhomes = brieflistingcontroller.soldhomes(neighbourhood,30)
-    unfiltered_soldhomes = brieflistingcontroller.SoldHomesinNeighbourhood(neighbourhood,   30)
+    unfiltered_soldhomes = brieflistingcontroller.SoldHomesinNeighbourhood(neighbourhood,   daysOfInterest)
     housesoldpriceaverage = initiateSummarydata()
     price = 0
     for brieflisting in unfiltered_soldhomes:
@@ -38,6 +38,10 @@ def NeighbourhoodReportDetails(neighbourhood):
                 housesoldpriceaverage["4bed3+bath"]["count"] +=1
                 housesoldpriceaverage["4bed3+bath"]["totalprice"] += brieflisting.price
                 housesoldpriceaverage["4bed3+bath"]["houses"].append(brieflisting)
+            else:
+                housesoldpriceaverage["else"]["count"] +=1
+                housesoldpriceaverage["else"]["totalprice"] += brieflisting.price
+                housesoldpriceaverage["else"]["houses"].append(brieflisting)
         except Exception as e:
             print('Error with ', brieflisting)
 
@@ -55,6 +59,8 @@ def NeighbourhoodReportDetails(neighbourhood):
                     value['maxprice'] = brieflisting.price
     if unfiltered_soldhomes.__len__()==0:
         return 0,{},None
+
+    print(unfiltered_soldhomes.__len__())
     averageprice = price/unfiltered_soldhomes.__len__()
     map = generateMap(unfiltered_soldhomes, neighbourhood,False);
 
@@ -102,6 +108,13 @@ def initiateSummarydata():
         "4bed3+bath": {
             "beds": 4,
             "baths": 3,
+            "count": 0,
+            "totalprice": 0,
+            "houses": []
+        },
+        "else": {
+            "beds": 0,
+            "baths": 0,
             "count": 0,
             "totalprice": 0,
             "houses": []

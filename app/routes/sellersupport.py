@@ -37,6 +37,23 @@ def neighcleanup():
 def schedule():
     # Assuming sendEmailwithNewListing() is a function that sends an email with new listings.
     # cleanupresults = brieflistingcontroller.listingsN_Cleanup()
+    fulladdress = request.form.get('fulladdress')
+    try:
+        propertydata = SearchZillowByAddress(fulladdress)
+        bedrooms = propertydata["bedrooms"]
+        bathrooms = propertydata["bathrooms"]
+        livingArea = propertydata["livingArea"]
+        zestimate = propertydata["zestimate"]
+        imgSrc = propertydata["desktopWebHdpImageLink"]
+
+    except Exception as e:
+        bedrooms = 999
+        bathrooms = 999
+        livingArea = 9
+        zestimate = 9
+        imgSrc = ''
+
+
 
     cleaner = request.form.get('cleaner')
     stager = request.form.get('stager')
@@ -83,7 +100,12 @@ def schedule():
         # Move the current date to the day after the task ends
         current_date = task_end_date + timedelta(days=1)
 
-    return {"schedule":schedule , "taxes":50000}, 200
+    return {"schedule":schedule ,
+            "salestax":zestimate,
+            "ownerpolicyfee": 2250,
+            'closingfee':1750,
+            'stateexcisetax':0.015,
+            'townexcisetax':0.002}, 200
 
 
 @sellersupport_bp.route('/cleaners_all', methods=['GET'])

@@ -251,10 +251,17 @@ def FindSoldHomesByLocation(search_neigh, doz):
     return soldbriefhomedata
 
 def FindHomesByNeighbourhood(search_neigh, doz):
-    soldrawdata = SearchZillowHomesByLocation(search_neigh,"recentlySold",doz)
+    interval=100
+    minhomesize=4000
+    maxhomesize=interval+minhomesize
     soldbrieflistingarr = []
-    for briefhomedata in soldrawdata:
-            soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
+    while maxhomesize < 6000:
+        soldrawdata = SearchZillowHomesByLocation(search_neigh,"recentlySold",doz,minhomesize,maxhomesize)
+        for briefhomedata in soldrawdata:
+                soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
+        print(f"Finished searching {minhomesize} to {maxhomesize}")
+        minhomesize = minhomesize + interval
+        maxhomesize = maxhomesize + interval
     forsalerawdata = SearchZillowHomesByLocation(search_neigh,"forSale","any")
     forsalebrieflistingarr = []
     for briefhomedata in forsalerawdata:
@@ -267,9 +274,9 @@ def loadPropertyDataFromBrief(brieflisting:BriefListing):
     print('Load property : ',brieflisting)
     if not os.path.exists(filepath):
         propertydata = SearchZillowByZPID(brieflisting.zpid)
-        # json_string = json.dumps(propertydata, indent=4)
-        # with open(filepath, 'w') as f:
-        #     f.write(json_string)
+        json_string = json.dumps(propertydata, indent=4)
+        with open(filepath, 'w') as f:
+            f.write(json_string)
     else:
         with open(filepath, 'r') as file:
             # Read the content of the file

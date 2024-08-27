@@ -1,3 +1,5 @@
+SOLD="recentlySold"
+
 class SW(object):
     TOWNHOUSE = 'TOWNHOUSE'
     SINGLE_FAMILY = 'SINGLE_FAMILY'

@@ -40,29 +40,28 @@ def AreaReportGatherData(neighbourhoods, doz):
                 else:
                     brieflisting.homeStatus = status
                     print('Looking into this status '+  status + '  : ' + brieflisting.__str__())
-
             except Exception as e:
                 print(e, brieflisting)
 
-
-
     # #Updating the Sold Properties
-        solddb = brieflistingcontroller.SoldHomesinNeighbourhood(search_neigh,120)
+        solddb = brieflistingcontroller.SoldHomesinNeighbourhood(search_neigh,doz)
         solddb_ids = [listing.zpid for listing in solddb]
         newsoldbriefs=[]
-        for brieflisting in soldbrieflistingarr:
+
+        for ccc, brieflisting in enumerate(soldbrieflistingarr):
             if brieflisting.zpid in solddb_ids:
                 ##code to remove brieflisting from soldbriefarr
                 continue
             try:
+                print(f"{ccc} out of {soldbrieflistingarr.__len__()}")
                 propertydata = loadPropertyDataFromBrief(brieflisting)
                 listresults = ListingLengthbyBriefListing(propertydata)
                 brieflisting.updateListingLength(listresults)
                 brieflisting.hdpUrl = propertydata['hdpUrl']
-                newsoldbriefs.append(brieflisting)
+                newsoldbriefs.append(brieflisting)#looking for new sold stuff
             except Exception as e:
                 print(e, brieflisting)
-        brieflistingcontroller.SaveBriefListingArr(newsoldbriefs)
+        brieflistingcontroller.SaveBriefListingArr(newsoldbriefs)#if its sold then maybe it was pending at some point. This line updates it.
 
         newsalebriefs = []
         for brieflisting in forsalebrieflistingarr:

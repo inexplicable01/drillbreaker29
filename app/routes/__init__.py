@@ -10,6 +10,8 @@ from .neighbourhoodreport import neighbourhoodreport_bp
 from .maintanance import maintanance_bp
 from .sellersupport import sellersupport_bp
 from .clickablemap import clickablemap_bp
+from .platformSMSsupport import platformSMSBP
+from .email_monitor import emailmonitorbp
 
 def register_blueprints(app: Flask):
     app.register_blueprint(alert_bp)
@@ -22,3 +24,5 @@ def register_blueprints(app: Flask):
     app.register_blueprint(maintanance_bp)
     app.register_blueprint(sellersupport_bp)
     app.register_blueprint(clickablemap_bp)
+    app.register_blueprint(platformSMSBP)
+    app.register_blueprint(emailmonitorbp)
