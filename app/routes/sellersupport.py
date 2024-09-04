@@ -3,6 +3,7 @@ from flask import Blueprint, redirect, url_for,request, jsonify
 from datetime import datetime, timedelta
 from app.ZillowAPI.ZillowAPICall import SearchZillowByAddress
 from app.DBFunc.CleanerController import cleanercontroller
+from app.DBFunc.TaxRatesController import taxratescontroller
 
 sellersupport_bp = Blueprint('sellersupport_bp', __name__, url_prefix='/sellersupport')
 
@@ -43,8 +44,9 @@ def schedule():
         bedrooms = propertydata["bedrooms"]
         bathrooms = propertydata["bathrooms"]
         livingArea = propertydata["livingArea"]
-        zestimate = propertydata["zestimate"]
+        zestimate = 99999999 if propertydata["zestimate"]==None else propertydata["zestimate"]
         imgSrc = propertydata["desktopWebHdpImageLink"]
+        city =propertydata["city"]
 
     except Exception as e:
         bedrooms = 999
@@ -100,12 +102,25 @@ def schedule():
         # Move the current date to the day after the task ends
         current_date = task_end_date + timedelta(days=1)
 
+    if zestimate <= 525000:
+        stateexcisetax = 0.011*zestimate
+    elif 525000.01 <= zestimate <= 1525000:
+        stateexcisetax = 0.0128 * (zestimate-525000.01) + 5775
+    elif 1525000.01 <= zestimate <= 3025000:
+        stateexcisetax = 0.0275 * (zestimate-1525000.01) + 18575
+    else:  # sale_price > 3025000
+        stateexcisetax = 0.03 * (zestimate-3025000.01) + 59825
+
+    taxinfo = taxratescontroller.getTaxRateByCity(city)
+
     return {"schedule":schedule ,
-            "salestax":zestimate,
+            'zestimate':zestimate,
+            "salestax":0.1025,
             "ownerpolicyfee": 2250,
             'closingfee':1750,
-            'stateexcisetax':0.015,
-            'townexcisetax':0.002}, 200
+            'stateexcisetax':stateexcisetax,
+            'townexcisetax':taxinfo.local_rate
+            }, 200
 
 
 @sellersupport_bp.route('/cleaners_all', methods=['GET'])

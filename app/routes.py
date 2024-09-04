@@ -18,25 +18,6 @@ from app.RouteModel.OldHousesModel import WhereOldBuild
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# +++++++++++++++++++++++++++++
-
-
-
 @main.route('/mapexample')
 def MapExample():
     # Create a map
@@ -89,30 +70,7 @@ def new_listing_in_selectneighbourhood():
                                                    living_space)
     return render_template('NewListing.html', listings=listings, infodump=infodump,
                            bedrooms=bedrooms,bathrooms=bathrooms,living_space=living_space)
-@main.route('/mappotentialValue', methods=['GET', 'POST','PUT'])
-def MapPotentialValue():
-    # addresses = ["Address 1", "Address 2", "Address 3"]
 
-    if request.method =='POST':
-        days = 60
-        description = request.form['description']
-        # displayfun = request.form['displayfun']
-
-        map_html2 = validateHomePredictionPrice2(description)
-        return jsonify({'map_html2': map_html2, 'report': "Future Justification of Value"})
-    elif request.method =='PUT':
-        buildpotentiallowerlimit = request.form['buildpotentiallowerlimit']
-        map_html, nu_hits = alladdresseswithbuilthomecalues(float(buildpotentiallowerlimit))
-        return jsonify({'map_html': map_html, 'buildpotentiallowerlimit': buildpotentiallowerlimit, 'nu_hits':nu_hits})
-    else:
-        description = None
-        buildpotentiallowerlimit=2000000
-        averagenewbuildprice = None
-        map_html2 = 'Display for Property details'
-        # displayfun = SOLDHOTTNESS
-    map_html, nu_hits = alladdresseswithbuilthomecalues(buildpotentiallowerlimit)
-
-    return render_template('MapPotentialValue.html', map=map_html ,map2=map_html2,  description = description, buildpotentiallowerlimit=buildpotentiallowerlimit, nu_hits=nu_hits)
 
 @main.route('/heatmapexample', methods=['GET', 'POST'])
 def HeatMapExample():

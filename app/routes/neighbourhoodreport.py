@@ -21,6 +21,15 @@ neighbourhoodreport_bp = Blueprint('neighbourhoodreport', __name__, url_prefix='
 #     # send_email('New Listing', email_content)
 #     return redirect(url_for('main.index'))
 neighbourhoods = ['Alki','Genesee','Seattle','Ravenna','Wallingford']
+
+neighbourhoods = [
+        'Shoreline', 'Bothell', 'Kenmore', 'Kirkland', 'Woodinville', 'Duvall', 'Carnation',
+        'Auburn', 'Bellevue', 'Black Diamond', 'Burien', 'Clyde Hill', 'Covington', 'Des Moines', 'Enumclaw',
+        'Federal Way', 'Hunts Point', 'Issaquah', 'Kenmore', 'Kent', 'Kirkland', 'Lake Forest Park', 'Maple Valley',
+        'Medina', 'Mercer Island', 'Milton', 'Newcastle', 'Normandy Park', 'North Bend', 'Pacific', 'Redmond',
+        'Renton', 'Sammamish', 'SeaTac', 'Seattle', 'Skykomish', 'Snoqualmie', 'Tukwila',
+        'Yarrow Point'
+    ]
 @neighbourhoodreport_bp.route('/neighbourhood', methods=['GET','POST'])
 def neigh_report():
     # neighbourhoods = brieflistingcontroller.uniqueNeighbourhood('Seattle')

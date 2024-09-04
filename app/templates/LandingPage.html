@@ -37,14 +37,14 @@
     {#    <td>New Listing goes and fetch these areas (Bellevue, Kenmore, Bothell, Kirkland): for new Listings</td>#}
     {#    <td><a href="/newlistings">New Listings</a></td>#}
     {#  </tr>#}
-    {#  <tr>#}
-    {#    <td>Below Link Show a Heat Map of Homes Sold</td>#}
-    {#    <td><a href="/heatmapexample">Homes Sold Heat Map</a></td>#}
-    {#  </tr>#}
-    {#  <tr>#}
-    {#    <td>Potential Map Value</td>#}
-    {#    <td><a href="/mappotentialValue">Potential Map Value</a></td>#}
-    {#  </tr>#}
+{#      <tr>#}
+{#        <td>Below Link Show a Heat Map of Homes Sold</td>#}
+{#        <td><a href="/heatmapexample">Homes Sold Heat Map</a></td>#}
+{#      </tr>#}
+      <tr>
+        <td>Potential Map Value</td>
+        <td><a href="{{ url_for('hothomes_bp.MapPotentialValue') }}">Potential Map Value</a></td>
+      </tr>
     {#  <tr>#}
     {#    <td>Where are high Value places to build?</td>#}
     {#    <td><a href="/wheretobuild">Where to Build</a></td>#}
@@ -70,9 +70,13 @@
     {#    <td>New Listing in Ballard/Fremont</td>#}
     {#    <td><a href="/new_listing_in_selectneighbourhood">New Listing</a></td>#}
     {#  </tr>#}
+
     {#          <tr>#}
     <td>Openhouse</td>
     <td><a href="{{ url_for('openhouse.SearchForOpenHouseRoute') }}">Open House</a></td>
+    </tr>
+        <td>Homes for Sale</td>
+    <td><a href="{{ url_for('hothomes_bp.forsalehomes') }}">Homes for Sale</a></td>
     </tr>
     <td>Area Report on Fremont, Ballard</td>
     <td><a href="{{ url_for('soldhomes_bp.AreaReport') }}">Area Report</a></td>

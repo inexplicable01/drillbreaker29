@@ -169,6 +169,10 @@ class BriefListingController():
         ).all()
         return [brieflisting.zpid for brieflisting in unfiltered_soldhomes]
 
+    def get_listing_by_zpid(self, zpid):
+        # Query the database for the listing with the given zpid
+        listing = BriefListing.query.filter_by(zpid=zpid).first()
+        return listing
     def get_listings_by_ids(self, ids):
         # Query the database for listings with the given ids
         listings = BriefListing.query.filter(BriefListing.zpid.in_(ids)).all()
