@@ -29,15 +29,16 @@
             display: flex;
             width: 100%;
             max-width: 1400px; /* Optional: To limit the maximum width */
-            padding: 50px;
-            height: 80vh;
+            padding: 5px;
+        {#height: 80vh;#}
         }
 
         .map_container {
             display: flex;
             width: 100%;
             max-width: 1400px; /* Optional: To limit the maximum width */
-            height: 80vh;
+            height: 60vh;
+            overflow: hidden;
         }
 
         .main-div {
@@ -62,7 +63,7 @@
         }
 
         .side-div {
-            flex: 4; /* 25% of the width */
+            flex: 2; /* 25% of the width */
         {#height: 100vh;#} overflow-y: auto; /* Enables scrolling within the side-div */
             background-color: #c0c0c0; /* Example background color */
             display: flex;
@@ -70,22 +71,25 @@
             align-items: center;
             justify-content: flex-start;
         }
+
         .optionheader {
-            font-size:12px;
+            font-size: 12px;
+            color: #E1FC75;
         }
-        .radiobuttonpadding{
+
+        .radiobuttonpadding {
             padding: 10px;
         }
 
         .buttoncenter {
-    display: flex;
-    justify-content: center; /* Center horizontally */
-    width: 100%;
-            padding:2px;
-}
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            width: 100%;
+            padding: 2px;
+        }
     </style>
 </head>
-<body style="background-color: #BADA55">
+<body style="background-color: #19211A">
 <div class="container">
 
     <div class="mainform">
@@ -107,11 +111,11 @@
                 <div style="display: flex; flex: 1;flex-direction: row; margin-left: auto;">
                     <h3 class="optionheader" style="padding-bottom: 10px">Select Home Types:</h3>
                     {% for home_type in HOMETYPES %}
-                        <div class="radiobuttonpadding" style="display: flex; flex: 1;flex-direction: column;">
-                            <label>
-                                <input type="checkbox" name="home_type" value="{{ home_type }}"
-                                       {% if home_type in selectedhometypes %}checked{% endif %}>
-                                {{ home_type }}
+                        <div class="radiobuttonpadding" style="display: flex; flex: 1;flex-direction: row;">
+                            <input type="checkbox" name="home_type" value="{{ home_type }}"
+                                   {% if home_type in selectedhometypes %}checked{% endif %}
+                                   style="margin-right: 10px; width: 20px; height: 20px;">
+                            <span style="font-size: 16px; font-weight: bold; color: #E1FC75;">{{ home_type }}</span>
                             </label>
                         </div>
                     {% endfor %}
