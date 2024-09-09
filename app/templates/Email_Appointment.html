@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <h1>New Viewing Appointment Request</h1>
+        <p>Hello,</p>
+        <p>You have received a new viewing appointment request. Below are the details:</p>
+
+        <div class="details">
+            <h3>Appointment Details</h3>
+            <p><strong>Name:</strong> {{ name }}</p>
+            <p><strong>Email:</strong> {{ email }}</p>
+            <p><strong>Phone:</strong> {{ phone }}</p>
+            <p><strong>Viewing Date:</strong> {{ viewing_date }}</p>
+            <p><strong>Viewing Time:</strong> {{ viewing_time }}</p>
+        </div>
+
+        <div class="details">
+            <h3>Property Details</h3>
+            <p><strong>Property Address:</strong> {{ address }}</p>
+            <p><strong>ZPID:</strong> {{ zpid }}</p>
+        </div>
+
+        <p>Best regards,</p>
+        <p>Your Team</p>
+    </div>
+</body>
+</html>
+</html>

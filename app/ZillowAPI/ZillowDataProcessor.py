@@ -268,6 +268,24 @@ def FindHomesByNeighbourhood(search_neigh, doz):
             forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
     return soldbrieflistingarr,forsalebrieflistingarr
 
+def FindHomesByCities(city, doz):
+    interval=100
+    minhomesize=4000
+    maxhomesize=interval+minhomesize
+    soldbrieflistingarr = []
+    while maxhomesize < 6000:
+        soldrawdata = SearchZillowHomesByLocation(search_neigh,"recentlySold",doz,minhomesize,maxhomesize)
+        for briefhomedata in soldrawdata:
+                soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
+        print(f"Finished searching {minhomesize} to {maxhomesize}")
+        minhomesize = minhomesize + interval
+        maxhomesize = maxhomesize + interval
+    forsalerawdata = SearchZillowHomesByLocation(search_neigh,"forSale","any")
+    forsalebrieflistingarr = []
+    for briefhomedata in forsalerawdata:
+            forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
+    return soldbrieflistingarr,forsalebrieflistingarr
+
 
 def loadPropertyDataFromBrief(brieflisting:BriefListing):
     filepath = os.path.join(os.getenv('ADDRESSJSON'), brieflisting.ref_address().replace('/','div') + '.txt')

@@ -2,6 +2,7 @@ import requests
 import os
 from warnings import warn
 import time
+from app.DBModels.ZillowBriefHomeData import BriefListing
 import sqlite3
 url = "https://zillow56.p.rapidapi.com/search"
 # url ="https://zillow-com4.p.rapidapi.com/properties/search"
@@ -139,6 +140,33 @@ def SearchZillowHomesByLocation(location, status="recentlySold", duration=14,min
             break
     print('found ', len(houseresult), ' results')
     return houseresult
+
+def SearchZillowHomesByCity(city, lastpage, maxpage, status="forSale", duration=14):
+
+
+    houseresult=[]
+    print('Search in location ' + status + ' : ', city)
+    # lastpage = 1
+    # maxpage = 2
+
+    querystring = {"location":city + ", wa","page": str(lastpage),"status": status}
+    response = requests.get(url, headers=headers, params=querystring)
+    time.sleep(0.5)
+    if response.status_code==502:
+        raise('502 on ' + city)
+    try:
+        result = response.json()
+        houseresult = houseresult+ result['results']
+        maxpage = result['totalPages']
+        print('lastpage:' + str(lastpage) + ' out of ' + str(maxpage))
+        lastpage = lastpage + 1
+    except Exception as e:
+        raise(f"Search Zillow failed due to an exception")
+
+    forsalebrieflistingarr = []
+    for briefhomedata in houseresult:
+            forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,city))
+    return forsalebrieflistingarr, lastpage, maxpage
 # def UpdateListfromLocation(location):
 #     querystring = {"location":location + ", wa","status":"recentlySold","doz":"30"}
 #     response = requests.get(url, headers=headers, params=querystring)

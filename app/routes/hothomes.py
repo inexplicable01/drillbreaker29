@@ -3,6 +3,7 @@ from flask import Blueprint, redirect, url_for
 # from app.RouteModel.EmailModel import sendEmailwithListingforclient
 from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,loadPropertyDataFromBrief
 from app.DBFunc.BriefListingController import brieflistingcontroller
+from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.ZillowAPI.ZillowAPICall import *
 from app.HeatMapProcessing import *
 from app.UsefulAPI.UseFulAPICalls import get_neighborhood
@@ -86,13 +87,32 @@ def getUpdatedHomes():
 # import base64
 
 from app.MapTools.MappingTools import generateMap
-@hothomes_bp.route('/forsale', methods=['GET'])
+@hothomes_bp.route('/forsale', methods=['GET','POST'])
 def forsalehomes():
-    neighbourhoods=['Fremont','Ballard','Wallingford']
+    # cities=['Seattle']
     selectedhometypes=['SINGLE_FAMILY', 'TOWNHOUSE','CONDO' ]
-    unfiltered_forsale=brieflistingcontroller.ForSaleListingsByNeighbourhoodsAndHomeTypes(neighbourhoods, selectedhometypes, 30, 'FOR_SALE')
 
-    return render_template('ForSale.html', m=generatethisMap(brieflistings=unfiltered_forsale,neighbourhoods=[],showneighbounds=False))
+    cities = washingtoncitiescontroller.getallcities()
+    if request.method == 'POST':
+        selectedhometypes = request.form.getlist('home_type')
+        selectedCity = request.form.get('selected_city')
+
+        # Process the selections as needed
+    elif request.method == 'GET':
+        selectedCity = 'Seattle'
+        selectedhometypes = Config.HOMETYPES
+
+    unfiltered_forsale = brieflistingcontroller.ForSaleListingsByCitiesAndHomeTypes([selectedCity], selectedhometypes)
+
+
+    return render_template('ForSale.html',
+                           m=generatethisMap(brieflistings=unfiltered_forsale,neighbourhoods=[],
+                                                             showneighbounds=False),
+                           selectedCity=selectedCity,
+                           cityoptions = cities,
+                           HOMETYPES=Config.HOMETYPES,
+                           selectedhometypes=selectedhometypes,
+    )
 
 import folium
 from shapely.geometry import shape, Point
@@ -272,6 +292,7 @@ def get_data():
     rendered_html = render_template('components/property_details.html',
                                     item=propertydata,
                                     images=images,
+                                    carid="ASDasdAS21232",
                                     brieflisting=brieflisting,
                                     estimatesoldprice=1000000,
                                     wayberbuyersavings=10500,

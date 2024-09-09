@@ -59,6 +59,16 @@ def SendEmailOfListings(changebrieflistingarr,oldbrieflistingarr):
                html_content=html_content,
                recipient =defaultrecipient)
 
+
+def sendAppointmentEmail(name,email,phone,viewing_date,viewing_time,zpid,address):
+    # subject, body, recipient = defaultrecipient, html_content = None
+    html_content = render_template('Email_Appointment.html', name=name,email=email,
+                                   phone=phone,viewing_date=viewing_date,viewing_time=viewing_time,zpid=zpid,address=address)
+    # html_content=''
+    send_email(subject='New Appointment',
+               html_content=html_content,
+               recipient =defaultrecipient)
+
 # def sendEmailofOpenHomes():
 #     # subject, body, recipient = defaultrecipient, html_content = None
 #     map_html, filtered_houses = SearchForOpenHouses()

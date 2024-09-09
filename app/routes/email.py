@@ -1,6 +1,6 @@
 # email_bp.py
-from flask import Blueprint, redirect, url_for
-from app.RouteModel.EmailModel import sendEmailwithNewListing
+from flask import Blueprint, redirect, url_for, jsonify, request
+from app.RouteModel.EmailModel import sendEmailwithNewListing,sendAppointmentEmail
 
 email_bp = Blueprint('email', __name__, url_prefix='/email')
 
@@ -23,4 +23,33 @@ def sendEmailUpdates():
     sendEmailwithNewListing()
     return redirect(url_for('main.index'))
 
+@email_bp.route('/scheduleviewing', methods=['POST'])
+def schedulingemail():
+    try:
+        # Parse the incoming JSON data from the request
+        data = request.get_json()
+
+        # Log the incoming data to verify it
+        print("Received Data:", data)  # Or use logging for production
+
+        # Extract values from the request (optional, for logging purposes)
+        name = data.get('name')
+        email = data.get('email')
+        phone = data.get('phone')
+        viewing_date = data.get('viewingDate')
+        viewing_time = data.get('viewingTime')
+        zpid = data.get('zpid')
+        address = data.get('address')
+
+        print(f"Name: {name}, Email: {email}, Phone: {phone}, Viewing Date: {viewing_date}, Viewing Time: {viewing_time}")
+        sendAppointmentEmail(name,email,phone,viewing_date,viewing_time,zpid,address)
+        # Assume sendEmailwithNewListing() is a function that sends the email
+        # sendEmailwithNewListing(name, email, phone, viewing_date, viewing_time)
+
+        # Respond with a success message in JSON format
+        return jsonify({"message": "Viewing request submitted successfully!"}), 200
+    except Exception as e:
+        # Handle any errors and respond with a JSON error message
+        print(f"Error: {str(e)}")
+        return jsonify({"error": "An error occurred while processing your request."}), 400
 

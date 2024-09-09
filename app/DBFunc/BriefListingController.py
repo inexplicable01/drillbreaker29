@@ -206,7 +206,33 @@ class BriefListingController():
 
         return unfiltered_soldhomes
 
+    def forSaleInCity(self, city):
+        # Calculate the date for the given days ago from today
+        # date_threshold = datetime.now() - timedelta(days=days_ago)
+        #
+        # date_threshold_ms = date_threshold.timestamp()
 
+        # Query the database for listings in the specified neighbourhood
+        # and sold within the last `days_ago` days.
+        unfiltered_soldhomes = BriefListing.query.filter(
+            BriefListing.city == city,
+            BriefListing.homeStatus == "FOR_SALE"
+        ).all()
+
+        # Extract the IDs from the brief listings
+        # forsaleinarea_ids = [listing.zpid for listing in unfiltered_soldhomes]
+        #
+        # # Assuming forsalebriefarr is a list of brief listings currently on sale as extracted by the API
+        # # Extract the IDs from the brief listings
+        # forsalebrief_ids = [listing.zpid for listing in forsalebriefarr]
+        #
+        # # Finding IDs in forsaleinarea that are not in forsalebrief_ids
+        # no_longer_selling_ids = [zpid for zpid in forsaleinarea_ids if zpid not in forsalebrief_ids]
+        #
+        # # Get the listings from the database with those IDs
+        # no_longer_selling_listings = self.get_listings_by_ids(no_longer_selling_ids)
+
+        return unfiltered_soldhomes
 
     def uniqueNeighbourhood(self, city):
         # Calculate the date for the given days ago from today
@@ -250,6 +276,18 @@ class BriefListingController():
             BriefListing.neighbourhood.in_(neighbourhoods),
             # BriefListing.homeType.in_(homeTypes),
             BriefListing.homeStatus == homeStatus,
+        ).all()
+
+        return unfiltered_soldhomes
+
+    def ForSaleListingsByCitiesAndHomeTypes(self, cities, homeTypes, days_ago=365):
+        date_threshold = datetime.now() - timedelta(days=days_ago)
+        date_threshold_ms = int(date_threshold.timestamp() * 1000)
+
+        unfiltered_soldhomes = BriefListing.query.filter(
+            BriefListing.city.in_(cities),
+            BriefListing.homeType.in_(homeTypes),
+            BriefListing.homeStatus == 'FOR_SALE',
         ).all()
 
         return unfiltered_soldhomes

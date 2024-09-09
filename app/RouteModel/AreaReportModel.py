@@ -17,9 +17,7 @@ def AreaReportGatherData(neighbourhoods, doz):
     count =0
     for search_neigh in neighbourhoods:
         soldbrieflistingarr, forsalebrieflistingarr = FindHomesByNeighbourhood(search_neigh,doz)
-        # soldbriefarr=  soldbriefarr
-        # forsalebrieflistingarr.pop()
-        # forsalebriefarr = forsalebriefarr+forsalebrieflistingarr
+
         forsalebrief_ids = [listing.zpid for listing in forsalebrieflistingarr]
         for_sale_DB = brieflistingcontroller.forSaleInNeighbourhood(search_neigh,doz)
 

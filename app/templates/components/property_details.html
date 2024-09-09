@@ -1,27 +1,31 @@
 <style>
     {#.component {#}
     {#    border: 1px solid black;#}
-    {#}#}
+    {
+    #}#}
     {##}
     {#.makemoney {#}
     {#    font-size: larger; /* Larger text size */#}
     {#    color: green; /* Green text color */#}
-    {#}#}
+    {
+    #}#}
     {##}
     {#.losemoney {#}
     {#    font-size: larger; /* Larger text size */#}
     {#    color: red; /* Green text color */#}
-    {#}#}
+    {
+    #}#}
 
     {#.container {#}
     {#    border: 1px solid #BADA55; /* Example border style */#}
-        {#padding: 15px; /* Example padding */#}
+    {#padding: 15px; /* Example padding */#}
     {#    color: #ffffff;#}
     {#    background-color: #19211A;#}
     {#    width: 100%; /* Full width */#}
-        {#margin: 30px;#}
+    {#margin: 30px;#}
     {##}
-    {#}#}
+    {
+    #}#}
 
     .descriptiondiv {
         border: 1px solid #ddd; /* Example border style */
@@ -34,7 +38,8 @@
     {#moneytable {#}
     {#    width: 100%; /* Table occupies full width of its container */#}
     {#    margin: auto; /* Center the table */#}
-    {#}#}
+    {
+    #}#}
 
     .custom-table {
         width: 100%; /* Full width for the table */
@@ -43,15 +48,15 @@
     }
 
     .custom-table, .custom-table th, .custom-table td {
-        {#border: 1px solid #000; /* Solid black border for table and cells */#}
-        text-align: center; /* Center text in cells */
+    {#border: 1px solid #000; /* Solid black border for table and cells */#} text-align: center; /* Center text in cells */
         padding: 5px; /* Padding inside cells */
-        font-size: 20px; /* Sets the font size to 16 pixels */
+        font-size: 14px; /* Sets the font size to 16 pixels */
     }
 
     .carousel-container {
         width: 100%;
     }
+
 
     .button-link {
         display: inline-block;
@@ -76,7 +81,11 @@
 
     {#.thickborder {#}
     {#    border: 3px solid antiquewhite;#}
-    {#}#}
+    {
+    #}#}
+    .titlefont {
+        font-size: 12px;
+    }
 
     .single-column {
         display: flex;
@@ -84,24 +93,52 @@
         align-items: stretch;
     }
 
+    .schedule-form {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s ease-out;
+    }
+
+    .schedule-form.show {
+        max-height: 500px; /* Adjust according to the form height */
+    }
+
+    .button-link {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 10px 0;
+        border: 1px solid #BADA55;
+        background-color: #19211A;
+        color: #BADA55;
+        text-align: center;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .button-link:hover {
+        background-color: #BADA55;
+        color: #19211A;
+    }
+
 </style>
 <div class="descriptiondiv">
     <div class="single-column">
-        <h4>
-            {{ item.address.streetAddress }} , {{ item.address.city }}
+        <h4 id="addressDisplay" class="titlefont">
+            {{ item.address.streetAddress }} {{ item.address.city }}
         </h4>
-        <h4>
-            Bed: {{ brieflisting.bedrooms }} , Bath: {{ brieflisting.bathrooms }} ,
-{#            Neighborhood: {{ brieflisting.gapis_neighbourhood }}#}
+        <h4 class="titlefont">
+            Bed: {{ brieflisting.bedrooms }}, Bath: {{ brieflisting.bathrooms }}, {{ brieflisting.livingArea }} ft&sup2;
         </h4>
 
-        <h4>
+        <h4 class="titlefont">
             Price ${{ "{:,.0f}".format(item.price) }}
         </h4>
 
 
-
-        <div id="{{ carid }}" class="carousel slide carousel-container thickborder" data-ride="carousel">
+        <div id="{{ carid }}" class="carousel slide" data-ride="carousel">
             <div class="carousel-inner">
                 {% for image in images %}
                     <div class="carousel-item {% if loop.first %}active{% endif %}">
@@ -121,12 +158,37 @@
                 <span class="sr-only">Next</span>
             </a>
         </div>
-        <a href="https://www.wayber.net/property-talk" class="button-link">Schedule a Viewing Now!</a>
+
+        <a href="#" id="scheduleButton" class="button-link">Schedule a Viewing Now!</a>
+
+        <!-- Hidden Form for Scheduling -->
+            <div id="scheduleForm" class="schedule-form">
+                <form id="viewingForm">
+                    <label for="name">Name:</label>
+                    <input type="text" id="name" name="name" required><br>
+
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required><br>
+
+                    <label for="phone">Phone:</label>
+                    <input type="tel" id="phone" name="phone" required><br>
+
+                    <label for="viewingDate">Select Date:</label>
+                    <input type="date" id="viewingDate" name="viewingDate" required><br>
+
+                    <label for="viewingTime">Select Time:</label>
+                    <input type="time" id="viewingTime" name="viewingTime" required><br>
+
+                    <button type="submit" id="sendButton" disabled>Send</button> <!-- Initially disabled -->
+                </form>
+            </div>
+
+
         <div class="descriptiondiv padding">
-            <h4>Wayber Estimate</h4>
-            <table class="custom-table">
+            <table class="custom-table titlefont">
                 <tr>
-                    <td>Likely to Sell in {{ estimatelistingdays }} {{ 'day' if estimatelistingdays == 1 else 'days' }}</td>
+                    <td>Likely to Sell
+                        in {{ estimatelistingdays }} {{ 'day' if estimatelistingdays == 1 else 'days' }}</td>
                 </tr>
                 <tr>
                     <td>Likely to be Sold at ${{ "{:,.0f}".format(estimatesoldprice) }}</td>
@@ -138,21 +200,72 @@
             </table>
         </div>
 
-            <p>
-            Description {{ item.description }}
+        <p class="titlefont">
+            {{ item.description }}
         </p>
     </div>
 </div>
-{#    <div class="padding">#}
-{#        {% for photo in item.photos %}#}
-{#            {% for jpeg in photo['mixedSources']['jpeg']%}#}
-{#                {% if jpeg.width==192 %}#}
-{#                    <img src="{{ jpeg.url }}" alt="Photo" width="{{ jpeg.width }}">#}
-{#                {%  endif %}#}
-{#            {% endfor %}#}
-{#        {% endfor %}#}
-{#    </div>#}
-{#    <div class="descriptiondiv padding">#}
-{#        Description: {{ item.description }}#}
-{#    </div>#}
-{##}
+<script>
+
+
+    // Select all form elements
+    const form = document.getElementById('viewingForm');
+    const sendButton = document.getElementById('sendButton');
+
+    // Function to check if all form fields are filled and valid
+    function checkFormValidity() {
+        if (form.checkValidity()) {
+            sendButton.disabled = false;  // Enable the button
+        } else {
+            sendButton.disabled = true;   // Keep the button disabled
+        }
+    }
+
+    // Add event listeners to all form fields to recheck validity on input
+    form.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', checkFormValidity);
+    });
+
+    // Handle form submission
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();  // Prevent the default form submission
+
+        const formData = {
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            viewingDate: document.getElementById('viewingDate').value,
+            viewingTime: document.getElementById('viewingTime').value,
+            address: document.getElementById('addressDisplay').textContent.trim(),
+            zpid :"{{ brieflisting.zpid }}"
+
+        };
+
+        fetch('/email/scheduleviewing', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                alert('Viewing request submitted successfully!');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting the request.');
+            });
+    });
+
+    // Show/hide the form when "Schedule a Viewing Now" is clicked
+    document.getElementById('scheduleButton').addEventListener('click', function (event) {
+        event.preventDefault();
+        const form = document.getElementById('scheduleForm');
+        form.classList.toggle('show');
+    });
+
+
+</script>
+

@@ -15,7 +15,7 @@ DB_PASSWORD = 'wayber_housing'
 DB_NAME = 'FatPanda1985$housingdata'
 Base = declarative_base()
 log_file_path = 'logfile.txt'
-csv_file_path = 'C:/Users/waich/Box Sync/Wayber/Website/Real_Estate_Excise_Tax_Rates_Complete_WA.csv'  # Path to the CSV file
+csv_file_path = 'C:/Users/waich/Box Sync/Wayber/Website/washington_cities.csv'  # Path to the CSV file
 
 # Logging function
 def print_and_log(message):
@@ -49,7 +49,7 @@ with sshtunnel.SSHTunnelForwarder(
         df = pd.read_csv(csv_file_path)
 
         # Define the table name where you want to upload the data
-        table_name = 'Real_Estate_Excise_Tax_Rates'
+        table_name = 'WashingtonCities'
 
         # Upload the DataFrame to the database
         df.to_sql(table_name, con=engine, if_exists='replace', index=False)

@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Homes For Sale</title>
-{#    <link rel="stylesheet" href="styles.css">#}
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    {#    <link rel="stylesheet" href="styles.css">#}
+    <!-- Add Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Add jQuery and Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
     <style>
         body, html {
             margin: 0;
@@ -21,63 +25,138 @@
         }
 
         .container {
+            flex-direction: column;
             display: flex;
             width: 100%;
             max-width: 1400px; /* Optional: To limit the maximum width */
             padding: 50px;
-            height: 60vh;
+            height: 80vh;
         }
 
-    .main-div {
-        flex: 6; /* 75% of the width */
-        position: sticky;
-        top: 0;
-        {#height: 100vh;#}
-        background-color: #e0e0e0; /* Example background color */
-    }
+        .map_container {
+            display: flex;
+            width: 100%;
+            max-width: 1400px; /* Optional: To limit the maximum width */
+            height: 80vh;
+        }
 
-    .side-div {
-        flex: 2; /* 25% of the width */
-        {#height: 100vh;#}
-        overflow-y: auto; /* Enables scrolling within the side-div */
-        background-color: #c0c0c0; /* Example background color */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-    }
+        .main-div {
+            flex: 6; /* 75% of the width */
+            position: sticky;
+            top: 0;
+            flex-direction: row;
 
+        {#overflow: hidden;#} background-color: #e0e0e0; /* Example background color */
+        }
+
+        .main-div-map-div {
+            flex: 6;
+
+        }
+
+        .main-div-form-div {
+            flex: 1;
+            position: sticky;
+            overflow: hidden;
+            background-color: #e0e0e0; /* Example background color */
+        }
+
+        .side-div {
+            flex: 4; /* 25% of the width */
+        {#height: 100vh;#} overflow-y: auto; /* Enables scrolling within the side-div */
+            background-color: #c0c0c0; /* Example background color */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .optionheader {
+            font-size:12px;
+        }
+        .radiobuttonpadding{
+            padding: 10px;
+        }
+
+        .buttoncenter {
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    width: 100%;
+            padding:2px;
+}
     </style>
 </head>
 <body style="background-color: #BADA55">
 <div class="container">
-    <div class="main-div">
-        {{ m | safe }}
+
+    <div class="mainform">
+
+
+        <form method="POST">
+            <div style="display: flex;flex-grow: 1;  flex-direction: row;justify-content: space-around;">
+                <!-- Dropdown Button Section -->
+                <div style="display: flex; flex: 1; flex-direction: column; margin: 0 20px;">
+                    <h3 class="optionheader">Select City:</h3>
+                    <select name="selected_city">
+                        {% for city in cityoptions %}
+                            <option value="{{ city }}" {% if city == selectedCity %}selected{% endif %}>
+                                {{ city }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="display: flex; flex: 1;flex-direction: row; margin-left: auto;">
+                    <h3 class="optionheader" style="padding-bottom: 10px">Select Home Types:</h3>
+                    {% for home_type in HOMETYPES %}
+                        <div class="radiobuttonpadding" style="display: flex; flex: 1;flex-direction: column;">
+                            <label>
+                                <input type="checkbox" name="home_type" value="{{ home_type }}"
+                                       {% if home_type in selectedhometypes %}checked{% endif %}>
+                                {{ home_type }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div style="justify-content: center;" class="buttoncenter">
+                <button type="submit">Update</button>
+            </div>
+        </form>
     </div>
-    <div id="info-div" class="side-div">
-    Click on Pins to show homes.
+    <div class="map_container">
+        <div class="main-div">
+            {{ m | safe }}
+        </div>
+        <div id="info-div" class="side-div">
+            Click on Pins to show homes.
+        </div>
     </div>
+
 </div>
 
 <script>
     // Listen for the custom event 'pinClick'
-    document.addEventListener('pinClick', function(event) {
+    document.addEventListener('pinClick', function (event) {
         const zpid = event.detail.zpid;
         console.log("Custom event received with ZPID:", zpid);
 
-           {#console.log("Clicked ZPID:", zpid);#}
+        {#console.log("Clicked ZPID:", zpid);#}
 
-    fetch(`/hothomes/zpid/getdata?zpid=${zpid}`)
-        .then(response => response.json())
-        .then(data => {
+        fetch(`/hothomes/zpid/getdata?zpid=${zpid}`)
+            .then(response => response.json())
+            .then(data => {
+                const infoDiv = document.getElementById('info-div');
+                infoDiv.innerHTML = data.html;
 
-            // Inject the rendered HTML into the 'result' div
-            document.getElementById('info-div').innerHTML = data.html;
-        })
-        .catch(error => {
-            console.log('Error:', error);
-            document.getElementById('info-div').innerHTML = 'An error occurred while fetching data.';
-        });
+                // Manually evaluate scripts
+                const scripts = infoDiv.getElementsByTagName('script');
+                for (let i = 0; i < scripts.length; i++) {
+                    eval(scripts[i].innerHTML);
+                }
+            })
+            .catch(error => {
+                console.log('Error:', error);
+                document.getElementById('info-div').innerHTML = 'An error occurred while fetching data.';
+            });
     });
 </script>
 
