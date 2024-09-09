@@ -136,7 +136,8 @@ def generatethisMap(brieflistings, neighbourhoods, showneighbounds):
     max_diff = max(max_lat - min_lat, max_lon - min_lon)
 
     # Simple heuristic to determine zoom level based on max difference
-    zoom_start = 15 if max_diff < 0.01 else 13 if max_diff < 0.05 else 12 if max_diff < 0.1 else 10 if max_diff < 0.5 else 8
+    # zoom_start = 15 if max_diff < 0.01 else 13 if max_diff < 0.05 else 12 if max_diff < 0.1 else 10 if max_diff < 0.5 else 8
+    zoom_start = 10
     m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom_start)
 
     # click_js = """function onClick(e) {}"""
