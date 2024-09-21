@@ -136,6 +136,22 @@
         .address-suggestions li:hover {
             background-color: #f0f0f0;
         }
+
+        .spinner {
+    border: 4px solid #ccc; /* Light grey border */
+    border-top: 4px solid #333; /* Darker grey on the top */
+    border-radius: 50%; /* Rounded shape */
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite; /* Spinning animation */
+    display: inline-block; /* Make it inline to fit with the text */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
     </style>
 </head>
 <body style="background-color: #19211A">
@@ -176,9 +192,12 @@
                     <ul id="address-suggestions" class="address-suggestions"></ul>
                 </div>
             </div>
-            <div style="justify-content: center;" class="buttoncenter">
-                <button type="submit">Update</button>
-            </div>
+<div style="justify-content: center;" class="buttoncenter">
+    <button type="submit" id="update-btn">
+        <span id="button-text">Update</span>
+        <span id="spinner" class="spinner" style="display: none;"></span>
+    </button>
+</div>
         </form>
     </div>
     <div class="map_container">
@@ -247,6 +266,15 @@
             suggestionsList.appendChild(li);
         });
     }
+
+    document.getElementById('update-btn').addEventListener('click', function(event) {
+
+    // Hide the button text and show the spinner
+    document.getElementById('button-text').style.display = 'none';
+    document.getElementById('spinner').style.display = 'inline-block';
+
+
+});
 </script>
 
 </body>
