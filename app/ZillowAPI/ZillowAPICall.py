@@ -50,6 +50,18 @@ def SearchZillowByAddress(addressStr):
         warn(f"Search Zillow failed due to an exception: {e}")
         return None
 
+def SearchZillowBriefListingByAddress(addressStr):
+     ##  this is when you have the full address and you still have to only get the brief version of the listing.
+    querystring = {"location": addressStr,"output":"json","status":"forSale","doz":"any"}
+    response = requests.get("https://zillow56.p.rapidapi.com/search", headers=headers, params=querystring)
+    time.sleep(0.5)
+    if response.status_code==502:
+        warn('502 on ' + addressStr)
+    try:
+        return response.json()['results'][0]
+    except Exception as e:
+        warn(f"Search Zillow failed due to an exception: {e}")
+        return None
 
 def SearchZillowNewListingByLocation(location, daysonzillow):
     curpage = 1

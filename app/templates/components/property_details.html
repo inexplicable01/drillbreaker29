@@ -184,21 +184,21 @@
             </div>
 
 
-        <div class="descriptiondiv padding">
-            <table class="custom-table titlefont">
-                <tr>
-                    <td>Likely to Sell
-                        in {{ estimatelistingdays }} {{ 'day' if estimatelistingdays == 1 else 'days' }}</td>
-                </tr>
-                <tr>
-                    <td>Likely to be Sold at ${{ "{:,.0f}".format(estimatesoldprice) }}</td>
-                </tr>
-                <tr>
-                    <td>Wayber can save you ${{ "{:,.0f}".format(wayberbuyersavings) }}</td>
-                </tr>
-
-            </table>
-        </div>
+{#        <div class="descriptiondiv padding">#}
+{#            <table class="custom-table titlefont">#}
+{#                <tr>#}
+{#                    <td>Likely to Sell#}
+{#                        in {{ estimatelistingdays }} {{ 'day' if estimatelistingdays == 1 else 'days' }}</td>#}
+{#                </tr>#}
+{#                <tr>#}
+{#                    <td>Likely to be Sold at ${{ "{:,.0f}".format(estimatesoldprice) }}</td>#}
+{#                </tr>#}
+{#                <tr>#}
+{#                    <td>Wayber can save you ${{ "{:,.0f}".format(wayberbuyersavings) }}</td>#}
+{#                </tr>#}
+{##}
+{#            </table>#}
+{#        </div>#}
 
         <p class="titlefont">
             {{ item.description }}

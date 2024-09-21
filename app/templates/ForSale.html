@@ -6,6 +6,8 @@
     <title>Homes For Sale</title>
     {#    <link rel="stylesheet" href="styles.css">#}
     <!-- Add Bootstrap CSS -->
+
+
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Add jQuery and Bootstrap JS -->
@@ -87,6 +89,53 @@
             width: 100%;
             padding: 2px;
         }
+        .buttoncenter button {
+    background-color: #E1FC75; /* Button background color */
+    color: #333; /* Button text color */
+    font-size: 16px; /* Font size similar to the rest */
+    font-weight: bold; /* Bold text */
+    border: 2px solid #ccc; /* Add a border */
+    padding: 10px 20px; /* Padding for better spacing */
+    border-radius: 4px; /* Rounded corners */
+    cursor: pointer; /* Cursor change on hover */
+    transition: background-color 0.3s ease; /* Smooth hover transition */
+}
+
+.buttoncenter button:hover {
+    background-color: #c0c0c0; /* Hover background color */
+    color: #000; /* Hover text color */
+}
+
+                .address-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            color: #333;
+            background-color: #fff;
+        }
+        .address-suggestions {
+            position: absolute;
+            border: 1px solid #ccc;
+            border-top: none;
+            list-style: none;
+            margin-top: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-left: 0;
+            width: calc(100% - 20px);
+            background-color: #fff;
+            z-index: 1000;
+        }
+        .address-suggestions li {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .address-suggestions li:hover {
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 <body style="background-color: #19211A">
@@ -96,7 +145,7 @@
 
 
         <form method="POST">
-            <div style="display: flex;flex-grow: 1;  flex-direction: row;justify-content: space-around;">
+            <div style="display: flex;flex-grow: 1;  flex-direction: row;justify-content: space-around; ">
                 <!-- Dropdown Button Section -->
                 <div style="display: flex; flex: 1; flex-direction: column; margin: 0 20px;">
                     <h3 class="optionheader">Select City:</h3>
@@ -119,6 +168,12 @@
                             </label>
                         </div>
                     {% endfor %}
+                </div>
+
+                <div style="display: flex; flex: 1; flex-direction: column; margin: 0 20px; position: relative;">
+                    <h3 class="optionheader">Enter Address:</h3>
+                    <input type="text" id="address-input" name="address" class="address-input" placeholder="Start typing an address...">
+                    <ul id="address-suggestions" class="address-suggestions"></ul>
                 </div>
             </div>
             <div style="justify-content: center;" class="buttoncenter">
@@ -162,6 +217,36 @@
                 document.getElementById('info-div').innerHTML = 'An error occurred while fetching data.';
             });
     });
+
+    const addressInput = document.getElementById('address-input');
+    const suggestionsList = document.getElementById('address-suggestions');
+
+    addressInput.addEventListener('input', async function() {
+        if (this.value.length > 2) {
+            try {
+                const response = await fetch(`/hothomes/autocomplete?input=${encodeURIComponent(this.value)}`);
+                const data = await response.json();
+                updateSuggestions(data.predictions);
+            } catch (error) {
+                console.error('Error fetching suggestions:', error);
+            }
+        } else {
+            suggestionsList.innerHTML = '';
+        }
+    });
+
+    function updateSuggestions(predictions) {
+        suggestionsList.innerHTML = '';
+        predictions.forEach(prediction => {
+            const li = document.createElement('li');
+            li.textContent = prediction.description;
+            li.addEventListener('click', function() {
+                addressInput.value = this.textContent;
+                suggestionsList.innerHTML = '';
+            });
+            suggestionsList.appendChild(li);
+        });
+    }
 </script>
 
 </body>

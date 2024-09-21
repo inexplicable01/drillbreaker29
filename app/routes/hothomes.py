@@ -7,10 +7,12 @@ from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.ZillowAPI.ZillowAPICall import *
 from app.HeatMapProcessing import *
 from app.UsefulAPI.UseFulAPICalls import get_neighborhood
+# from app.ZillowAPI.ZillowAPICall import SearchZillowByAddress
 from app.config import Config
 import numpy as np
 import random
 hothomes_bp = Blueprint('hothomes_bp', __name__,url_prefix='/hothomes')
+WC_Wayber_GOOGLE_API_KEY = os.getenv('WC_Wayber_GOOGLE_API_KEY')
 @hothomes_bp.route('/ballard', methods=['GET'])
 def showHotHomes():
     neighbourhoods=['Fremont','Ballard','Wallingford']
@@ -86,6 +88,13 @@ def getUpdatedHomes():
 # from io import BytesIO
 # import base64
 
+@hothomes_bp.route('/autocomplete')
+def autocomplete():
+    input_text = request.args.get('input')
+    url = f"https://maps.googleapis.com/maps/api/place/autocomplete/json?input={input_text}&types=address&key={WC_Wayber_GOOGLE_API_KEY}"
+    response = requests.get(url)
+    return jsonify(response.json())
+
 from app.MapTools.MappingTools import generateMap
 @hothomes_bp.route('/forsale', methods=['GET','POST'])
 def forsalehomes():
@@ -96,18 +105,52 @@ def forsalehomes():
     if request.method == 'POST':
         selectedhometypes = request.form.getlist('home_type')
         selectedCity = request.form.get('selected_city')
+        address =  request.form.get('address')
+        address_coords = None
+        geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address= {address}&key={WC_Wayber_GOOGLE_API_KEY}"
+        response = requests.get(geocode_url)
+        geocode_data = response.json()
+        interetedbrieflisting=None
+        if geocode_data['status'] == 'OK':
+            location = geocode_data['results'][0]['geometry']['location']
+            address_coords = (location['lat'], location['lng'])
+            address_components = geocode_data['results'][0]['address_components']
+            for component in address_components:
+                if 'locality' in component['types']:
+                    selectedCity = component['long_name']### selected City is over writting is USer is looking in a different city that's not selected
+                    break
+            homeForSale, zpid = isHomeForSale(address)
+            if homeForSale:
+                interetedbrieflisting = brieflistingcontroller.get_listing_by_zpid(zpid)
+                if interetedbrieflisting is None:
+                    forsalerawdata = SearchZillowBriefListingByAddress(address)
+                    brieflistingcontroller.SaveBriefListingArr(
+                        [BriefListing.CreateBriefListing(forsalerawdata, None, None, selectedCity)])
+                    interetedbrieflisting = brieflistingcontroller.get_listing_by_zpid(zpid)
+                address_coords=(interetedbrieflisting.latitude, interetedbrieflisting.longitude)
+                selectedCity = interetedbrieflisting.city
+        else:
+
+            print(f"Geocoding API error: {geocode_data['status']}")
+
 
         # Process the selections as needed
     elif request.method == 'GET':
         selectedCity = 'Seattle'
         selectedhometypes = Config.HOMETYPES
+        address_coords = None
+
+        zpid=None
+        interetedbrieflisting=None
 
     unfiltered_forsale = brieflistingcontroller.ForSaleListingsByCitiesAndHomeTypes([selectedCity], selectedhometypes)
 
 
+
     return render_template('ForSale.html',
                            m=generatethisMap(brieflistings=unfiltered_forsale,neighbourhoods=[],
-                                                             showneighbounds=False),
+                                                             showneighbounds=False, address_coords=address_coords,
+                                             interetedbrieflisting=interetedbrieflisting),
                            selectedCity=selectedCity,
                            cityoptions = cities,
                            HOMETYPES=Config.HOMETYPES,
@@ -117,27 +160,43 @@ def forsalehomes():
 import folium
 from shapely.geometry import shape, Point
 import fiona
+def isHomeForSale(address):
+    addressjson = SearchZillowByAddress(address)
+    if addressjson:
+        if 'homeStatus' in addressjson.keys():
+            if addressjson['homeStatus']=='FOR_SALE':
+                return True , addressjson['zpid']
+    return False , None
 
-def generatethisMap(brieflistings, neighbourhoods, showneighbounds):
-    if not brieflistings:
-        return folium.Map(location=[47.6762, -122.3860], zoom_start=13)
+def generatethisMap(brieflistings, neighbourhoods, showneighbounds,address_coords,interetedbrieflisting):
+    #zpid is in case this address user typed in is actually for sale.
 
-    # Calculate bounds
-    min_lat = min(home.latitude for home in brieflistings)
-    max_lat = max(home.latitude for home in brieflistings)
-    min_lon = min(home.longitude for home in brieflistings)
-    max_lon = max(home.longitude for home in brieflistings)
 
-    # Calculate center of the map
-    center_lat = (min_lat + max_lat) / 2
-    center_lon = (min_lon + max_lon) / 2
 
-    # Calculate the maximum distance (in degrees) which could be used to adjust zoom
-    max_diff = max(max_lat - min_lat, max_lon - min_lon)
+    # Calculate bounds based on listings
+    if brieflistings:
+        min_lat = min(home.latitude for home in brieflistings)
+        max_lat = max(home.latitude for home in brieflistings)
+        min_lon = min(home.longitude for home in brieflistings)
+        max_lon = max(home.longitude for home in brieflistings)
 
+        center_lat = (min_lat + max_lat) / 2
+        center_lon = (min_lon + max_lon) / 2
+
+        max_diff = max(max_lat - min_lat, max_lon - min_lon)
+        zoom_start = 10
+    else:
+        # If no listings, set default zoom
+        center_lat, center_lon = 47.6762, -122.3860
+        zoom_start = 13
+
+    # If the address of interest has valid coordinates, override the center and zoom
+    if address_coords:
+        center_lat, center_lon = address_coords
+        zoom_start = 15  # Zoom closer to the address of interest
     # Simple heuristic to determine zoom level based on max difference
     # zoom_start = 15 if max_diff < 0.01 else 13 if max_diff < 0.05 else 12 if max_diff < 0.1 else 10 if max_diff < 0.5 else 8
-    zoom_start = 10
+
     m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom_start)
 
     # click_js = """function onClick(e) {}"""
@@ -159,7 +218,7 @@ def generatethisMap(brieflistings, neighbourhoods, showneighbounds):
 
     html.script.get_root().render()
     html.script._children[e.get_name()] = e
-    coordave=[0,0]
+
     for brieflisting in brieflistings:
         list2penddays = brieflisting.list2penddays
         if list2penddays is None:
@@ -190,8 +249,11 @@ def generatethisMap(brieflistings, neighbourhoods, showneighbounds):
         # f"<a href='https://www.zillow.com{house['hdpUrl']}' target='_blank'>House Link</a>" \
         # f"<br/>" \
         popup = folium.Popup(htmltext, max_width=300)
+        icon = folium.Icon(color='orange')
+        if interetedbrieflisting:
+            if brieflisting.zpid==interetedbrieflisting.zpid:
+                icon = folium.Icon(color='red')
 
-        icon = folium.Icon(color=color)
         marker = folium.Marker(
             location=[brieflisting.latitude, brieflisting.longitude],
             popup=popup,
@@ -222,6 +284,7 @@ def generatethisMap(brieflistings, neighbourhoods, showneighbounds):
         # Inject the custom JS into the map
         e = folium.Element(f'<script>{custom_js}</script>')
         m.get_root().html.add_child(e)
+
 
 
 
