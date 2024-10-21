@@ -62,9 +62,11 @@ class BriefListing(db.Model):
     listday = db.Column(BigInteger, nullable=True)
     pendday = db.Column(BigInteger, nullable=True)
     listtime = db.Column(BigInteger, nullable=True)
+    soldBy = db.Column(db.String(100), nullable=True)
+    waybercomments = db.Column(db.String(255), nullable=True)
 
-
-
+    # Define the one-to-one relationship to FSBOStatus
+    fsbo_status = db.relationship('FSBOStatus', backref='brief_listing', uselist=False, lazy=True)
 
     def __post_init__(self, extras):
         # This method now accepts `extras` but does nothing with it,
@@ -83,6 +85,23 @@ class BriefListing(db.Model):
 
     def __str__(self):
         return str(self.zpid) + ' ' + self.streetAddress + ' ' + self.city
+
+    def to_dict(self):
+        return {
+            'zpid': self.zpid,
+            'streetAddress': self.streetAddress,
+            'city': self.city,
+            'state': self.state,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'price': self.price,
+            'soldBy': self.soldBy,
+            'homeStatus': self.homeStatus,
+            'neighbourhood': self.neighbourhood,
+            'dateSold': self.dateSold,
+            'waybercomments':self.waybercomments,
+            'fsbostatus': self.fsbo_status
+        }
 
     @classmethod
     def CreateBriefListing(cls, briefhomedata, neighbourhood, zillowapi_neighbourhood, search_neigh):
@@ -138,6 +157,7 @@ class BriefListing(db.Model):
 
             listing_time = datetime.utcnow() - timedelta(seconds=safe_int_conversion(briefhomedata.get('timeOnZillow', 0))/1000)
             new_listing.listtime = int(listing_time.timestamp())
+            new_listing.soldBy = "AGENT"
 
             return new_listing
 

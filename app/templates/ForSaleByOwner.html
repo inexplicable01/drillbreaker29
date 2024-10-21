@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FSBO Listings</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h2>FSBO Listings</h2>
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>ZPID</th>
+            <th>Link</th>
+            <th>Street Address</th>
+            <th>City</th>
+            <th>State</th>
+            <th>Price</th>
+            {#            <th>Sold By</th>#}
+            {#            <th>Neighborhood</th>#}
+            <th>Home Status</th>
+            {#            <th>Date Sold</th>#}
+            <th>Details</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for listing in fsbo_listings %}
+            <tr>
+                <td>{{ listing.zpid }}</td>
+                <td><a href='https://www.zillow.com{{ listing.hdpUrl }}' target='_blank'>House Link</a></td>
+                <td>{{ listing.streetAddress }}</td>
+                <td>{{ listing.city }}</td>
+                <td>{{ listing.state }}</td>
+                <td>{{ listing.price }}</td>
+                {#            <td>{{ listing.soldBy }}</td>#}
+                {#            <td>{{ listing.neighbourhood }}</td>#}
+                <td>{{ listing.homeStatus }}</td>
+                {#            <td>{{ listing.dateSold }}</td>#}
+                <td>
+                    <form action="/fsbo/updatefsbolisting" method="POST" class="d-flex flex-column">
+                        <input type="hidden" name="zpid" value="{{ listing.zpid }}">
+
+                        <!-- Wayber Comments Field -->
+                        {% if listing.waybercomments %}
+                            <input type="text" name="details" class="form-control mb-2"
+                                   value="{{ listing.waybercomments }}">
+                        {% else %}
+                            <input type="text" name="details" class="form-control mb-2" placeholder="Add details">
+                        {% endif %}
+
+                        <!-- Checkbox for hasContactedOnline -->
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="hasContactedOnline"
+                                   id="hasContactedOnline{{ listing.zpid }}"
+                                    {% if listing.fsbo_status and listing.fsbo_status.hasContactedOnline %}
+                                   checked {% endif %}>
+                            <label class="form-check-label" for="hasContactedOnline{{ listing.zpid }}">
+                                Contacted Online
+                            </label>
+                            <!-- Display timestamp for Contacted Online -->
+                            {% if listing.fsbo_status and listing.fsbo_status.contactedOnlineTimestamp %}
+                                <small class="text-muted">
+                                    (on {{ listing.fsbo_status.contactedOnlineTimestamp.strftime('%Y-%m-%d %H:%M:%S') }})</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Checkbox for HasPostCarded -->
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="hasPostCarded"
+                                   id="hasPostCarded{{ listing.zpid }}"
+                                    {% if listing.fsbo_status and listing.fsbo_status.hasPostCarded %}
+                                   checked {% endif %}>
+                            <label class="form-check-label" for="hasPostCarded{{ listing.zpid }}">
+                                Postcard Sent
+                            </label>
+                            <!-- Display timestamp for Postcard Sent -->
+                            {% if listing.fsbo_status and listing.fsbo_status.postcardedTimestamp %}
+                                <small class="text-muted">
+                                    (on {{ listing.fsbo_status.postcardedTimestamp.strftime('%Y-%m-%d %H:%M:%S') }})</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary ms-2">Save</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

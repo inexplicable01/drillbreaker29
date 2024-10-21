@@ -12,9 +12,13 @@
         {#        <th>zipcode</th>#}
         <th>Bedrooms</th>
         <th>Bathrooms</th>
-        <th>Lot Size</th>
+        <th>Living Area</th>
 
         <th>Days on Zillow</th>
+        <th>Rent Estimate</th>
+        <th>Cashflow</th>
+
+{#                <th>Rent Estimate (2)</th>#}
         {#        <th>homeType</th>#}
         {#        <th>ListingLength</th>#}
     </tr>
@@ -22,7 +26,7 @@
 
     <!-- Table data -->
     <tbody>
-    {% for listing in listings %}
+    {% for (listing, cashflow) in listings %}
         <tr>
             {#            <td>{{ listing.zpid }}</td>#}
             <td>{{ listing.price }}</td>
@@ -35,8 +39,10 @@
             {#            <td>{{ listing.zipcode }}</td>#}
             <td>{{ listing.bedrooms }}</td>
             <td>{{ listing.bathrooms }}</td>
-            <td>{{ listing.shape_area }}</td>
+            <td>{{ listing.livingArea }}</td>
             <td>{{ listing.daysOnZillow }}</td>
+            <td>{{ listing.rentZestimate }}</td>
+                       <td>{{ cashflow | int }}</td>
             {#            <td>{{ listing.homeType }}</td>#}
             {#            <td>{{ listing.list2pend }}</td>#}
         </tr>

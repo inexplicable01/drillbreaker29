@@ -1,4 +1,4 @@
-from app.DBModels.ZillowBriefHomeData import BriefListing
+from app.DBModels.BriefListing import BriefListing
 from sqlalchemy.sql import func, or_, distinct
 from app.extensions import db
 from app.useful_func import safe_float_conversion,safe_int_conversion,print_and_log
@@ -9,6 +9,8 @@ import decimal
 from sqlalchemy import distinct
 from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
 from app.MapTools.MappingTools import findNeighbourhoodfromCoord
+from app.DBModels.FSBOStatus import FSBOStatus
+
 
 import os
 def is_equal_with_tolerance(val1, val2, tolerance=1e-4):
@@ -19,10 +21,52 @@ class BriefListingController():
         self.db = db
         self.BriefListing = BriefListing
 
-    def updateBriefListing(self,updatedbrieflisting):
+    def addBriefListing(self,brieflisting):
+        try:
+            gapis_neighbourhood = get_neighborhood(brieflisting.latitude, brieflisting.longitude)
+            brieflisting.gapis_neighbourhood = gapis_neighbourhood
+            brieflisting.neighbourhood = findNeighbourhoodfromCoord(brieflisting.city, brieflisting.longitude,
+                                                                    brieflisting.latitude)
+            brieflisting.listday = datetime.now()
+            print_and_log('Adding new listing for ' + brieflisting.ref_address())
+            self.db.session.add(brieflisting)
+            self.db.session.commit()
+        # changebrieflistingarr.append(brieflisting)
+        except Exception as e:
+            print_and_log(f"Error during update or insert: {str(e)}")
+            self.db.session.rollback()
+
+    def updateBriefListing(self,updatedbrieflisting, fsbo_status=None):
         try:
             print_and_log('Updating existing listing for ' + updatedbrieflisting.streetAddress)
-            self.db.session.add(updatedbrieflisting)
+            self.db.session.merge(updatedbrieflisting)
+            # If FSBO status is provided, update it as well
+            if fsbo_status:
+                existing_fsbo_status = self.db.session.query(FSBOStatus).filter_by(
+                    zpid=updatedbrieflisting.zpid).first()
+
+                if existing_fsbo_status:
+                    # Update FSBO status fields
+                    if fsbo_status.hasContactedOnline and not existing_fsbo_status.hasContactedOnline:
+                        existing_fsbo_status.hasContactedOnline = True
+                        existing_fsbo_status.contactedOnlineTimestamp = datetime.utcnow()  # Set timestamp for online contact
+
+                    if fsbo_status.hasPostCarded and not existing_fsbo_status.hasPostCarded:
+                        existing_fsbo_status.hasPostCarded = True
+                        existing_fsbo_status.postcardedTimestamp = datetime.utcnow()  # Set timestamp for postcard
+
+                else:
+                    # If FSBO status does not exist, add a new entry with timestamps
+                    new_fsbo_status = FSBOStatus(
+                        zpid=updatedbrieflisting.zpid,
+                        hasContactedOnline=fsbo_status.hasContactedOnline,
+                        hasPostCarded=fsbo_status.hasPostCarded,
+                        contactedOnlineTimestamp=datetime.utcnow() if fsbo_status.hasContactedOnline else None,
+                        postcardedTimestamp=datetime.utcnow() if fsbo_status.hasPostCarded else None
+                    )
+                    self.db.session.add(new_fsbo_status)
+
+
             self.db.session.commit()
         # changebrieflistingarr.append(brieflisting)
         except Exception as e:
@@ -117,6 +161,14 @@ class BriefListingController():
                     print_and_log(f"Error during update or insert: {str(e)}")
                     self.db.session.rollback()
         return changebrieflistingarr,oldbrieflistingarr
+
+    def UpdateBriefListing(self,brieflisting):
+        try:
+            self.db.session.merge(brieflisting)
+            self.db.session.commit()
+        except Exception as e:
+            print_and_log(f"Error during update or insert: {str(e)}")
+            self.db.session.rollback()
 
     def listingsN_Cleanup(self):
         # Query to find all listings with 'FIX ME' as the neighborhood
@@ -304,6 +356,15 @@ class BriefListingController():
         neighbourhoods = [neighbourhood[0] for neighbourhood in unique_neighbourhoods]
 
         return neighbourhoods
+
+    def getFSBOListings(self):
+        try:
+            # Query to filter listings where SoldBy is "FSBO"
+            fsbo_listings = self.BriefListing.query.filter_by(soldBy='FSBO').all()
+            return fsbo_listings
+        except Exception as e:
+            print_and_log(f"Error retrieving FSBO listings: {str(e)}")
+            return []
 
     def UniqueCities(self):
         # Query the database for distinct neighbourhoods in the specified cities

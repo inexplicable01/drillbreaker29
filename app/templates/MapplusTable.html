@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment</title>
+    <style>
+        #map-container {
+            height: 80vh; /* 80% of the viewport height */
+            width: 60vw; /* 60% of the viewport width */
+            margin: 0 auto; /* center the map horizontally */
+        }
+    </style>
+</head>
+<body>
+<div style="display: flex;flex-grow: 1; overflow-y: auto;">
+    <form method="POST">
+
+        <div style="display: flex; flex: 4;flex-direction: column; margin-right: auto;">
+            <h3>Select Locations:</h3>
+
+            <div style="display: flex; flex: 1; flex-direction: column; margin: 0 20px;">
+                <select name="location">
+                    {% for location in LOCATIONS %}
+                        <option value="{{ location }}" {% if location == selected_location %}selected{% endif %}>
+                            {{ location }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+        </div>
+
+        <button type="submit">Search</button>
+    </form>
+</div>
+<div id="map-container">
+    {{ m | safe }}
+</div>
+
+<div class="col-md-9">
+    {% include 'components/listing_tables.html' %}
+</div>
+</body>
+</html>

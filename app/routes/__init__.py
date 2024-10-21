@@ -12,6 +12,8 @@ from .sellersupport import sellersupport_bp
 from .clickablemap import clickablemap_bp
 from .platformSMSsupport import platformSMSBP
 from .email_monitor import emailmonitorbp
+from .rentalhomes import rental_bp
+from .fsbo import fsbo_bp
 
 def register_blueprints(app: Flask):
     app.register_blueprint(alert_bp)
@@ -26,3 +28,5 @@ def register_blueprints(app: Flask):
     app.register_blueprint(clickablemap_bp)
     app.register_blueprint(platformSMSBP)
     app.register_blueprint(emailmonitorbp)
+    app.register_blueprint(rental_bp)
+    app.register_blueprint(fsbo_bp)

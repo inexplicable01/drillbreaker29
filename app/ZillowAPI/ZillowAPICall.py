@@ -2,7 +2,7 @@ import requests
 import os
 from warnings import warn
 import time
-from app.DBModels.ZillowBriefHomeData import BriefListing
+from app.DBModels.BriefListing import BriefListing
 import sqlite3
 url = "https://zillow56.p.rapidapi.com/search"
 # url ="https://zillow-com4.p.rapidapi.com/properties/search"
@@ -62,6 +62,37 @@ def SearchZillowBriefListingByAddress(addressStr):
     except Exception as e:
         warn(f"Search Zillow failed due to an exception: {e}")
         return None
+
+
+def RentEstimateBriefListing(addressStr):
+    ##  this is when you have the full address and you still have to only get the brief version of the listing.
+    querystring = {"address":addressStr}
+    response = requests.get("https://zillow56.p.rapidapi.com/rent_estimate", headers=headers, params=querystring)
+    time.sleep(0.5)
+
+    if response.status_code == 502:
+        warn('502 on ' + addressStr)
+    try:
+        return response.json()
+    except Exception as e:
+        warn(f"Search Zillow failed due to an exception: {e}")
+        return None
+
+
+
+def SearchZillowBriefListingByAddress(addressStr):
+    ##  this is when you have the full address and you still have to only get the brief version of the listing.
+    querystring = {"location": addressStr, "output": "json", "status": "forSale", "doz": "any"}
+    response = requests.get("https://zillow56.p.rapidapi.com/search", headers=headers, params=querystring)
+    time.sleep(0.5)
+    if response.status_code == 502:
+        warn('502 on ' + addressStr)
+    try:
+        return response.json()['results'][0]
+    except Exception as e:
+        warn(f"Search Zillow failed due to an exception: {e}")
+        return None
+
 
 def SearchZillowNewListingByLocation(location, daysonzillow):
     curpage = 1
@@ -179,6 +210,39 @@ def SearchZillowHomesByCity(city, lastpage, maxpage, status="forSale", duration=
     for briefhomedata in houseresult:
             forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,city))
     return forsalebrieflistingarr, lastpage, maxpage
+
+def SearchZillowHomesFSBO(city, lastpage, maxpage, status="forSale", duration=14):
+
+    houseresult=[]
+    print('Search in location ' + status + ' : ', city)
+    # lastpage = 1
+    # maxpage = 2
+
+    querystring = {"location":city + ", wa","page": str(lastpage),"status": status,
+                   "listing_type": "by_owner_other",
+                   "isForSaleByOwner": "true"}
+    response = requests.get(url, headers=headers, params=querystring)
+    time.sleep(0.5)
+    if response.status_code==502:
+        raise('502 on ' + city)
+    try:
+        result = response.json()
+        houseresult = houseresult+ result['results']
+        maxpage = result['totalPages']
+        print('lastpage:' + str(lastpage) + ' out of ' + str(maxpage))
+        lastpage = lastpage + 1
+    except Exception as e:
+        raise(f"Search Zillow failed due to an exception")
+
+    brieflistingarr = []
+    for briefhomedata in houseresult:
+        if 'is_forAuction' in briefhomedata['listing_sub_type'].keys():
+            continue
+        # print(briefhomedata['listing_sub_type'])
+        brieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,city))
+
+
+    return brieflistingarr, lastpage, maxpage
 # def UpdateListfromLocation(location):
 #     querystring = {"location":location + ", wa","status":"recentlySold","doz":"30"}
 #     response = requests.get(url, headers=headers, params=querystring)

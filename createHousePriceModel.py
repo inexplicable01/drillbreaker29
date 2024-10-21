@@ -12,7 +12,7 @@ DB_PASSWORD = 'wayber_housing'
 DB_NAME = 'FatPanda1985$housingdata'
 Base = declarative_base()
 import pandas as pd
-from app.DBModels.ZillowBriefHomeData import BriefListing
+from app.DBModels.BriefListing import BriefListing
 
 def print_and_log(message):
     log_file_path = 'logfile.txt'  # Specify your log file name here

@@ -75,14 +75,15 @@ def schedule():
         {"service": "Cleaning","serviceVendor":cleaner, "duration": 3, "cost":500},
         {"service": "Staging", "serviceVendor":stager, "duration": 3, "cost":5000},
         {"service": "Photography", "serviceVendor":photographer, "duration": 1 , "cost":600},
-        {"service": "Listing", "serviceVendor":'Agent', "duration": 14 ,"cost":0},
-        {"service": "Open House", "serviceVendor":'Agent', "duration": 1,"cost":0},
-        {"service": "Final Walkthrough", "serviceVendor":'Agent', "duration": 1, "cost":0},
-        {"service": "Closing", "serviceVendor":titlecompany, "duration": 17,  "cost":3000},
+        # {"service": "Listing", "serviceVendor":'Agent', "duration": 14 ,"cost":0},
+        # {"service": "Open House", "serviceVendor":'Agent', "duration": 1,"cost":0},
+        # {"service": "Final Walkthrough", "serviceVendor":'Agent', "duration": 1, "cost":0},
+        {"service": "Title and Escrow", "serviceVendor":titlecompany, "duration": 17,  "cost":0},
         # {"service": "Title and Escrow", "serviceVendor":titlecompany, "duration": 9},
         {"service": "Legal Review","serviceVendor":legaladvisor,  "duration": 1,"cost":2000},
         {"service": "Moving", "serviceVendor":mover, "duration": 2,"cost":5000}
     ]
+
 
     current_date = start_date
 

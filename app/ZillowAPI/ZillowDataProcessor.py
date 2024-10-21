@@ -12,7 +12,7 @@ from app.ZillowAPI.ZillowAPICall import SearchZillowNewListingByLocation,\
     SearchZillowNewListingByInterest,\
     SearchZillowHomesByLocation
 
-from app.DBModels.ZillowBriefHomeData import BriefListing, filter_dataclass_fields
+from app.DBModels.BriefListing import BriefListing, filter_dataclass_fields
 from os.path import join
 import os
 import json
