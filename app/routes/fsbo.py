@@ -1,5 +1,5 @@
 # email_bp.py
-from flask import Blueprint, redirect, url_for, jsonify, render_template, request
+from flask import Blueprint, redirect, url_for, jsonify, render_template, request, Response
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.config import Config,SW
@@ -75,6 +75,29 @@ def updatefsbolisting():
     return render_template('ForSaleByOwner.html',fsbo_listings=selectedListing(fsbo_listings))
 
 
+import csv
+import io
+@fsbo_bp.route('/csv', methods=['GET'])
+def download_csv():
+    # Create an in-memory output file
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Write the header
+
+    fsbo_listings = brieflistingcontroller.getFSBOListings()
+    writer.writerow(['zpid', 'link', 'address', 'city', 'state', 'price', 'status'])
+
+    # Write each FSBO listing row
+    for listing in fsbo_listings:
+        writer.writerow([listing.zpid, f'https://www.zillow.com{listing.hdpUrl}', listing.streetAddress, listing.city , listing.state, listing.price])
+
+    # Set the output to the beginning so it can be read
+    output.seek(0)
+
+    # Send the CSV file as a response
+    return Response(output, mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=fsbo_listings.csv"})
+
 def selectedListing(fsbo_listings):
     seattle_latitude = 47.6062
     seattle_longitude = -122.3321
@@ -102,3 +125,4 @@ def selectedListing(fsbo_listings):
                 untouched.append(listing)
 
     return untouched + touched_wcommentsonly +touched_andcontacted
+
