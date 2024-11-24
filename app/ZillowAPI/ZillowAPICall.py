@@ -185,7 +185,7 @@ def SearchZillowHomesByLocation(location, status="recentlySold", duration=14,min
     return houseresult
 
 def SearchZillowHomesByCity(city, lastpage, maxpage, status="forSale", duration=14):
-
+    #Brief Listing
 
     houseresult=[]
     print('Search in location ' + status + ' : ', city)

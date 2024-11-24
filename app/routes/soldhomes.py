@@ -28,15 +28,7 @@ def AreaReport():
         selectedlocations = []
         selectedhometypes = Config.HOMETYPES
         selected_doz = 30
-    elif request.method == 'PATCH':
-        try:
-            selected_doz =  int(request.form.get('doz'))
-            AreaReportGatherData(Config.CITIES,selected_doz)
-            # If the function successfully completes, return a success message
-            return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200
-        except Exception as e:
-            # If the function fails, return a failure message with details
-            return jsonify({'status': 'failure', 'message': 'Data gathering failed.', 'details': str(e)}), 500
+
 
 
 

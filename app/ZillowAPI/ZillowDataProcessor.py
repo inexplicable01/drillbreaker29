@@ -77,50 +77,54 @@ def SearchAllNewListing(location, daysonzillow):
     houseresult = SearchZillowNewListingByLocation(location, daysonzillow)
     dbmethods.loadHouseSearchDataintoDB(houseresult, 'forSale')
 
-def ZillowSearchForOpenHouse(TR,TL,BR,BL):
 
-    location = 'seattle'
-    daysonzillow = 30
-    briefhomedataarr = SearchZillowNewListingByLocation(location,daysonzillow)
-    openbrieflisting=[]
-    for briefhomedata in briefhomedataarr:
-        # filtered_data = filter_dataclass_fields(briefhomedata, BriefListing)
-        openbrieflisting.append(BriefListing.CreateBriefListing(briefhomedata, None, None, location))
-        # soldhomes=  soldhomes+ FindSoldHomesByLocation(location,30)
 
-    filtered_houses = []
-    for brieflisting in openbrieflisting:
 
-        # Check if the house's coordinates fall within the defined bounding box
-        if (BL[0] <= brieflisting.latitude <= TL[0]) and (TL[1] <= brieflisting.longitude <= TR[1]):
 
-            propertydata = loadPropertyDataFromBrief(brieflisting)
-            try:
-                print('address',propertydata['address']['streetAddress'])
-                # print('isOpenHouse',response['listingSubType']['isOpenHouse'])
-                # print('openHouseSchedule',response['openHouseSchedule'])
-                # print('homeType', response['homeType'])
-                # print('propertyCondition', response['resoFacts']['propertyCondition'])
-                # print('neighborhoodRegion', response['neighborhoodRegion'])
-                # neighborhoodRegion
-                if propertydata['homeType']=="LOT" or propertydata['homeType']=="MULTI_FAMILY" or propertydata['homeType']=="CONDO":
-                    print('Not a proper home Type, skip')
-                    continue
-                if propertydata['resoFacts']['propertyCondition']=="Under Construction":
-                    print('Under Construction, skip')
-                    continue
-                if propertydata['neighborhoodRegion']['name']  in Config.WRONGNEIGHBORHOODS:
-                    print('wrong neighbourhood, skip')
-                    continue
-                if not propertydata['listingSubType']['isOpenHouse']:
-                    filtered_houses.append(propertydata)
-            except:
-                continue
-
-    # Calculate the center of your bounding box (average of the bounding box coordinates)
-
-    return filtered_houses
-
+# def ZillowSearchForOpenHouse(TR,TL,BR,BL):
+#
+#     location = 'seattle'
+#     daysonzillow = 30
+#     briefhomedataarr = SearchZillowNewListingByLocation(location,daysonzillow)
+#     openbrieflisting=[]
+#     for briefhomedata in briefhomedataarr:
+#         # filtered_data = filter_dataclass_fields(briefhomedata, BriefListing)
+#         openbrieflisting.append(BriefListing.CreateBriefListing(briefhomedata, None, None, location))
+#         # soldhomes=  soldhomes+ FindSoldHomesByLocation(location,30)
+#
+#     filtered_houses = []
+#     for brieflisting in openbrieflisting:
+#
+#         # Check if the house's coordinates fall within the defined bounding box
+#         if (BL[0] <= brieflisting.latitude <= TL[0]) and (TL[1] <= brieflisting.longitude <= TR[1]):
+#
+#             propertydata = loadPropertyDataFromBrief(brieflisting)
+#             try:
+#                 print('address',propertydata['address']['streetAddress'])
+#                 # print('isOpenHouse',response['listingSubType']['isOpenHouse'])
+#                 # print('openHouseSchedule',response['openHouseSchedule'])
+#                 # print('homeType', response['homeType'])
+#                 # print('propertyCondition', response['resoFacts']['propertyCondition'])
+#                 # print('neighborhoodRegion', response['neighborhoodRegion'])
+#                 # neighborhoodRegion
+#                 if propertydata['homeType']=="LOT" or propertydata['homeType']=="MULTI_FAMILY" or propertydata['homeType']=="CONDO":
+#                     print('Not a proper home Type, skip')
+#                     continue
+#                 if propertydata['resoFacts']['propertyCondition']=="Under Construction":
+#                     print('Under Construction, skip')
+#                     continue
+#                 if propertydata['neighborhoodRegion']['name']  in Config.WRONGNEIGHBORHOODS:
+#                     print('wrong neighbourhood, skip')
+#                     continue
+#                 if not propertydata['listingSubType']['isOpenHouse']:
+#                     filtered_houses.append(propertydata)
+#             except:
+#                 continue
+#
+#     # Calculate the center of your bounding box (average of the bounding box coordinates)
+#
+#     return filtered_houses
+#
 
 def ZillowSearchForForSaleHomes(clientinterest):
     forsalehomesarr = []
@@ -270,36 +274,37 @@ def FindHomesByNeighbourhood(search_neigh, doz):
 
 def FindHomesByCities(city, doz):
     interval=100
-    minhomesize=4000
+    minhomesize=100
     maxhomesize=interval+minhomesize
     soldbrieflistingarr = []
     while maxhomesize < 6000:
-        soldrawdata = SearchZillowHomesByLocation(search_neigh,"recentlySold",doz,minhomesize,maxhomesize)
+        soldrawdata = SearchZillowHomesByLocation(city,"recentlySold",doz,minhomesize,maxhomesize)
         for briefhomedata in soldrawdata:
-                soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
+                soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,city))
         print(f"Finished searching {minhomesize} to {maxhomesize}")
         minhomesize = minhomesize + interval
         maxhomesize = maxhomesize + interval
-    forsalerawdata = SearchZillowHomesByLocation(search_neigh,"forSale","any")
+    forsalerawdata = SearchZillowHomesByLocation(city,"forSale","any")
     forsalebrieflistingarr = []
     for briefhomedata in forsalerawdata:
-            forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
+            forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,city))
     return soldbrieflistingarr,forsalebrieflistingarr
 
 
 def loadPropertyDataFromBrief(brieflisting:BriefListing):
     filepath = os.path.join(os.getenv('ADDRESSJSON'), brieflisting.ref_address().replace('/','div') + '.txt')
     print('Load property : ',brieflisting)
-    if not os.path.exists(filepath):
-        propertydata = SearchZillowByZPID(brieflisting.zpid)
-        json_string = json.dumps(propertydata, indent=4)
-        with open(filepath, 'w') as f:
-            f.write(json_string)
-    else:
-        with open(filepath, 'r') as file:
-            # Read the content of the file
-            text_content = file.read()
-            propertydata = json.loads(text_content)
+    propertydata = SearchZillowByZPID(brieflisting.zpid)
+    # if not os.path.exists(filepath):
+    #
+    #     json_string = json.dumps(propertydata, indent=4)
+    #     with open(filepath, 'w') as f:
+    #         f.write(json_string)
+    # else:
+    #     with open(filepath, 'r') as file:
+    #         # Read the content of the file
+    #         text_content = file.read()
+    #         propertydata = json.loads(text_content)
 
 
             # {

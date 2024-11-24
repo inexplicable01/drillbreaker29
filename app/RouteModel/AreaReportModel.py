@@ -15,66 +15,7 @@ def AreaReportGatherData(neighbourhoods, doz):
     # soldbriefarr=[]
     # forsalebriefarr=[]
     count =0
-    for search_neigh in neighbourhoods:
-        soldbrieflistingarr, forsalebrieflistingarr = FindHomesByNeighbourhood(search_neigh,doz)
 
-        forsalebrief_ids = [listing.zpid for listing in forsalebrieflistingarr]
-        for_sale_DB = brieflistingcontroller.forSaleInNeighbourhood(search_neigh,doz)
-
-        #
-        # # Finding IDs in forsaleinarea that are not in forsalebrief_ids
-        # no_longer_selling_ids = [zpid for zpid in forsaleinarea_ids if zpid not in forsalebrief_ids]
-
-        for brieflisting in for_sale_DB:
-            if brieflisting.zpid in forsalebrief_ids:
-                print(brieflisting.__str__() + ' is still for sale.')
-                continue
-            try:
-                status = ListingStatus(brieflisting)
-                if status =='PENDING' or status =='RECENTLY_SOLD':
-                    brieflisting.homeStatus=status
-                    print(brieflisting.__str__() + ' has changed from Selling to Pending or Sold!!!')
-                    brieflistingcontroller.updateBriefListing(brieflisting)
-                else:
-                    brieflisting.homeStatus = status
-                    print('Looking into this status '+  status + '  : ' + brieflisting.__str__())
-            except Exception as e:
-                print(e, brieflisting)
-
-    # #Updating the Sold Properties
-        solddb = brieflistingcontroller.SoldHomesinNeighbourhood(search_neigh,doz)
-        solddb_ids = [listing.zpid for listing in solddb]
-        newsoldbriefs=[]
-
-        for ccc, brieflisting in enumerate(soldbrieflistingarr):
-            if brieflisting.zpid in solddb_ids:
-                ##code to remove brieflisting from soldbriefarr
-                continue
-            try:
-                print(f"{ccc} out of {soldbrieflistingarr.__len__()}")
-                propertydata = loadPropertyDataFromBrief(brieflisting)
-                listresults = ListingLengthbyBriefListing(propertydata)
-                brieflisting.updateListingLength(listresults)
-                brieflisting.hdpUrl = propertydata['hdpUrl']
-                newsoldbriefs.append(brieflisting)#looking for new sold stuff
-            except Exception as e:
-                print(e, brieflisting)
-        brieflistingcontroller.SaveBriefListingArr(newsoldbriefs)#if its sold then maybe it was pending at some point. This line updates it.
-
-        newsalebriefs = []
-        for brieflisting in forsalebrieflistingarr:
-            if brieflisting.zpid in forsalebrief_ids:
-                ##code to remove brieflisting from soldbriefarr
-                continue
-            ## write code here to do this:  forsaleinarea is a list of ids that are for sale in the database, the forsalebriefarr is a list of brieflistings that are currently on sale as extracted by the API.
-            ## if any id in forsaleinarea is not in forsalebriefarr, then that means that id is no longer selling and I have to create an array of that.
-            try:
-                propertydata = loadPropertyDataFromBrief(brieflisting)
-                brieflisting.hdpUrl = propertydata['hdpUrl']
-                newsalebriefs.append(brieflisting)
-            except Exception as e:
-                print(e, brieflisting)
-        brieflistingcontroller.SaveBriefListingArr(newsalebriefs)
 
 
 def ListAllNeighhourhoodsByCities(cities):

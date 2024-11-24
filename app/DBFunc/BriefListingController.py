@@ -286,6 +286,14 @@ class BriefListingController():
 
         return unfiltered_soldhomes
 
+    def OpenHousePotential(self):
+        openhouse_brieflistings = BriefListing.query.filter(
+            BriefListing.openhouseneed == True,
+            BriefListing.homeStatus == "FOR_SALE"
+        ).all()
+        return openhouse_brieflistings
+
+
     def uniqueNeighbourhood(self, city):
         # Calculate the date for the given days ago from today
         unique_neighbourhoods_query=BriefListing.query.with_entities(

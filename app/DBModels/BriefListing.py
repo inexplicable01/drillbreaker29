@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field, InitVar, fields
 from typing import Optional, Dict
 
+from openpyxl.pivot.fields import Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime , Numeric
 Base = declarative_base()
@@ -64,6 +65,7 @@ class BriefListing(db.Model):
     listtime = db.Column(BigInteger, nullable=True)
     soldBy = db.Column(db.String(100), nullable=True)
     waybercomments = db.Column(db.String(255), nullable=True)
+    openhouseneed = db.Column(db.Boolean,nullable=True)
 
     # Define the one-to-one relationship to FSBOStatus
     fsbo_status = db.relationship('FSBOStatus', backref='brief_listing', uselist=False, lazy=True)
