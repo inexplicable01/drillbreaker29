@@ -119,6 +119,8 @@ def maintainListings():
                     if brieflisting.zpid in solddb_ids:
                         ##code to remove brieflisting from soldbriefarr
                         continue
+                    if brieflistingcontroller.get_listing_by_zpid(brieflisting.zpid) is not None:
+                        continue
                     try:
                         print(f"{ccc} out of {soldbrieflistingarr.__len__()}")
                         propertydata = loadPropertyDataFromBrief(brieflisting)

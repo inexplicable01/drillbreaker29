@@ -5,7 +5,7 @@ import os
 # url2 = f"https://www.drillbreaker29.com/maintanance/updatelistings"
 url3 = f"https://www.drillbreaker29.com/maintanance/listingscheck"
 urlfsbo = f"https://www.drillbreaker29.com/maintanance/fsbo"
-urlopen = f"https://www.drillbreaker29.com/maintanance/fsbo"
+urlopen = f"https://www.drillbreaker29.com/maintanance/updateopenhouse"
 
 ##Need FSBO weekly Update
 ##Need All ForSale Listing Weekly Update
