@@ -109,6 +109,9 @@
 <form action="{{ url_for('email.sendEmailUpdates') }}" method="post">
     <button type="submit">Send Email!</button>
 </form>
+
+<p>This is last update on {{ lastupdate }}</p>
+<p>{{ recent_pending_count }} went pending in the last 7 days.</p>
 {#        <a href="/downloadpicsfromMLS">downloadpicsfromMLS</a>#}
 {#        <p>fkajdsf</p>#}
 {#        <a href="/mapexample">mapexample</a>#}

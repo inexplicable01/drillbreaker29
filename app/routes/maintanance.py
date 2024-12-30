@@ -79,7 +79,7 @@ def updateopenhouse():
 
             except Exception as e:
                 print(e,brieflisting)
-    return openhouses, 200
+    return jsonify({'status': 'success', 'message': 'Data gathering complete.','list':[item.to_dict() for item in openhouses]}), 200
 
 @maintanance_bp.route('/maintainListings', methods=['PATCH'])
 def maintainListings():
@@ -215,6 +215,7 @@ def updatefsbo():
     # Assuming sendEmailwithNewListing() is a function that sends an email with new listings.
     cities= washingtoncitiescontroller.getallcities()
     fsboarr=[]
+    count = 0
     for city in cities:
         lastpage = 1
         maxpage = 2
@@ -225,24 +226,24 @@ def updatefsbo():
                 print(e, "seattle")
             fsboarr = fsboarr + fsbolistingarr
 
-        count =0
-    for fsbo in fsboarr:
-        # print(fsbo)
-        propertydetail = SearchZillowByZPID(fsbo.zpid)
-        # print(propertydetail)
-        if 'brokerIdDimension' in propertydetail.keys():
-            if propertydetail['brokerIdDimension'] == 'For Sale by Agent':
-                # print(propertydetail)
-                continue
-            elif propertydetail['brokerIdDimension'] == 'For Sale by Owner':
-                print(propertydetail['address'])
-                fsbo.soldBy="FSBO"
-                fsbo.hdpUrl = propertydetail['hdpUrl']
-                if brieflistingcontroller.get_listing_by_zpid(fsbo.zpid):
-                    brieflistingcontroller.updateBriefListing(fsbo)
-                else:
-                    brieflistingcontroller.addBriefListing(fsbo)
-                count +=1
+
+        for fsbo in fsboarr:
+            # print(fsbo)
+            propertydetail = SearchZillowByZPID(fsbo.zpid)
+            print(count)
+            if 'brokerIdDimension' in propertydetail.keys():
+                if propertydetail['brokerIdDimension'] == 'For Sale by Agent':
+                    print(propertydetail['address'])
+                    continue
+                elif propertydetail['brokerIdDimension'] == 'For Sale by Owner':
+                    print(propertydetail['address'])
+                    fsbo.soldBy="FSBO"
+                    fsbo.hdpUrl = propertydetail['hdpUrl']
+                    if brieflistingcontroller.get_listing_by_zpid(fsbo.zpid):
+                        brieflistingcontroller.updateBriefListing(fsbo)
+                    else:
+                        brieflistingcontroller.addBriefListing(fsbo)
+                    count +=1
 
 
     return f"Committed {count} entires", 200

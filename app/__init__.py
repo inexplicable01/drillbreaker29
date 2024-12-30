@@ -31,7 +31,7 @@ def load_env(env_file=".env"):
 load_env()
 
 mail = Mail()
-scheduler = BackgroundScheduler()
+# scheduler = BackgroundScheduler()
 
 
 def create_ssh_tunnel():
@@ -56,6 +56,7 @@ def create_app(debug=False,config_object="config.module.path"):
     if os.getenv('FLASK_ENV') == 'development':
         # Setup SSH tunnel in development
         tunnel = create_ssh_tunnel()
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_recycle': 3600, 'pool_pre_ping': True}
         app.config['SQLALCHEMY_DATABASE_URI'] = (
             f"mysql+mysqldb://{os.getenv('DATABASE_USER')}:{os.getenv('DATABASE_PASS')}"
             f"@127.0.0.1:{tunnel.local_bind_port}/{os.getenv('DATABASE_NAME')}"

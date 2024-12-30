@@ -385,4 +385,18 @@ class BriefListingController():
 
         return cities
 
+    def latestListingTime(self):
+        return BriefListing.query.with_entities(
+            func.max(BriefListing.listtime).label('latest_listtime')
+        ).scalar()
+
+    def pendingListings(self, fromdays):
+        seven_days_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
+        # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
+        recent_pending_count = BriefListing.query.filter(
+            BriefListing.homeStatus == 'PENDING',
+            BriefListing.pendday >= seven_days_ago
+        ).count()
+        return recent_pending_count
+
 brieflistingcontroller = BriefListingController()
