@@ -223,15 +223,15 @@ def maintainListings():
                 newsoldbriefs)  # if its sold then maybe it was pending at some point. This line updates it.
 
             newsalebriefs = []
+            for_sale_DB = brieflistingcontroller.forSaleInCity(city)
+            forsaledb_ids = [brieflist.zpid for brieflist in for_sale_DB]
             for brieflisting in forsalebrieflistingarr:
                 # print(brieflisting.streetAddress)
-                if "4601" in brieflisting.streetAddress:
-                    print(brieflisting.streetAddress)
                 if "Aurora" in brieflisting.streetAddress:
                     print(brieflisting.streetAddress)
                 if "Crockett" in brieflisting.streetAddress:
                     print(brieflisting.streetAddress)
-                if brieflisting.zpid in forsalebrief_ids:
+                if brieflisting.zpid in forsaledb_ids:
                     ##code to remove brieflisting from soldbriefarr
                     continue
                 ## write code here to do this:  forsaleinarea is a list of ids that are for sale in the database, the forsalebriefarr is a list of brieflistings that are currently on sale as extracted by the API.
