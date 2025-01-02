@@ -159,7 +159,7 @@ def maintainListings_full():
 
 @maintanance_bp.route('/getCityList', methods=['GET'])
 def cityList():
-    return {"cities":Config.CITIES}, 200
+    return {"cities":washingtoncitiescontroller.getallcities()}, 200
 
 @maintanance_bp.route('/maintainListings', methods=['PATCH'])
 def maintainListings():

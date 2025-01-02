@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<table border="1">
+    <!-- Table headers -->
+    <thead>
+    <tr>
+        {#        <th>zpid</th>#}
+        <th>City</th>
+        <th>Sold</th>
+        <th>Pending</th>
+        <th>For Sale</th>
+        <th>Latest Brief Listing</th>
+    </tr>
+    </thead>
+
+    <!-- Table data -->
+    <tbody>
+    {% for citydata in citiesdata %}
+        <tr>
+            {#            <td>{{ listing.zpid }}</td>#}
+            <td>{{ citydata.name }}</td>
+            <td>{{ citydata.sold  }}</td>
+            <td>{{ citydata.pending  }}</td>
+            <td>{{ citydata.forsale  }}</td>
+        <td>{{ citydata.updated  }}</td>
+
+
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>
