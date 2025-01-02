@@ -149,22 +149,29 @@ def SearchZillowNewListingByInterest(location, beds_min,beds_max,baths_min,price
             return houseresult
     return houseresult
 
-def SearchZillowHomesByLocation(location, status="recentlySold", duration=14,minhomesize=0,maxhomesize=4000):
-
-
+def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, duration=14,minhomesize=0,maxhomesize=4000):
     houseresult=[]
     print('Search in location ' + status + ' : ', location)
     lastpage = 1
     maxpage = 2
     while maxpage>lastpage:
-        querystring = {"location":location + ", wa","page": str(lastpage),"status": status,
-         "isMultiFamily": "false",
-         "isApartment": "false",
-                       "isCondo": "false",
-                       "timeOnZillow": str(duration),
-                       "sqft_min": str(minhomesize),
-                       "sqft_max": str(maxhomesize)}
-        #
+
+        if status== "recentlySold":
+            querystring = {"location": location + ", wa", "page": str(lastpage), "status": status,
+                           "isMultiFamily": "false",
+                           "isApartment": "false",
+                           "isCondo": "false",
+                           "sqft_min": str(minhomesize),
+                           "sqft_max": str(maxhomesize),
+                           "doz": doz}
+        elif status== "forSale":
+            querystring = {"location": location + ", wa", "page": str(lastpage), "status": status,
+                           "isMultiFamily": "false",
+                           "isApartment": "false",
+                           "isCondo": "false",
+                           "timeOnZillow": str(duration),
+                           "sqft_min": str(minhomesize),
+                           "sqft_max": str(maxhomesize)}
         # querystring = {"location": "houston, tx", "output": "json", "status": "forSale",
         #                "sortSelection": "priorityscore", "listing_type": "by_agent", "doz": "any", }
         response = requests.get(url, headers=headers, params=querystring)
