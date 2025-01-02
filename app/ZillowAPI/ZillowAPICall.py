@@ -149,47 +149,130 @@ def SearchZillowNewListingByInterest(location, beds_min,beds_max,baths_min,price
             return houseresult
     return houseresult
 
-def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, duration=14,minhomesize=0,maxhomesize=4000):
-    houseresult=[]
-    print('Search in location ' + status + ' : ', location)
-    lastpage = 1
-    maxpage = 2
-    while maxpage>lastpage:
+# def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, duration=14):
+#     houseresult=[]
+#     print('Search in location ' + status + ' : ', location)
+#     lastpage = 1
+#     maxpage = 2
+#
+#     interval=10000
+#     minhomesize=1
+#     maxhomesize=interval+minhomesize
+#
+#     while maxpage>lastpage:
+#         querystring = {
+#             "location": f"{location}, wa",
+#             "page": str(lastpage),
+#             "status": status,
+#             "sqft_min": str(minhomesize),
+#             "sqft_max": str(maxhomesize),
+#             "doz": doz if status == "recentlySold" else None,
+#             "timeOnZillow": duration if status == "forSale" else None,
+#             "isMultiFamily": "false",
+#         }
+#         querystring = {k: v for k, v in querystring.items() if v is not None}
+#
+#
+#         response = requests.get(url, headers=headers, params=querystring)
+#
+#         time.sleep(0.5)
+#         if response.status_code==502:
+#             warn('502 on ' + location)
+#             break
+#         try:
+#             result = response.json()
+#             maxpage =result['totalPages']
+#             if maxpage >= 20:
+#                 print("search too large, set interval to half")
+#                 ### go back to query string building.
+#             houseresult = houseresult+ result['results']
+#             maxpage = result['totalPages']
+#             print('lastpage:' + str(lastpage) + ' out of ' + str(maxpage))
+#             lastpage = lastpage + 1
+#
+#         except Exception as e:
+#             print(f"Search Zillow failed due to an exception")
+#             break
+#     print('found ', len(houseresult), ' results')
+#     return houseresult
 
-        if status== "recentlySold":
-            querystring = {"location": location + ", wa", "page": str(lastpage), "status": status,
-                           "isMultiFamily": "false",
-                           "isApartment": "false",
-                           "isCondo": "false",
-                           "sqft_min": str(minhomesize),
-                           "sqft_max": str(maxhomesize),
-                           "doz": doz}
-        elif status== "forSale":
-            querystring = {"location": location + ", wa", "page": str(lastpage), "status": status,
-                           "isMultiFamily": "false",
-                           "isApartment": "false",
-                           "isCondo": "false",
-                           "timeOnZillow": str(duration),
-                           "sqft_min": str(minhomesize),
-                           "sqft_max": str(maxhomesize)}
-        # querystring = {"location": "houston, tx", "output": "json", "status": "forSale",
-        #                "sortSelection": "priorityscore", "listing_type": "by_agent", "doz": "any", }
-        response = requests.get(url, headers=headers, params=querystring)
-        time.sleep(0.5)
-        if response.status_code==502:
-            warn('502 on ' + location)
+
+
+def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, duration=14):
+    houseresult = []
+    print(f'Searching {status} homes in location: {location}')
+
+    interval = 10000
+    minhomesize = 1
+    maxhomesize = interval + minhomesize
+
+    while True:
+        lastpage = 1
+        maxpage = 2
+        results_in_this_interval = []
+
+        while maxpage > lastpage:
+            querystring = {
+                "location": f"{location}, wa",
+                "page": str(lastpage),
+                "status": status,
+                "sqft_min": str(minhomesize),
+                "sqft_max": str(maxhomesize),
+                "doz": doz if status == "recentlySold" else None,
+                "timeOnZillow": duration if status == "forSale" else None,
+                "isMultiFamily": "false",
+            }
+            querystring = {k: v for k, v in querystring.items() if v is not None}
+            print(f"Search {minhomesize} to {maxhomesize} with status{status}.")
+            response = requests.get(url, headers=headers, params=querystring)
+            time.sleep(0.5)
+
+            if response.status_code == 502:
+                warn(f'502 error on {location}')
+                break
+
+            try:
+                result = response.json()
+
+
+                if result.get('totalPages') >= 20:
+                    print("Search too large, reducing interval.")
+                    interval //= 2
+                    maxhomesize = minhomesize + interval  # Adjust the range
+                    continue  # Restart the outer loop with updated interval
+                maxpage = result.get('totalPages')
+                results_in_this_interval.extend(result.get('results', []))
+                print(f'Page {lastpage} of {maxpage} processed.')
+                lastpage += 1
+
+            except Exception as e:
+                print("Search Zillow failed due to an exception:", e)
+                break
+
+        houseresult.extend(results_in_this_interval)
+
+        # Check if interval is small enough or search is complete
+        if maxpage < 20:
+            if interval == 1:
+                print("Search complete with current interval.")
+                break
+
+        if maxpage < 3:
+            interval = 2*interval
+
+
+
+        # Move to the next range
+        if maxpage <= 20 and minhomesize + interval >= 10000:  # Arbitrary max size for demonstration
+            print("All intervals processed.")
             break
-        try:
-            result = response.json()
-            houseresult = houseresult+ result['results']
-            maxpage = result['totalPages']
-            print('lastpage:' + str(lastpage) + ' out of ' + str(maxpage))
-            lastpage = lastpage + 1
-        except Exception as e:
-            print(f"Search Zillow failed due to an exception")
-            break
-    print('found ', len(houseresult), ' results')
+
+        minhomesize = maxhomesize
+        maxhomesize = minhomesize + interval
+
+    print(f'Found {len(houseresult)} results.')
     return houseresult
+
 
 def SearchZillowHomesByCity(city, lastpage, maxpage, status="forSale", duration=14):
     #Brief Listing

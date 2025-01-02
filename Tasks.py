@@ -1,6 +1,6 @@
 import requests
 base = "http://127.0.0.1:5000/"
-base = "https://www.drillbreaker29.com/"
+# base = "https://www.drillbreaker29.com/"
 
 url = base + "maintanance/getCityList"
 
@@ -13,7 +13,7 @@ for city in response.json()["cities"]:
     print(city)
     url = base + "maintanance/maintainListings"
 
-    payload = {'doz': '30',
+    payload = {'doz': '365',
                'city': city}
     files = [
 

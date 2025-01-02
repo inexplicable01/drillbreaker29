@@ -273,21 +273,16 @@ def FindHomesByNeighbourhood(search_neigh, doz):
     return soldbrieflistingarr,forsalebrieflistingarr
 
 def FindHomesByCities(city, doz):
-    interval=250
-    minhomesize=100
-    maxhomesize=interval+minhomesize
     soldbrieflistingarr = []
-    while maxhomesize < 6000:
-        soldrawdata = SearchZillowHomesByLocation(city,status="recentlySold",doz=doz,minhomesize=minhomesize,maxhomesize=maxhomesize)
-        for briefhomedata in soldrawdata:
-                soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,city))
-        print(f"Finished searching {minhomesize} to {maxhomesize}")
-        minhomesize = minhomesize + interval
-        maxhomesize = maxhomesize + interval
-    forsalerawdata = SearchZillowHomesByLocation(city,status="forSale",duration="any")
-    forsalebrieflistingarr = []
+    soldrawdata = SearchZillowHomesByLocation(city, status="recentlySold", doz=doz)
+    for briefhomedata in soldrawdata:
+        soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+
+    forsalebrieflistingarr=[]
+    forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz="any")
     for briefhomedata in forsalerawdata:
-            forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,city))
+        forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+
     return soldbrieflistingarr,forsalebrieflistingarr
 
 

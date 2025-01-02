@@ -224,6 +224,13 @@ def maintainListings():
 
             newsalebriefs = []
             for brieflisting in forsalebrieflistingarr:
+                # print(brieflisting.streetAddress)
+                if "4601" in brieflisting.streetAddress:
+                    print(brieflisting.streetAddress)
+                if "Aurora" in brieflisting.streetAddress:
+                    print(brieflisting.streetAddress)
+                if "Crockett" in brieflisting.streetAddress:
+                    print(brieflisting.streetAddress)
                 if brieflisting.zpid in forsalebrief_ids:
                     ##code to remove brieflisting from soldbriefarr
                     continue
