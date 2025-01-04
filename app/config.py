@@ -4,6 +4,7 @@ class SW(object):
     TOWNHOUSE = 'TOWNHOUSE'
     SINGLE_FAMILY = 'SINGLE_FAMILY'
     CONDO = 'CONDO'
+    APARTMENT='APARTMENT'
 
 
 class Config(object):
@@ -115,6 +116,6 @@ class Config(object):
 
     }
 
-    HOMETYPES = [SW.CONDO, SW.TOWNHOUSE, SW.SINGLE_FAMILY]
+    HOMETYPES = [SW.CONDO, SW.TOWNHOUSE, SW.SINGLE_FAMILY, SW.APARTMENT]
     # NEIGHBORHOOD2 = ['Ballard', 'Fremont', 'Crown Hill', 'Green Wood', 'Phinney Ridge', 'Wallingford', 'North Beach',
     #                  'Blue Ridge', 'Whittier Heights', 'Loyal Heights', 'Sunset Hill', 'Magnolia', 'Queen Anne']

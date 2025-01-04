@@ -211,7 +211,7 @@ def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, duratio
         maxpage = 2
         results_in_this_interval = []
 
-        while maxpage > lastpage:
+        while maxpage >= lastpage:
             querystring = {
                 "location": f"{location}, wa",
                 "page": str(lastpage),

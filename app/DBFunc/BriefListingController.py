@@ -268,7 +268,9 @@ class BriefListingController():
         # and sold within the last `days_ago` days.
         unfiltered_soldhomes = BriefListing.query.filter(
             BriefListing.city == city,
-            BriefListing.homeStatus == "FOR_SALE"
+            BriefListing.homeStatus == "FOR_SALE",
+            BriefListing.homeType.in_(Config.HOMETYPES)
+
         ).all()
 
         # Extract the IDs from the brief listings

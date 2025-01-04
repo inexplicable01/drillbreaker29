@@ -2,11 +2,12 @@
 from flask import Blueprint, redirect, url_for, jsonify, render_template, request
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
+from app.DBModels.BriefListing import BriefListing
 from app.config import Config,SW
 maintanance_bp = Blueprint('maintanance_bp', __name__, url_prefix='/maintanance')
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
     loadPropertyDataFromBrief,FindHomesByCities, ListingStatus
-from app.ZillowAPI.ZillowAPICall import SearchZillowHomesByCity,SearchZillowByZPID,SearchZillowHomesFSBO
+from app.ZillowAPI.ZillowAPICall import SearchZillowHomesByCity,SearchZillowByZPID,SearchZillowHomesFSBO, SearchZillowHomesByLocation
 from datetime import datetime
 @maintanance_bp.route('/neighcleanup', methods=['POST'])
 def neighcleanup():
@@ -252,53 +253,60 @@ def maintainListings():
 @maintanance_bp.route('/listingscheck', methods=['PATCH'])
 def listingscheck():
     # This is looking for missing listings.  This feels more like its catching things that fell through the hole
-    cities= washingtoncitiescontroller.getallcities()
-    for city in cities:
+    city = request.form.get('city')
 
-        for_sale_DB = brieflistingcontroller.forSaleInCity(city)
-        forsaledb_ids = [brieflist.zpid  for brieflist in for_sale_DB]
-        lastpage = 1
-        maxpage = 2
-        forsaleapi_ids=[]
-        while (maxpage+1)> lastpage:
-            try:
-                forsalebrieflistingarr, lastpage, maxpage =  SearchZillowHomesByCity(city, lastpage, maxpage, 'forSale')
-            except Exception as e:
-                print(e, city)
-            for listing in forsalebrieflistingarr:
-                forsaleapi_ids.append(listing.zpid)
-        # find the ids in forsaledb_ids that are NOT in forsaleapi_ids
-        # for_sale_api = SearchZillowHomesByCity(city, lastpage, maxpage,  'forSale')
-        ids_in_db_not_in_api = set(forsaledb_ids) - set(forsaleapi_ids)
+    for_sale_DB = brieflistingcontroller.forSaleInCity(city)
+    forsaledb_ids = [brieflist.zpid  for brieflist in for_sale_DB]
+    forsaleapi_ids=[]
+    try:
+        forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz="any")
+    except Exception as e:
+        print(e, city)
+    for listing in forsalerawdata:
+        brieflist = BriefListing.CreateBriefListing(listing, None, None, city)
 
-        ids_in_db_not_in_api_list = list(ids_in_db_not_in_api)
-        for id in ids_in_db_not_in_api_list:  #This takes care of the listings
-            try:
-                brieflist = brieflistingcontroller.get_listing_by_zpid(id)
-                propertydetail =  SearchZillowByZPID(id)
-                if propertydetail['homeStatus']=='PENDING':
-                    brieflist.homeStatus='PENDING'
-                    brieflist.pendday=int(datetime.now().timestamp())
-                    listresults = ListingLengthbyBriefListing(propertydetail)
-                    brieflist.updateListingLength(listresults)
-                    brieflistingcontroller.UpdateBriefListing(brieflist)
-                elif propertydetail['homeStatus']=='RECENTLY_SOLD':
-                    brieflist.homeStatus='RECENTLY_SOLD'
-                    brieflist.dateSold=int(datetime.now().timestamp() * 1000)
-                    listresults = ListingLengthbyBriefListing(propertydetail)
-                    brieflist.updateListingLength(listresults)
-                    brieflistingcontroller.UpdateBriefListing(brieflist)
-                else:
-                    print(f" brieflist status {brieflist.homeStatus} , propertydetail status {propertydetail['homeStatus']}")
-                    # print(brieflist)
-                    if propertydetail['homeStatus']=='FOR_SALE':
-                        print(propertydetail['zpid'])#not sure how the ID checks allow us to get here.
-                    brieflist.homeStatus = propertydetail['homeStatus']
-                    brieflistingcontroller.UpdateBriefListing(brieflist)
-                    print(brieflist)
-                # print(propertydetail)
-            except Exception as e:
-                print(e, brieflist)
+        forsaleapi_ids.append(brieflist.zpid)
+    # find the ids in forsaledb_ids that are NOT in forsaleapi_ids
+    # for_sale_api = SearchZillowHomesByCity(city, lastpage, maxpage,  'forSale')
+    ids_in_db_not_in_api = set(forsaledb_ids) - set(forsaleapi_ids)
+
+    ids_in_db_not_in_api_list = list(ids_in_db_not_in_api)
+    for id in ids_in_db_not_in_api_list:  #This takes care of the listings
+        try:
+            brieflist = brieflistingcontroller.get_listing_by_zpid(id)
+            propertydetail =  SearchZillowByZPID(id)
+            if propertydetail['homeStatus']=='PENDING':
+                print(
+                    f" brieflist status {brieflist.homeStatus} , propertydetail status {propertydetail['homeStatus']}")
+                print(brieflist)
+                brieflist.homeStatus='PENDING'
+                brieflist.pendday=int(datetime.now().timestamp())
+                listresults = ListingLengthbyBriefListing(propertydetail)
+                brieflist.updateListingLength(listresults)
+                brieflistingcontroller.UpdateBriefListing(brieflist)
+
+            elif propertydetail['homeStatus']=='RECENTLY_SOLD':
+                print(
+                    f" brieflist status {brieflist.homeStatus} , propertydetail status {propertydetail['homeStatus']}")
+                print(brieflist)
+                brieflist.homeStatus='RECENTLY_SOLD'
+                brieflist.dateSold=int(datetime.now().timestamp() * 1000)
+                listresults = ListingLengthbyBriefListing(propertydetail)
+                brieflist.updateListingLength(listresults)
+                brieflistingcontroller.UpdateBriefListing(brieflist)
+
+            else:
+                print(f" brieflist status {brieflist.homeStatus} , propertydetail status {propertydetail['homeStatus']}")
+                # print(brieflist)
+                if propertydetail['homeStatus']=='FOR_SALE':
+                    print(propertydetail['zpid'])#not sure how the ID checks allow us to get here.
+                    # brieflistingcontroller.addBriefListing(brieflist)
+                brieflist.homeStatus = propertydetail['homeStatus']
+                brieflistingcontroller.UpdateBriefListing(brieflist)
+                print(brieflist)
+            # print(propertydetail)
+        except Exception as e:
+            print(e, brieflist)
 
     return {"IDs in DB but not in API:": ids_in_db_not_in_api_list}, 200
 
