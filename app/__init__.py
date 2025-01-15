@@ -1,16 +1,11 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 import os
-from apscheduler.schedulers.background import BackgroundScheduler
-
 # Ensure the upload folder exists
 # from app.models import Listing
 from .routes import register_blueprints
-
 from flask_mail import Mail, Message
 
 import logging
-
 # logging.basicConfig()
 # logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
@@ -33,23 +28,36 @@ load_env()
 mail = Mail()
 # scheduler = BackgroundScheduler()
 
-
 def create_ssh_tunnel():
-    server = SSHTunnelForwarder(
-        ('ssh.pythonanywhere.com'),
-        ssh_username='FatPanda1985', ssh_password='Lowlevelpw01!',
-        remote_bind_address=('FatPanda1985.mysql.pythonanywhere-services.com', 3306)
-    )
-    server.start()
-    return server
+    try:
+        server = SSHTunnelForwarder(
+            ('ssh.pythonanywhere.com'),
+            ssh_username=os.getenv('SSH_USER'),
+            ssh_password=os.getenv('SSH_PASS'),
+            remote_bind_address=('FatPanda1985.mysql.pythonanywhere-services.com', 3306)
+        )
+        server.start()
+        return server
+    except Exception as e:
+        raise RuntimeError(f"SSH Tunnel Error: {e}")
+
+# def create_ssh_tunnel():
+#     server = SSHTunnelForwarder(
+#         ('ssh.pythonanywhere.com'),
+#         ssh_username='FatPanda1985', ssh_password='Lowlevelpw01!',
+#         remote_bind_address=('FatPanda1985.mysql.pythonanywhere-services.com', 3306),
+#         # banner_timeout=30  # Increase timeout
+#     )
+#     server.start()
+#     return server
 
 
 
 
 from app.extensions import db
 from app.DataBaseFunc import dbmethods
+
 def create_app(debug=False,config_object="config.module.path"):
-    # env = os.getenv('FLASK_ENV', 'production')
     app = Flask(__name__, instance_relative_config=True)
     tunnel = None
     # app.config.from_object(Config)
@@ -83,30 +91,14 @@ def create_app(debug=False,config_object="config.module.path"):
     db.init_app(app)
     app.secret_key ='DAMNITWAYER'
 
-
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     # Optionally, you can use Flask's app context to create the tables.
     # However, this is generally done outside the create_app to allow more control over when tables are created.
-
-
     with app.app_context():
         db.create_all()
 
     register_blueprints(app)
-
-    # Initialize and start the scheduler
-
-    # Schedule the email sending task to run daily
-    # scheduler = BackgroundScheduler()
-    #
-    # # Pass the app instance to the scheduled job
-    # # scheduler.add_job(func=send_emailtest, args=[app], trigger='interval', days=1)
-    #
-    # scheduler.start()
-
-    # Ensure scheduler shuts down when the app exits
-    # atexit.register(lambda: scheduler.shutdown())
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):

@@ -8,6 +8,8 @@ from app.config import Config
 from app.NewListing import NewListing,NewListingForEmail
 from app.EmailHelper.EmailSender import send_email , send_emailforOpenHouse
 from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,loadPropertyDataFromBrief
+from datetime import datetime
+import pytz
 # from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,
 defaultrecipient = 'waichak.luk@gmail.com'
 def sendEmailwithNewListing():
@@ -17,6 +19,27 @@ def sendEmailwithNewListing():
     send_email(subject='NewListing',
                html_content=html_content,
                recipient =defaultrecipient)
+
+def sendEmailtimecheck():
+    # subject, body, recipient = defaultrecipient, html_content = None
+    seattle_tz = pytz.timezone('America/Los_Angeles')
+    current_time = datetime.now(seattle_tz)
+    formatted_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+
+    # Prepare the email content
+    html_content = f"""
+    <html>
+        <body>
+            <p>The email was sent on {formatted_time} (Seattle Time).</p>
+            <p>Here is the rest of your email content.</p>
+        </body>
+    </html>
+    """
+    # html_content=''
+    send_email(subject='NewListing',
+               html_content=html_content,
+               recipient =defaultrecipient)
+
 
 def SendEmailOfListings(changebrieflistingarr,oldbrieflistingarr):
     # subject, body, recipient = defaultrecipient, html_content = None
