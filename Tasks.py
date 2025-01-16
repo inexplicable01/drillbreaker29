@@ -27,9 +27,9 @@ for i,city in enumerate(response.json()["cities"]):
 
     response = requests.request("PATCH", url3, headers=headers, data=payload)
 
-    response = requests.request("POST", base+"citystats/update", headers=headers, data=payload)
+response = requests.request("POST", base+"citystats/update", headers=headers, data=payload)
 
-    url = "https://www.drillbreaker29.com/email/email_healthcheck"
-    payload = {'message': "completed listing maintenance"}
-    response = requests.request("GET", url, headers=headers, data=payload)
+url = "https://www.drillbreaker29.com/email/email_healthcheck"
+payload = {'message': "completed listing maintenance"}
+response = requests.request("GET", url, headers=headers, data=payload)
 
