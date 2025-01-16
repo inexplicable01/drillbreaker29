@@ -8,6 +8,7 @@ from app.config import Config
 from app.NewListing import NewListing,NewListingForEmail
 from app.EmailHelper.EmailSender import send_email , send_emailforOpenHouse
 from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,loadPropertyDataFromBrief
+from app.DBFunc.CityStatsCacheController import citystatscachecontroller
 from datetime import datetime
 import pytz
 # from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,
@@ -20,7 +21,7 @@ def sendEmailwithNewListing():
                html_content=html_content,
                recipient =defaultrecipient)
 
-def sendEmailtimecheck():
+def sendEmailtimecheck(message=None):
     # subject, body, recipient = defaultrecipient, html_content = None
     seattle_tz = pytz.timezone('America/Los_Angeles')
     current_time = datetime.now(seattle_tz)
@@ -32,9 +33,58 @@ def sendEmailtimecheck():
         <body>
             <p>The email was sent on {formatted_time} (Seattle Time).</p>
             <p>Here is the rest of your email content.</p>
+            <p>{message}</p>
         </body>
     </html>
     """
+    # html_content=''
+    send_email(subject='NewListing',
+               html_content=html_content,
+               recipient =defaultrecipient)
+
+def sendEmailpending():
+    # subject, body, recipient = defaultrecipient, html_content = None
+    seattle_tz = pytz.timezone('America/Los_Angeles')
+    current_time = datetime.now(seattle_tz)
+    formatted_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+    citiesdata = citystatscachecontroller.get_all_city_stats()
+    # Prepare the email content
+    table_rows = ""
+    for citydata in citiesdata:
+        table_rows += f"""
+        <tr>
+            <td>{citydata.city_name}</td>
+            <td>{citydata.sold}</td>
+            <td>{citydata.pending}</td>
+            <td>{citydata.forsale}</td>
+            <td>{citydata.updated_time.astimezone(seattle_tz).strftime(
+                '%m/%d/%Y %I:%M %p %A') if citydata.updated_time else "N/A"}</td>
+        </tr>
+        """
+        # Prepare the email content
+    html_content = f"""
+     <html>
+         <body>
+             <p>The email was sent on {formatted_time} (Seattle Time).</p>
+             <p>Here is the latest data:</p>
+             <table border="1">
+                 <thead>
+                 <tr>
+                     <th>City</th>
+                     <th>Sold</th>
+                     <th>Pending</th>
+                     <th>For Sale</th>
+                     <th>Latest Brief Listing</th>
+                 </tr>
+                 </thead>
+                 <tbody>
+                     {table_rows}
+                 </tbody>
+             </table>
+         </body>
+     </html>
+     """
+
     # html_content=''
     send_email(subject='NewListing',
                html_content=html_content,

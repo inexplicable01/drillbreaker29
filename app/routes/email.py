@@ -1,6 +1,6 @@
 # email_bp.py
 from flask import Blueprint, redirect, url_for, jsonify, request
-from app.RouteModel.EmailModel import sendEmailwithNewListing,sendAppointmentEmail,sendEmailtimecheck
+from app.RouteModel.EmailModel import sendEmailwithNewListing,sendAppointmentEmail,sendEmailtimecheck, sendEmailpending
 
 email_bp = Blueprint('email', __name__, url_prefix='/email')
 
@@ -25,8 +25,17 @@ def sendEmailUpdates():
 
 @email_bp.route('/email_healthcheck', methods=['GET'])
 def sendEmailHealthCheck():
+    # Retrieve the 'message' parameter from the request
+    message = request.args.get('message')  # For GET requests, use args to get query parameters
+    if not message:
+        message = None
+    sendEmailtimecheck(message)
+    return jsonify({"message": "Viewing request submitted successfully!"}), 200
+
+@email_bp.route('/email_pendingcheck', methods=['GET'])
+def sendEmailPending():
     # Assuming sendEmailwithNewListing() is a function that sends an email with new listings.
-    sendEmailtimecheck()
+    sendEmailpending()
     return jsonify({"message": "Viewing request submitted successfully!"}), 200
 
 @email_bp.route('/scheduleviewing', methods=['POST'])
