@@ -14,7 +14,7 @@ class CityStatsCacheController:
         """Retrieve all city statistics from the cache."""
         return self.db.session.query(self.CityStatsCache).all()
 
-    def update_city_stats(self, city_name, sold, pending, forsale, updated_time):
+    def update_city_stats(self, city_name, sold, pending,pending1,pending7, forsale, updated_time):
         """Update or insert a city's stats in the cache."""
         city_stats = self.db.session.query(self.CityStatsCache).filter_by(city_name=city_name).first()
 
@@ -25,9 +25,11 @@ class CityStatsCacheController:
         # Update values
         city_stats.sold = sold
         city_stats.pending = pending
+        city_stats.pending1 = pending1
+        city_stats.pending7 = pending7
         city_stats.forsale = forsale
         city_stats.updated_time = updated_time
-
+        print(city_stats)
         # Add or update in the session
         self.db.session.add(city_stats)
         self.db.session.commit()
@@ -50,8 +52,11 @@ class CityStatsCacheController:
                 city_name=city,
                 sold=brieflistingcontroller.soldListingsByCity(city, 30),
                 pending=brieflistingcontroller.pendingListingsByCity(city, 30),
+                pending7=brieflistingcontroller.pendingListingsByCity(city, 7),
+                pending1=brieflistingcontroller.pendingListingsByCity(city, 1),
                 forsale=brieflistingcontroller.forSaleListingsByCity(city, 365),
                 updated_time=updated_time
             )
+
 
 citystatscachecontroller = CityStatsCacheController()

@@ -21,6 +21,8 @@ def citystats():
             'name': city.city_name,
             'sold': city.sold,
             'pending': city.pending,
+            'pending7': city.pending7,
+            'pending1': city.pending1,
             'forsale': city.forsale,
             'updated': city.updated_time.astimezone(seattle_tz).strftime(
                 '%m/%d/%Y %I:%M %p %A') if city.updated_time else "N/A"
