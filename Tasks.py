@@ -34,8 +34,7 @@ payload = {}
 response = requests.request("POST", base+"citystats/update", headers=headers, data=payload)
 
 
-response = requests.request("PATCH", urlfsbo, headers=headers, data=payload)
-response = requests.request("PATCH", urlopen, headers=headers, data=payload)
+
 url_health = "https://www.drillbreaker29.com/email/email_healthcheck"
 payload = {'message': "completed listing maintenance"}
 response = requests.request("GET", url_health, headers=headers, data=payload)
