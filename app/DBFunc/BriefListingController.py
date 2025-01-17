@@ -404,40 +404,40 @@ class BriefListingController():
     def pendingListings(self, fromdays):
         seven_days_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
-        recent_pending_count = BriefListing.query.filter(
+        recent_pending = BriefListing.query.filter(
             BriefListing.homeStatus == 'PENDING',
             BriefListing.pendday >= seven_days_ago
-        ).count()
-        return recent_pending_count
+        )
+        return recent_pending
 
     def pendingListingsByCity(self, city, fromdays):
         fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
-        recent_pending_count = BriefListing.query.filter(
+        recent_pending = BriefListing.query.filter(
             BriefListing.homeStatus == 'PENDING',
             BriefListing.city == city,
             BriefListing.pendday >= fromdays_ago
-        ).count()
-        return recent_pending_count
+        )
+        return recent_pending
 
     def soldListingsByCity(self, city, fromdays):
         fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
-        recent_sold_count = BriefListing.query.filter(
+        recent_sold = BriefListing.query.filter(
             BriefListing.homeStatus == 'RECENTLY_SOLD',
             BriefListing.city == city,
             BriefListing.dateSold >= fromdays_ago*1000
-        ).count()
-        return recent_sold_count
+        )
+        return recent_sold
 
     def forSaleListingsByCity(self, city, fromdays=365):
         fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
-        for_Sale_count = BriefListing.query.filter(
+        for_Sale = BriefListing.query.filter(
             BriefListing.homeStatus == 'FOR_SALE',
             BriefListing.city == city,
             BriefListing.listtime >= fromdays_ago
-        ).count()
-        return for_Sale_count
+        )
+        return for_Sale
 
 brieflistingcontroller = BriefListingController()

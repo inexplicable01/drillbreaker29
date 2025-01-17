@@ -9,6 +9,8 @@ from app.NewListing import NewListing,NewListingForEmail
 from app.EmailHelper.EmailSender import send_email , send_emailforOpenHouse
 from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,loadPropertyDataFromBrief
 from app.DBFunc.CityStatsCacheController import citystatscachecontroller
+from app.DBFunc.BriefListingController import brieflistingcontroller
+from app.DBModels.BriefListing import BriefListing
 from datetime import datetime
 import pytz
 # from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,
@@ -42,53 +44,61 @@ def sendEmailtimecheck(message=None):
                html_content=html_content,
                recipient =defaultrecipient)
 
+
+from datetime import datetime, timedelta
+import pytz
+from jinja2 import Environment, FileSystemLoader
+
+
 def sendEmailpending():
-    # subject, body, recipient = defaultrecipient, html_content = None
+    # Define Seattle timezone
     seattle_tz = pytz.timezone('America/Los_Angeles')
     current_time = datetime.now(seattle_tz)
     formatted_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z')
-    citiesdata = citystatscachecontroller.get_all_city_stats()
-    # Prepare the email content
-    table_rows = ""
-    for citydata in citiesdata:
-        table_rows += f"""
-        <tr>
-            <td>{citydata.city_name}</td>
-            <td>{citydata.sold}</td>
-            <td>{citydata.pending}</td>
-            <td>{citydata.forsale}</td>
-            <td>{citydata.updated_time.astimezone(seattle_tz).strftime(
-                '%m/%d/%Y %I:%M %p %A') if citydata.updated_time else "N/A"}</td>
-        </tr>
-        """
-        # Prepare the email content
-    html_content = f"""
-     <html>
-         <body>
-             <p>The email was sent on {formatted_time} (Seattle Time).</p>
-             <p>Here is the latest data:</p>
-             <table border="1">
-                 <thead>
-                 <tr>
-                     <th>City</th>
-                     <th>Sold</th>
-                     <th>Pending</th>
-                     <th>For Sale</th>
-                     <th>Latest Brief Listing</th>
-                 </tr>
-                 </thead>
-                 <tbody>
-                     {table_rows}
-                 </tbody>
-             </table>
-         </body>
-     </html>
-     """
 
-    # html_content=''
-    send_email(subject='NewListing',
-               html_content=html_content,
-               recipient =defaultrecipient)
+    # Fetch all city statistics
+    citiesdata = citystatscachecontroller.get_all_city_stats()
+
+    # Prepare city statistics for the template
+    city_stats = [
+        {
+            "city_name": citydata.city_name,
+            "sold": citydata.sold,
+            "pending": citydata.pending,
+            "forsale": citydata.forsale,
+            "updated_time": (
+                citydata.updated_time.astimezone(seattle_tz).strftime('%m/%d/%Y %I:%M %p %A')
+                if citydata.updated_time
+                else "N/A"
+            )
+        }
+        for citydata in citiesdata
+    ]
+
+    # Initialize a dictionary to hold listings for each city of interest
+    cityofinterest = ['Seattle', 'Bellevue', 'Kirkland']
+    listings_data = {city: [] for city in cityofinterest}
+
+    # Fetch pending listings for each city of interest
+    for cityname in cityofinterest:
+        listings = brieflistingcontroller.pendingListingsByCity(cityname, 1)  # Assuming '1' signifies last day
+        for listing in listings:
+            if isinstance(listing, BriefListing):
+                listings_data[cityname].append(listing.to_dict())
+
+    html_content = render_template(
+        'Email_PendingTemplate.html',  # Your template in app/templates
+        formatted_time=formatted_time,
+        city_stats=city_stats,
+        listings_data=listings_data
+    )
+
+    # Send the email
+    send_email(
+        subject='Pending Listings',
+        html_content=html_content,
+        recipient=defaultrecipient
+    )
 
 
 def SendEmailOfListings(changebrieflistingarr,oldbrieflistingarr):

@@ -5,6 +5,10 @@ base = "https://www.drillbreaker29.com/"
 url = base + "maintanance/getCityList"
 url3 = base + "maintanance/listingscheck"
 
+# url3 = f"https://www.drillbreaker29.com/maintanance/listingscheck"
+urlfsbo = f"https://www.drillbreaker29.com/maintanance/fsbo"
+urlopen = f"https://www.drillbreaker29.com/maintanance/updateopenhouse"
+
 payload = {}
 headers = {}
 
@@ -24,12 +28,15 @@ for i,city in enumerate(response.json()["cities"]):
     headers = {}
 
     response = requests.request("PATCH", url, headers=headers, data=payload, files=files)
-
     response = requests.request("PATCH", url3, headers=headers, data=payload)
 
+payload = {}
 response = requests.request("POST", base+"citystats/update", headers=headers, data=payload)
 
-url = "https://www.drillbreaker29.com/email/email_healthcheck"
+
+response = requests.request("PATCH", urlfsbo, headers=headers, data=payload)
+response = requests.request("PATCH", urlopen, headers=headers, data=payload)
+url_health = "https://www.drillbreaker29.com/email/email_healthcheck"
 payload = {'message': "completed listing maintenance"}
-response = requests.request("GET", url, headers=headers, data=payload)
+response = requests.request("GET", url_health, headers=headers, data=payload)
 

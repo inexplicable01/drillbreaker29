@@ -1,0 +1,63 @@
+<html>
+    <body>
+        <p>The email was sent on {{ formatted_time }} (Seattle Time).</p>
+        <h1>City Statistics</h1>
+        <table border="1" cellpadding="5" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>City</th>
+                    <th>Sold</th>
+                    <th>Pending</th>
+                    <th>For Sale</th>
+                    <th>Latest Brief Listing</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for city in city_stats %}
+                <tr>
+                    <td>{{ city.city_name }}</td>
+                    <td>{{ city.sold }}</td>
+                    <td>{{ city.pending }}</td>
+                    <td>{{ city.forsale }}</td>
+                    <td>{{ city.updated_time }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br/>
+
+        {% for city, listings in listings_data.items() %}
+        <h2>Pending Listings in {{ city }} (Last 24 Hours)</h2>
+        {% if listings %}
+        <table border="1" cellpadding="5" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Street Address</th>
+                    <th>City</th>
+                    <th>State</th>
+                    <th>Zipcode</th>
+                    <th>Price</th>
+                    <th>Listing URL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for listing in listings %}
+                <tr>
+                    <td>{{ listing.streetAddress }}</td>
+                    <td>{{ listing.city }}</td>
+                    <td>{{ listing.state }}</td>
+                    <td>{{ listing.zipcode }}</td>
+                    <td>${{ "{:,.2f}".format(listing.price) }}</td>
+                    <td><a href="{{ listing.hdpUrl }}" target="_blank">View Listing</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br/>
+        {% else %}
+        <p>No pending listings found in {{ city }} in the last 24 hours.</p>
+        <br/>
+        {% endif %}
+        {% endfor %}
+    </body>
+</html>

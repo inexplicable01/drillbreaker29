@@ -50,11 +50,11 @@ class CityStatsCacheController:
 
             self.update_city_stats(
                 city_name=city,
-                sold=brieflistingcontroller.soldListingsByCity(city, 30),
-                pending=brieflistingcontroller.pendingListingsByCity(city, 30),
-                pending7=brieflistingcontroller.pendingListingsByCity(city, 7),
-                pending1=brieflistingcontroller.pendingListingsByCity(city, 1),
-                forsale=brieflistingcontroller.forSaleListingsByCity(city, 365),
+                sold=brieflistingcontroller.soldListingsByCity(city, 30).count(),
+                pending=brieflistingcontroller.pendingListingsByCity(city, 30).count(),
+                pending7=brieflistingcontroller.pendingListingsByCity(city, 7).count(),
+                pending1=brieflistingcontroller.pendingListingsByCity(city, 1).count(),
+                forsale=brieflistingcontroller.forSaleListingsByCity(city, 365).count(),
                 updated_time=updated_time
             )
 
