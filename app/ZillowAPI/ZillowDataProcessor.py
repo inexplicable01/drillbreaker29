@@ -164,10 +164,13 @@ def PicturesFromMLS(zpid):
 
 from datetime import datetime
 def ListingLengthbyBriefListing(propertydata):
-
+    date_format = "%Y-%m-%d"
     list2penddays = None
     list2solddays=None
     listprice=None
+    listdate = None
+    penddate=None
+    solddate=None
     try:
         if PRICEHISTORY in propertydata.keys():
             soldposs = []
@@ -176,13 +179,16 @@ def ListingLengthbyBriefListing(propertydata):
                 if event['event'] == 'Listed for sale':
                     # print(event['date'] + 'Listed for Sale ' + propertydata['address']['streetAddress'])
                     listprice = event['price']
+                    listdate = datetime.strptime(event['date'], date_format)
                     for e in soldposs:
                         if e['event'] == 'Pending sale':
                             # print(e['date'] + '  Pending  ' + propertydata['address']['streetAddress'])
                             list2penddays = date_difference(e['date'], event['date'])
+                            penddate = datetime.strptime(e['date'], date_format)
                             # print(propertydata['address']['streetAddress']+ ' Took ' + str(list2penddays) + ' to be UnderContract')
                         if e['event'] == 'Sold':
                             list2solddays = date_difference(e['date'], event['date'])
+                            solddate = datetime.strptime(e['date'], date_format)
                             # print(e['date'] + '  Sold  ' + propertydata['address']['streetAddress'])
                             # print(propertydata['address']['streetAddress'] + ' Took ' + str(
                             #     date_difference(e['date'], event['date'])) + ' to sell')
@@ -191,11 +197,19 @@ def ListingLengthbyBriefListing(propertydata):
                     soldposs.append(event)
             return {'list2penddays': list2penddays,
                     'list2solddays': list2solddays,
-                    'listprice':listprice}
+                    'listprice':listprice,
+                    'listdate': listdate,
+                    'penddate': penddate,
+                    'solddate': solddate
+                    }
         else:
             return {'list2penddays': None,
                 'list2solddays': None,
-                    'listprice':listprice}
+                    'listprice':listprice,
+                    'listdate':None,
+                    'penddate':None,
+                    'solddate':None
+                    }
 
     except Exception as e:
         print('Lack of History Data for ' + e.__str__())

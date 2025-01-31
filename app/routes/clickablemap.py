@@ -3,8 +3,10 @@ from flask import Blueprint, render_template, redirect, url_for, request, jsonif
 # from app.RouteModel.EmailModel import sendEmailwithNewListing
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.RouteModel.NeighbourhoodReport import NeighbourhoodReportDetails
+import json
+from shapely.geometry import Point, shape
 
-clickablemap_bp = Blueprint('clickablemap', __name__, url_prefix='/clickablemap')
+clickablemap_bp = Blueprint('clickablemap_bp', __name__, url_prefix='/clickablemap')
 
 # @email_bp.route('/send-test', methods=['POST'])
 # def send_test_email():
@@ -19,9 +21,48 @@ clickablemap_bp = Blueprint('clickablemap', __name__, url_prefix='/clickablemap'
 #     # send_email('New Listing', email_content)
 #     return redirect(url_for('main.index'))
 
+
+# Load GeoJSON data once at app initialization
+file_path = 'app/MapTools/Neighborhood_Map_Atlas_Neighborhoods.geojson'
+with open(file_path, 'r') as f:
+    geojson_data = json.load(f)
+geojson_features = geojson_data['features']
+
+
+def replace_none(obj):
+    if isinstance(obj, list):
+        return [replace_none(i) for i in obj]
+    elif isinstance(obj, dict):
+        return {k: replace_none(v) for k, v in obj.items()}
+    elif obj is None:
+        return None  # Explicitly returning None to align with JSON `null`
+    return obj
+
+
+geojson_features = replace_none(geojson_data['features'])
+
+# Create a Blueprint for the clickable map
+
+
+def get_neighborhood(lat, lon, features):
+    """Find the neighborhood for a given latitude and longitude."""
+    point = Point(lon, lat)  # Shapely expects (lon, lat)
+    for feature in features:
+        polygon = shape(feature['geometry'])
+        if polygon.contains(point):
+            return feature['properties']['L_HOOD']  # Replace with desired property
+    return None
+
+
 @clickablemap_bp.route('/', methods=['GET','POST'])
 def clickablemap():
-    return render_template('ClickAbleMap.html')
+    # geojson_features
+    blah = list(range(0, 10))  # Convert range to a list
+
+    # for g in geojson_features:
+    #     g['properties']['S_HOOD_ALT_NAMES']='None'
+
+    return render_template('ClickAbleMap.html', blah=blah,geojson_features=geojson_features)
 
 
 @clickablemap_bp.route('/process', methods=['POST'])

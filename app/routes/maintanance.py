@@ -4,6 +4,10 @@ from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.DBModels.BriefListing import BriefListing
 from app.config import Config,SW
+from app.MapTools.MappingTools import get_neighborhood_in_Seattle, get_neighborhood_List_in_Seattle
+
+
+
 maintanance_bp = Blueprint('maintanance_bp', __name__, url_prefix='/maintanance')
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
     loadPropertyDataFromBrief,FindHomesByCities, ListingStatus
@@ -349,11 +353,47 @@ def updatefsbo():
     return f"Committed {count} entires", 200
 
 
-# @maintanance_bp.route('/fsbo', methods=['GET'])
-# def getfsbo():
-#     fsbo_listings = brieflistingcontroller.getFSBOListings()
-#     for fsbo in fsbo_listings:
-#         # print(fsbo)
-#         propertydetail = SearchZillowByZPID(fsbo.zpid)
-#         print(propertydetail)
-#     return render_template('ForSaleByOwner.html',fsbo_listings=fsbo_listings)
+@maintanance_bp.route('/updateathing', methods=['post'])
+def updateathing():
+    # fsbo_listings = brieflistingcontroller.getFSBOListings()
+    other = brieflistingcontroller.getListingsWithStatus(1000,'OTHER')
+    for brieflisting in other:
+        propertydetail = SearchZillowByZPID(brieflisting.zpid)
+        events = ListingLengthbyBriefListing(propertydetail)
+        try:
+            if events['listdate']:
+                brieflisting.listtime = events['listdate'].timestamp()
+            if events['penddate']:
+                brieflisting.pendday = events['penddate'].timestamp()
+            if events['solddate']:
+                brieflisting.solddate = events['solddate'].timestamp()*1000
+
+            if propertydetail['homeStatus'] != 'OTHER':
+                brieflisting.homeStatus=propertydetail['homeStatus']
+                brieflistingcontroller.updateBriefListing(brieflisting)
+        except Exception as e:
+            print(e, brieflisting)
+    # {'list2penddays': list2penddays,
+    #  'list2solddays': list2solddays,
+    #  'listprice': listprice,
+    #  'listdate': listdate,
+    #  'penddate': penddate,
+    #  'solddate': solddate
+    #  }
+    # seattlelistings = BriefListing.query.filter(
+    #     BriefListing.city == 'Seattle',
+    # )
+    #
+    # count =1
+    # for brieflisting in seattlelistings:
+    #     # get_neighborhood(brieflisting.latitude, brieflisting.longitude)
+    #     [neighbourhood, neighbourhood_sub] =get_neighborhood_in_Seattle(brieflisting.latitude, brieflisting.longitude)
+    #     brieflisting.neighbourhood_sub =neighbourhood_sub
+    #     brieflistingcontroller.updateBriefListing(brieflisting)
+    #     print(brieflisting.zpid, neighbourhood_sub)
+    #     # count += 1
+    #     # if count>50:
+    #     #     break
+
+
+    return {"Seattle Neighbourhood_subs updated":other.count()}, 200

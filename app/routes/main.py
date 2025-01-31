@@ -13,6 +13,6 @@ def index():
     seattle_tz = pytz.timezone('America/Los_Angeles')
     readable_time = datetime.fromtimestamp(lastupdate, tz=pytz.utc).astimezone(seattle_tz).strftime(
         '%m/ %d/ %Y   %I:%M %p %A')
-    recent_pending_count = brieflistingcontroller.pendingListings(7).count()
+    recent_pending_count = brieflistingcontroller.getListingsWithStatus(7,'PENDING').count()
 
     return render_template('LandingPage.html', lastupdate=readable_time, recent_pending_count=recent_pending_count)

@@ -20,10 +20,15 @@ def citystats():
         {
             'name': city.city_name,
             'sold': city.sold,
+            'sold7_SFH': city.sold7_SFH,
+            'sold7_TCA': city.sold7_TCA,
             'pending': city.pending,
-            'pending7': city.pending7,
+            'pending7_SFH': city.pending7_SFH,
+            'pending7_TCA': city.pending7_TCA,
             'pending1': city.pending1,
             'forsale': city.forsale,
+            'forsaleadded7_SFH': city.forsaleadded7_SFH,
+            'forsaleadded7_TCA': city.forsaleadded7_TCA,
             'updated': city.updated_time.astimezone(seattle_tz).strftime(
                 '%m/%d/%Y %I:%M %p %A') if city.updated_time else "N/A"
         }
@@ -41,6 +46,16 @@ def update_city_stats():
         return jsonify({"status": "success", "message": "City stats updated successfully."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# @citystats_bp.route('/update', methods=['POST'])
+# def update_city_stats():
+#     try:
+#         cities = washingtoncitiescontroller.getallcities()
+#         citystatscachecontroller.refresh_city_stats(cities, brieflistingcontroller)
+#         return jsonify({"status": "success", "message": "City stats updated successfully."})
+#     except Exception as e:
+#         return jsonify({"status": "error", "message": str(e)}), 500
 
 
 

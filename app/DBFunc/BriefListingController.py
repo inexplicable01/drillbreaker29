@@ -387,12 +387,15 @@ class BriefListingController():
 
         return cities
 
-    def latestListingTime(self,city=None):
+    def latestListingTime(self,city=None, neighbourhood_sub=None):
         query = BriefListing.query
 
         # Apply city filter if provided
         if city:
             query = query.filter(BriefListing.city == city)
+
+        if neighbourhood_sub:
+            query = query.filter(BriefListing.neighbourhood_sub == neighbourhood_sub)
 
         # Get the latest listtime from the filtered results
         latest_time = query.with_entities(
@@ -401,16 +404,38 @@ class BriefListingController():
 
         return latest_time
 
-    def pendingListings(self, fromdays):
-        seven_days_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
+    def getListingsWithStatus(self, fromdays, homeStatus):  #pendingListings(self, fromdays):
+        days_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
-        recent_pending = BriefListing.query.filter(
-            BriefListing.homeStatus == 'PENDING',
-            BriefListing.pendday >= seven_days_ago
-        )
-        return recent_pending
+        if homeStatus == 'PENDING':
+            results = BriefListing.query.filter(
+                BriefListing.homeStatus == homeStatus,
+                BriefListing.pendday >= days_ago
+            )
+        elif homeStatus == 'RECENTLY_SOLD':
+            results = BriefListing.query.filter(
+                BriefListing.homeStatus == homeStatus,
+                BriefListing.dateSold >= days_ago
+            )
+        elif homeStatus == 'FOR_SALE':
+            results = BriefListing.query.filter(
+                BriefListing.homeStatus == homeStatus,
+                BriefListing.listtime >= days_ago
+            )
+        elif homeStatus == 'OTHER':
+            results = BriefListing.query.filter(
+                BriefListing.homeStatus == homeStatus,
+                BriefListing.listtime >= days_ago
+            )
+        else:
+            results = BriefListing.query.filter(
+                BriefListing.homeStatus == homeStatus,
+                BriefListing.dateSold >= days_ago
+            )
 
-    def pendingListingsByCity(self, city, fromdays):
+        return results
+
+    def pendingListingsByCity(self, city, fromdays,  neighbourhood_sub=None, homeType=None ):
         fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
         recent_pending = BriefListing.query.filter(
@@ -418,9 +443,18 @@ class BriefListingController():
             BriefListing.city == city,
             BriefListing.pendday >= fromdays_ago
         )
+
+        if neighbourhood_sub:
+            recent_pending = recent_pending.filter(BriefListing.neighbourhood_sub == neighbourhood_sub)
+        if homeType:
+            if isinstance(homeType, list):
+                recent_pending = recent_pending.filter(BriefListing.homeType.in_(homeType))
+            else:
+                recent_pending = recent_pending.filter(BriefListing.homeType == homeType)
+
         return recent_pending
 
-    def soldListingsByCity(self, city, fromdays):
+    def soldListingsByCity(self, city, fromdays, neighbourhood_sub=None, homeType=None):
         fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
         recent_sold = BriefListing.query.filter(
@@ -428,9 +462,18 @@ class BriefListingController():
             BriefListing.city == city,
             BriefListing.dateSold >= fromdays_ago*1000
         )
+
+        if neighbourhood_sub:
+            recent_sold = recent_sold.filter(BriefListing.neighbourhood_sub == neighbourhood_sub)
+        if homeType:
+            if isinstance(homeType, list):
+                recent_sold = recent_sold.filter(BriefListing.homeType.in_(homeType))
+            else:
+                recent_sold = recent_sold.filter(BriefListing.homeType == homeType)
+
         return recent_sold
 
-    def forSaleListingsByCity(self, city, fromdays=365):
+    def forSaleListingsByCity(self, city, fromdays=365 , neighbourhood_sub=None, homeType=None):
         fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
         for_Sale = BriefListing.query.filter(
@@ -438,6 +481,14 @@ class BriefListingController():
             BriefListing.city == city,
             BriefListing.listtime >= fromdays_ago
         )
+        if neighbourhood_sub:
+            for_Sale = for_Sale.filter(BriefListing.neighbourhood_sub == neighbourhood_sub)
+        if homeType:
+            if isinstance(homeType, list):
+                for_Sale = for_Sale.filter(BriefListing.homeType.in_(homeType))
+            else:
+                for_Sale = for_Sale.filter(BriefListing.homeType == homeType)
+
         return for_Sale
 
 brieflistingcontroller = BriefListingController()

@@ -57,6 +57,7 @@ class BriefListing(db.Model):
     hdpUrl = db.Column(db.String(255), nullable=True)
     pricedelta = db.Column(db.BigInteger, nullable=True)
     neighbourhood = db.Column(db.String(50), nullable=True)
+    neighbourhood_sub = db.Column(db.String(100), nullable=True)
     gapis_neighbourhood=db.Column(db.String(50), nullable=True)
     zillowapi_neighbourhood = db.Column(db.String(50), nullable=True)
     search_neigh = db.Column(db.String(50), nullable=True)
@@ -102,7 +103,9 @@ class BriefListing(db.Model):
             'neighbourhood': self.neighbourhood,
             'dateSold': self.dateSold,
             'waybercomments':self.waybercomments,
-            'fsbostatus': self.fsbo_status
+            'fsbostatus': self.fsbo_status,
+            'bathrooms': self.bathrooms,
+            'bedrooms': self.bedrooms,
         }
 
     @classmethod

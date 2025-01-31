@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Neighborhood Interests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            max-width: 2000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            text-align: center;
+        }
+    </style>
+    <script>
+        function fetchNeighbourhoodDetails(city, neighbourhoodSub) {
+            fetch(`/customer_interest/get_neighbourhood_details`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({city: city, neighbourhood_sub: neighbourhoodSub})
+            })
+                .then(response => response.json())
+                .then(data => {
+                    let detailsContainer = document.getElementById('details-container');
+                    detailsContainer.style.display = 'block';
+                    detailsContainer.innerHTML = data.html;
+                })
+                .catch(error => console.error('Error fetching details:', error));
+        }
+    </script>
+</head>
+<body>
+<div class="container">
+    <h1>Customer Neighborhood Interests</h1>
+
+    <h2>Customer Details</h2>
+    <p><strong>Name:</strong> {{ customer.name }}</p>
+    <p><strong>Email:</strong> {{ customer.email }}</p>
+    <p><strong>Phone:</strong> {{ customer.phone }}</p>
+
+    <h2>Neighborhoods of Interest</h2>
+    {% if neighbourhoods %}
+        <table>
+            <thead>
+            <tr>
+                <th>City</th>
+                {#                <th>Neighborhood</th>#}
+                <th>Sub-Neighborhood</th>
+                <th>New Listings</th>
+                <th>For Sale 7_SFH</th>
+                <th>For Sale 7_TCA</th>
+                <th>Pending 7_SFH</th>
+                <th>Pending 7_TCA</th>
+                <th>Sold7_SFH</th>
+                <th>sold7_TCA</th>
+                <th>Details</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for area in neighbourhoods %}
+                <tr>
+                    <td>{{ area.city }}</td>
+                    {#                    <td>{{ area.neighbourhood }}</td>#}
+                    <td>{{ area.neighbourhood_sub }}</td>
+                    <td>{{ area.forsale }}</td>
+                    <td>{{ area.forsaleadded7_SFH }}</td>
+                    <td>{{ area.forsaleadded7_TCA }}</td>
+                    <td>{{ area.pending7_SFH }}</td>
+                    <td>{{ area.pending7_TCA }}</td>
+                    <td>{{ area.sold7_SFH }}</td>
+                    <td>{{ area.sold7_TCA }}</td>
+                    <td>
+                        <button onclick="fetchNeighbourhoodDetails('{{ area.city }}', '{{ area.neighbourhood_sub }}')">
+                            View Details
+                        </button>
+                    </td>
+                    {#                    <td>{{ area.sold }}</td>#}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No neighbourhoods of interest found for this customer.</p>
+    {% endif %}
+
+    <div id="details-container" class="details-container"></div>
+</div>
+</body>
+</html>

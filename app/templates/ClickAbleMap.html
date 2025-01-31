@@ -2,71 +2,90 @@
 <html>
 <head>
     <title>Clickable Map with Leaflet</title>
-    <meta charset="utf-8" />
+    <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
     <style>
-        #map { height: 600px; }
-        #label { font-size: 24px; margin-top: 10px; }
-        #result { margin-top: 20px; }
+        #map {
+            height: 600px;
+        }
+
+        #label {
+            font-size: 24px;
+            margin-top: 10px;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-    <div id="label">Click on a shape</div>
-    <div id="result"></div>
+<div id="map"></div>
+<div id="label">Click on a shape</div>
+<div id="result"></div>
 
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        var map = L.map('map').setView([47.6062, -122.3321], 10); // Centered on Seattle
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    var map = L.map('map').setView([47.6062, -122.3321], 10); // Centered on Seattle
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-        var seattleCoords = [
-            [47.734145, -122.435978], // Example coordinates for Seattle
-            [47.499525, -122.435978],
-            [47.499525, -122.224433],
-            [47.734145, -122.224433]
-        ];
+    function handleClick(region) {
+        document.getElementById('label').innerHTML = region;
 
-        var bellevueCoords = [
-            [47.700553, -122.229959], // Example coordinates for Bellevue
-            [47.520478, -122.229959],
-            [47.520478, -122.092909],
-            [47.700553, -122.092909]
-        ];
+        $.ajax({
+            url: '/clickablemap/process',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({region: region}),
+            success: function (response) {
+                document.getElementById('result').innerHTML = response.message;
+                // Here you can add code to display graphs or other processed data
+            },
+            error: function (error) {
+                console.log('Error:', error);
+            }
+        });
+    }
 
-        var seattlePolygon = L.polygon(seattleCoords, {color: 'blue'}).addTo(map);
-        var bellevuePolygon = L.polygon(bellevueCoords, {color: 'red'}).addTo(map);
+    var blah = {{ blah | tojson }}; // Use Jinja's `tojson` filter for safe serialization
 
-        function handleClick(region) {
-            document.getElementById('label').innerHTML = region;
+    console.log('Blah array:', blah); // Verify the array in the browser console
 
-            $.ajax({
-                url: '/clickablemap/process',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({region: region}),
-                success: function(response) {
-                    document.getElementById('result').innerHTML = response.message;
-                    // Here you can add code to display graphs or other processed data
-                },
-                error: function(error) {
-                    console.log('Error:', error);
-                }
-            });
+
+    var geojson_features = {{ geojson_features | tojson }};
+
+    {#console.log('GeoJSON Features:', geojson_features);#}
+    geojson_features.forEach(function (value) {
+        if (value.geometry.type === "Polygon") {
+            // For Polygon: Swap each coordinate pair in the outer array
+            value.geometry.coordinates = value.geometry.coordinates.map(ring =>
+                ring.map(coord => [coord[1], coord[0]]) // Swap x and y
+            );
+        } else if (value.geometry.type === "MultiPolygon") {
+            // For MultiPolygon: Swap coordinates for each polygon ring
+            value.geometry.coordinates = value.geometry.coordinates.map(polygon =>
+                polygon.map(ring =>
+                    ring.map(coord => [coord[1], coord[0]]) // Swap x and y
+                )
+            );
         }
+        // Slightly shift the Bellevue polygon's coordinates for each iteration
+        {#console.log(`Value from geojson_features: ${value.properties.L_HOOD}`);#}
 
-        seattlePolygon.on('click', function() {
-            handleClick('Seattle');
-        });
+        {#console.log(`Value from coordinates: ${value.geometry.coordinates}`);#}
+        var poly = L.polygon(value.geometry.coordinates, {color: 'red'}).addTo(map);
 
-        bellevuePolygon.on('click', function() {
-            handleClick('Bellevue');
+        poly.on('click', function () {
+            handleClick(value.properties.L_HOOD + ',' + value.properties.S_HOOD);
         });
-    </script>
+    });
+
+
+</script>
 </body>
 </html>

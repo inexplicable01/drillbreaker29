@@ -2,28 +2,35 @@ import folium
 from shapely.geometry import shape, Point
 import fiona
 
+
 def load_geojson(geojson_path):
     with fiona.open(geojson_path, 'r') as src:
         features = [feature for feature in src]
     return features
 file_path='app/MapTools/Neighborhood_Map_Atlas_Neighborhoods.geojson'
 geojson_features = load_geojson(file_path)
-def get_neighborhood(lat, lon, features):
+
+def get_neighborhood_in_Seattle(lat, lon):
     point = Point(lon, lat)
-    for feature in features:
+    for feature in geojson_features:
         polygon = shape(feature['geometry'])
         if polygon.contains(point):
-            return feature['properties']['L_HOOD']  # Using 'L_HOOD' for neighborhood name
-    return None
+            return [feature['properties']['L_HOOD'], feature['properties']['S_HOOD'] ]# Using 'L_HOOD' for neighborhood name
+    return [None, None]
 
-
+def get_neighborhood_List_in_Seattle():
+    l =[]
+    for feature in geojson_features:
+        l.append([feature['properties']['L_HOOD'], feature['properties']['S_HOOD'] ])# Using 'L_HOOD' for neighborhood name
+    return l
 
 def findNeighbourhoodfromCoord(city,xcoord,ycoord):
     # get_neighborhood(sample_lat,sample_lon)
+    [neighbourhood, neighbourhood_sub] =get_neighborhood_in_Seattle(ycoord, xcoord)
     cities2Neigh = {
 
         'Shoreline': 'Shoreline',
-        'Seattle': get_neighborhood(ycoord, xcoord, geojson_features),
+        'Seattle': neighbourhood,
         'Bothell': 'Bothell',
         'Kenmore': 'Kenmore',
         'Kirkland': 'Kirkland',
