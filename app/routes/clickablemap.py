@@ -4,6 +4,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, jsonif
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.RouteModel.NeighbourhoodReport import NeighbourhoodReportDetails
 import json
+from app.MapTools.MappingTools import geojson_features
 from shapely.geometry import Point, shape
 
 clickablemap_bp = Blueprint('clickablemap_bp', __name__, url_prefix='/clickablemap')
@@ -23,23 +24,7 @@ clickablemap_bp = Blueprint('clickablemap_bp', __name__, url_prefix='/clickablem
 
 
 # Load GeoJSON data once at app initialization
-file_path = 'app/MapTools/Neighborhood_Map_Atlas_Neighborhoods.geojson'
-with open(file_path, 'r') as f:
-    geojson_data = json.load(f)
-geojson_features = geojson_data['features']
 
-
-def replace_none(obj):
-    if isinstance(obj, list):
-        return [replace_none(i) for i in obj]
-    elif isinstance(obj, dict):
-        return {k: replace_none(v) for k, v in obj.items()}
-    elif obj is None:
-        return None  # Explicitly returning None to align with JSON `null`
-    return obj
-
-
-geojson_features = replace_none(geojson_data['features'])
 
 # Create a Blueprint for the clickable map
 

@@ -106,6 +106,7 @@ class BriefListing(db.Model):
             'fsbostatus': self.fsbo_status,
             'bathrooms': self.bathrooms,
             'bedrooms': self.bedrooms,
+            'hdpUrl': self.hdpUrl,
         }
 
     @classmethod

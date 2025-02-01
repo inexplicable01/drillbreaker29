@@ -10,6 +10,7 @@ from app.config import Config,SW
 customer_interest_bp = Blueprint('customer_interest_bp', __name__, url_prefix='/customer_interest')
 from app.DBFunc.CustomerNeighbourhoodInterestController import customerneighbourhoodinterestcontroller
 from app.DBFunc.CityStatsCacheController import citystatscachecontroller
+from app.MapTools.MappingTools import geojson_features
 
 @customer_interest_bp.route('/all', methods=['GET','POST'])
 def displayCustomerInterest():
@@ -51,8 +52,15 @@ def displayCustomerInterest():
                 #     "neighbourhood": neighbourhood.get("neighbourhood", ""),
                 #     "neighbourhood_sub": neighbourhood.get("neighbourhood_sub", "")
                 # })
-
-    return render_template('NeighbourhoodInterest.html', customer=customer, neighbourhoods=neighbourhoods)
+    print(neighbourhoods)
+    neighbourhoods_subs = []
+    for n in neighbourhoods:
+        neighbourhoods_subs.append(n["neighbourhood_sub"])
+    return render_template('NeighbourhoodInterest.html',
+                           customer=customer,
+                           neighbourhoods=neighbourhoods,
+                           neighbourhoods_subs=neighbourhoods_subs,
+                           geojson_features= geojson_features)
 
 # @citystats_bp.route('/update', methods=['POST'])
 # def update_city_stats():

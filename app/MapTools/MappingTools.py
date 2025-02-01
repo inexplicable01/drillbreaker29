@@ -1,14 +1,33 @@
 import folium
 from shapely.geometry import shape, Point
 import fiona
-
+import json
 
 def load_geojson(geojson_path):
     with fiona.open(geojson_path, 'r') as src:
         features = [feature for feature in src]
     return features
-file_path='app/MapTools/Neighborhood_Map_Atlas_Neighborhoods.geojson'
-geojson_features = load_geojson(file_path)
+
+
+file_path = 'app/MapTools/Neighborhood_Map_Atlas_Neighborhoods.geojson'
+with open(file_path, 'r') as f:
+    geojson_data = json.load(f)
+geojson_features = geojson_data['features']
+
+
+def replace_none(obj):
+    if isinstance(obj, list):
+        return [replace_none(i) for i in obj]
+    elif isinstance(obj, dict):
+        return {k: replace_none(v) for k, v in obj.items()}
+    elif obj is None:
+        return None  # Explicitly returning None to align with JSON `null`
+    return obj
+
+
+geojson_features = replace_none(geojson_data['features'])
+
+
 
 def get_neighborhood_in_Seattle(lat, lon):
     point = Point(lon, lat)

@@ -52,11 +52,6 @@
         });
     }
 
-    var blah = {{ blah | tojson }}; // Use Jinja's `tojson` filter for safe serialization
-
-    console.log('Blah array:', blah); // Verify the array in the browser console
-
-
     var geojson_features = {{ geojson_features | tojson }};
 
     {#console.log('GeoJSON Features:', geojson_features);#}
@@ -76,9 +71,14 @@
         }
         // Slightly shift the Bellevue polygon's coordinates for each iteration
         {#console.log(`Value from geojson_features: ${value.properties.L_HOOD}`);#}
+        var zoneName = value.properties.S_HOOD;
+        var poly = L.polygon(value.geometry.coordinates, {color: 'red'}).addTo(map);
+
+        // Bind a tooltip (always visible)
+        poly.bindTooltip(zoneName, {permanent: true, direction: "center", className: "zone-label"}).openTooltip();
 
         {#console.log(`Value from coordinates: ${value.geometry.coordinates}`);#}
-        var poly = L.polygon(value.geometry.coordinates, {color: 'red'}).addTo(map);
+        {#var poly = L.polygon(value.geometry.coordinates, {color: 'red'}).addTo(map);#}
 
         poly.on('click', function () {
             handleClick(value.properties.L_HOOD + ',' + value.properties.S_HOOD);
