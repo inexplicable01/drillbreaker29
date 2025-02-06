@@ -107,6 +107,7 @@ class BriefListing(db.Model):
             'bathrooms': self.bathrooms,
             'bedrooms': self.bedrooms,
             'hdpUrl': self.hdpUrl,
+            'imgSrc': self.imgSrc,
         }
 
     @classmethod

@@ -4,8 +4,12 @@ from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.DBModels.BriefListing import BriefListing
 from app.config import Config,SW
-from app.MapTools.MappingTools import get_neighborhood_in_Seattle, get_neighborhood_List_in_Seattle
-
+#from flask import Flask, render_template, make_response
+# from weasyprint import HTML
+#from app.MapTools.MappingTools import get_neighborhood_in_Seattle, get_neighborhood_List_in_Seattle
+from app.DBFunc.CustomerNeighbourhoodInterestController import customerneighbourhoodinterestcontroller
+from app.RouteModel.AIModel import AIModel
+from app.DBFunc.AIListingController import ailistingcontroller
 
 
 maintanance_bp = Blueprint('maintanance_bp', __name__, url_prefix='/maintanance')
@@ -352,6 +356,43 @@ def updatefsbo():
 
     return f"Committed {count} entires", 200
 
+@maintanance_bp.route('/clients_listing_Recommendation', methods=['patch'])
+def clients_listing_Recommendation():
+    customer_id = 3
+    customer, locations = customerneighbourhoodinterestcontroller.get_customer_neighbourhood_interest(customer_id)
+    customer = customerneighbourhoodinterestcontroller.get_customer(customer_id)
+
+    forsalehomes=[]
+    margin=100
+    # Loop through neighborhoods to extract data when city is 'Seattle'
+    for area in locations:
+        city_name = area["city"]  # Assuming `city` is in the returned dictionary
+
+        if city_name == "Seattle":
+            # Query the database to fetch the full row for this neighborhood
+            forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365,
+                                                                                      maxprice=customer.maxprice + 100000,
+                                                                                      minprice=customer.minprice - 100000,
+                                                                                      neighbourhood_sub=area["neighbourhood_sub"]).all()
+        else:
+            forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name,
+                                                                                      365,
+                                                                                      maxprice=customer.maxprice+100000,
+                                                                                      minprice=customer.minprice-100000).all()
+
+    for forsale_bl in forsalehomes:
+        ai_response = AIModel(forsale_bl.zpid, customer, locations)
+        likelihood_score = ai_response.get("likelihood_score", 0)
+        ai_comment = ai_response.get("reason", "")
+
+            # Save AI results to database
+        ailistingcontroller.save_ai_evaluation(
+            customer_id=customer_id,
+            zpid=forsale_bl.zpid,
+            ai_comment=ai_comment,
+            likelihood_score=likelihood_score
+        )
+    return {"Updated Recommendations ":len(forsalehomes)}, 200
 
 @maintanance_bp.route('/updateathing', methods=['post'])
 def updateathing():
@@ -397,3 +438,19 @@ def updateathing():
 
 
     return {"Seattle Neighbourhood_subs updated":other.count()}, 200
+
+
+# @maintanance_bp.route('/export-pdf',methods=['get'])
+# def export_pdf():
+#     # Render the HTML template
+#     rendered_html = render_template('template.html', title="PDF Export")
+#
+#     # Convert HTML to PDF
+#     pdf = HTML(string=rendered_html).write_pdf()
+#
+#     # Create response to serve as a file download
+#     response = make_response(pdf)
+#     response.headers['Content-Type'] = 'application/pdf'
+#     response.headers['Content-Disposition'] = 'attachment; filename=exported_page.pdf'
+#
+#     return response

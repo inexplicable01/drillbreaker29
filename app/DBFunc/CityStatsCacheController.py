@@ -15,7 +15,7 @@ class CityStatsCacheController:
         """Retrieve all city statistics from the cache."""
         return self.db.session.query(self.CityStatsCache).all()
 
-    def get_city_stats_by_name(self, city, neighbourhood_sub):
+    def get_city_stats_by_name(self, city, neighbourhood_sub=None):
         """Retrieve city stats for a given CustomerNeighbourhoodInterest object."""
         if city == "Seattle":  # Assuming city_name is always Seattle
             if neighbourhood_sub is None:

@@ -10,30 +10,46 @@ from app.config import Config,SW
 customer_interest_bp = Blueprint('customer_interest_bp', __name__, url_prefix='/customer_interest')
 from app.DBFunc.CustomerNeighbourhoodInterestController import customerneighbourhoodinterestcontroller
 from app.DBFunc.CityStatsCacheController import citystatscachecontroller
-from app.MapTools.MappingTools import geojson_features
+from app.DBFunc.AIListingController import ailistingcontroller
+from app.MapTools.MappingTools import WA_geojson_features
+from app.RouteModel.AIModel import AIModel
 
 @customer_interest_bp.route('/all', methods=['GET','POST'])
 def displayCustomerInterest():
     # Fetch precomputed city stats from the cache
     # Mock data for the example
     customer_id=3
-    customer, neighbourhoods = customerneighbourhoodinterestcontroller.get_customer_neighbourhood_interest(customer_id)
+
+    customer, locations = customerneighbourhoodinterestcontroller.get_customer_neighbourhood_interest(customer_id)
 
     # I want to loop through neiughbourhoods and extract that data here.
 
     if not customer:
         return f"Customer with ID {customer_id} not found", 404
-
-    city_data = []
-
+    homeType=None
+    forsalehomes=[]#SW.SINGLE_FAMILY
     # Loop through neighborhoods to extract data when city is 'Seattle'
-    for area in neighbourhoods:
+    for area in locations:
         city_name = area["city"]  # Assuming `city` is in the returned dictionary
 
         if city_name == "Seattle":
             # Query the database to fetch the full row for this neighborhood
             city_row = citystatscachecontroller.get_city_stats_by_name(city_name,area["neighbourhood_sub"])
-
+            forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType,
+                                                                             neighbourhood_sub=area["neighbourhood_sub"]).all()
+            if city_row:
+                area["forsale"]=city_row.forsale
+                area["pending7_SFH"] = city_row.pending7_SFH
+                area["pending7_TCA"] = city_row.pending7_TCA
+                area["sold7_SFH"] = city_row.sold7_SFH
+                area["sold7_TCA"] = city_row.sold7_TCA
+                area["forsaleadded7_SFH"] = city_row.forsaleadded7_SFH
+                area["forsaleadded7_TCA"] = city_row.forsaleadded7_TCA
+                area["sold"] = city_row.sold
+        else:
+            city_row = citystatscachecontroller.get_city_stats_by_name(city_name)
+            forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType
+                                                                                      ).all()
             if city_row:
                 area["forsale"]=city_row.forsale
                 area["pending7_SFH"] = city_row.pending7_SFH
@@ -52,15 +68,28 @@ def displayCustomerInterest():
                 #     "neighbourhood": neighbourhood.get("neighbourhood", ""),
                 #     "neighbourhood_sub": neighbourhood.get("neighbourhood_sub", "")
                 # })
-    print(neighbourhoods)
+    print(locations)
     neighbourhoods_subs = []
-    for n in neighbourhoods:
+    cities = []
+    aicomments=[]
+    selectedhomes=[]
+    for brieflisting in forsalehomes:
+        ai_comment = ailistingcontroller.check_existing_evaluation(customer_id, brieflisting.zpid)
+        if ai_comment and ai_comment.likelihood_score>50:
+            selectedhomes.append(brieflisting)
+            aicomments.append(ai_comment)
+    homes_with_comments = list(zip(selectedhomes, aicomments))
+
+    for n in locations:
         neighbourhoods_subs.append(n["neighbourhood_sub"])
+        cities.append(n["city"])
     return render_template('NeighbourhoodInterest.html',
                            customer=customer,
-                           neighbourhoods=neighbourhoods,
+                           locations=locations,
+                           cities=cities,
                            neighbourhoods_subs=neighbourhoods_subs,
-                           geojson_features= geojson_features)
+                           geojson_features= WA_geojson_features,
+                           homes_with_comments=homes_with_comments)
 
 # @citystats_bp.route('/update', methods=['POST'])
 # def update_city_stats():
@@ -74,7 +103,10 @@ def displayCustomerInterest():
 def get_neighbourhood_details():
     data = request.get_json()
     city = data.get('city')
+
     neighbourhood_sub = data.get('neighbourhood_sub')
+    if neighbourhood_sub=='None':
+        neighbourhood_sub = None
 
     city_stats = citystatscachecontroller.get_city_stats_by_name(city, neighbourhood_sub)
 
@@ -117,5 +149,51 @@ def get_neighbourhood_details():
                                 )
     })
 
+@customer_interest_bp.route("/evaluate_listing", methods=["POST"])
+def evaluate_listing():
+    """
+    API endpoint to evaluate a listing's match likelihood for a customer.
+    """
+    customer_id=3
+    data = request.json
+    zpid = data.get("zpid")
+    customer_data, locations = customerneighbourhoodinterestcontroller.get_customer_neighbourhood_interest(3)
+    customer = customerneighbourhoodinterestcontroller.get_customer(customer_id)
+
+    existing_comment = ailistingcontroller.check_existing_evaluation(customer_id, zpid)
+
+    if existing_comment:
+        return jsonify({
+            "message": "AI evaluation already exists.",
+            "likelihood_score": existing_comment.likelihood_score,
+            "reason": existing_comment.ai_comment
+        }), 200
+
+    if not zpid:
+        return jsonify({"error": "Missing ZPID"}), 400
+
+    ai_response  = AIModel(zpid,  customer, locations)
+
+    if "error" in ai_response:
+        return jsonify(ai_response), 500
+
+    # Extract AI results
+    likelihood_score = ai_response.get("likelihood_score", 0)
+    ai_comment = ai_response.get("reason", "")
+
+    # Save AI results to database
+    ailistingcontroller.save_ai_evaluation(
+        customer_id=customer_id,
+        zpid=zpid,
+        ai_comment=ai_comment,
+        likelihood_score=likelihood_score
+    )
+
+
+    return jsonify({
+        "message": "AI evaluation saved successfully",
+        "likelihood_score": likelihood_score,
+        "reason": ai_comment
+    }), 201
 
 

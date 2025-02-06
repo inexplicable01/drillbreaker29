@@ -1,10 +1,10 @@
 import requests
-base = "http://127.0.0.1:5000/"
-# base = "https://www.drillbreaker29.com/"
+# base = "http://127.0.0.1:5000/"
+base = "https://www.drillbreaker29.com/"
 
-url = base + "maintanance/getCityList"
+getcitylisturl = base + "maintanance/getCityList"
 url3 = base + "maintanance/listingscheck"
-
+getlistingsurl = base + "maintanance/maintainListings"
 # url3 = f"https://www.drillbreaker29.com/maintanance/listingscheck"
 urlfsbo = f"https://www.drillbreaker29.com/maintanance/fsbo"
 urlopen = f"https://www.drillbreaker29.com/maintanance/updateopenhouse"
@@ -12,13 +12,13 @@ urlopen = f"https://www.drillbreaker29.com/maintanance/updateopenhouse"
 payload = {}
 headers = {}
 
-response = requests.request("GET", url, headers=headers, data=payload)
+response = requests.request("GET", getcitylisturl, headers=headers, data=payload)
 
 for i,city in enumerate(response.json()["cities"]):
     print(city)
     # if i<185:
     #     continue
-    url = base + "maintanance/maintainListings"
+
 
     payload = {'doz': '365',
                'city': city}
@@ -27,8 +27,8 @@ for i,city in enumerate(response.json()["cities"]):
     ]
     headers = {}
 
-    response = requests.request("PATCH", url, headers=headers, data=payload, files=files)
-    response = requests.request("PATCH", url3, headers=headers, data=payload)
+    res = requests.request("PATCH", getlistingsurl, headers=headers, data=payload, files=files)
+    resp = requests.request("PATCH", url3, headers=headers, data=payload)
 
 payload = {}
 response = requests.request("POST", base+"citystats/update", headers=headers, data=payload)

@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, jsonif
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.RouteModel.NeighbourhoodReport import NeighbourhoodReportDetails
 import json
-from app.MapTools.MappingTools import geojson_features
+from app.MapTools.MappingTools import geojson_features, WA_geojson_features
 from shapely.geometry import Point, shape
 
 clickablemap_bp = Blueprint('clickablemap_bp', __name__, url_prefix='/clickablemap')
@@ -42,12 +42,22 @@ def get_neighborhood(lat, lon, features):
 @clickablemap_bp.route('/', methods=['GET','POST'])
 def clickablemap():
     # geojson_features
-    blah = list(range(0, 10))  # Convert range to a list
+    # blah = list(range(0, 10))  # Convert range to a list
 
     # for g in geojson_features:
     #     g['properties']['S_HOOD_ALT_NAMES']='None'
 
-    return render_template('ClickAbleMap.html', blah=blah,geojson_features=geojson_features)
+    return render_template('ClickAbleMap.html',geojson_features=geojson_features)
+
+@clickablemap_bp.route('/fullmap', methods=['GET','POST'])
+def clickablemap2():
+    # geojson_features
+    # blah = list(range(0, 10))  # Convert range to a list
+
+    # for g in geojson_features:
+    #     g['properties']['S_HOOD_ALT_NAMES']='None'
+
+    return render_template('ClickAbleMap.html',geojson_features=WA_geojson_features)
 
 
 @clickablemap_bp.route('/process', methods=['POST'])

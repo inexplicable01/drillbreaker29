@@ -473,7 +473,7 @@ class BriefListingController():
 
         return recent_sold
 
-    def forSaleListingsByCity(self, city, fromdays=365 , neighbourhood_sub=None, homeType=None):
+    def forSaleListingsByCity(self, city, fromdays=365 , neighbourhood_sub=None, homeType=None, maxprice=None,minprice=None):
         fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
         for_Sale = BriefListing.query.filter(
@@ -488,6 +488,10 @@ class BriefListingController():
                 for_Sale = for_Sale.filter(BriefListing.homeType.in_(homeType))
             else:
                 for_Sale = for_Sale.filter(BriefListing.homeType == homeType)
+        if maxprice:
+            for_Sale = for_Sale.filter(BriefListing.price <= maxprice)
+        if minprice:
+            for_Sale = for_Sale.filter(BriefListing.price >= minprice)
 
         return for_Sale
 

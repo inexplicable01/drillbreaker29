@@ -6,6 +6,7 @@ from app.DBModels.CustomerNeighbourhoodInterest import CustomerNeighbourhoodInte
 from datetime import datetime, timedelta
 from app.config import Config
 import pytz
+from typing import Optional
 
 class CustomerNeighbourhoodInterestController:
     def __init__(self):
@@ -35,16 +36,29 @@ class CustomerNeighbourhoodInterestController:
         }
 
         # Format neighbourhood interests
-        neighbourhoods = []
+        locations = []
         for n in interests:
+            if n.neighbourhood:
+                locations.append({
+                    "neighbourhood": n.neighbourhood.neighbourhood,
+                    "neighbourhood_sub": n.neighbourhood.neighbourhood_sub,
+                    "city": n.WashingtonCities.city
+                })
+            else:
+                locations.append({
+                    "neighbourhood": None,
+                    "neighbourhood_sub": None,
+                    "city": n.WashingtonCities.city
+                })
 
-            neighbourhoods.append({
-                "neighbourhood": n.neighbourhood.neighbourhood,
-                "neighbourhood_sub": n.neighbourhood.neighbourhood_sub,
-                "city": n.WashingtonCities.city
-            })
 
+        return customer_data, locations
 
-        return customer_data, neighbourhoods
+    def get_customer(self, customer_id: int) -> Optional[Customer]:
+        """
+        Fetch customer details and ensure it returns an instance of Customer or None.
+        """
+        customer: Optional[Customer] = Customer.query.filter_by(id=customer_id).first()
+        return customer
 
 customerneighbourhoodinterestcontroller = CustomerNeighbourhoodInterestController()

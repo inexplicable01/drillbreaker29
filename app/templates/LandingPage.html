@@ -37,14 +37,14 @@
     {#    <td>New Listing goes and fetch these areas (Bellevue, Kenmore, Bothell, Kirkland): for new Listings</td>#}
     {#    <td><a href="/newlistings">New Listings</a></td>#}
     {#  </tr>#}
-{#      <tr>#}
-{#        <td>Below Link Show a Heat Map of Homes Sold</td>#}
-{#        <td><a href="/heatmapexample">Homes Sold Heat Map</a></td>#}
-{#      </tr>#}
-      <tr>
+    {#      <tr>#}
+    {#        <td>Below Link Show a Heat Map of Homes Sold</td>#}
+    {#        <td><a href="/heatmapexample">Homes Sold Heat Map</a></td>#}
+    {#      </tr>#}
+    <tr>
         <td>Potential Map Value</td>
         <td><a href="{{ url_for('hothomes_bp.MapPotentialValue') }}">Potential Map Value</a></td>
-      </tr>
+    </tr>
     {#  <tr>#}
     {#    <td>Where are high Value places to build?</td>#}
     {#    <td><a href="/wheretobuild">Where to Build</a></td>#}
@@ -75,7 +75,7 @@
     <td>Openhouse</td>
     <td><a href="{{ url_for('openhouse.SearchForOpenHouseRoute') }}">Open House</a></td>
     </tr>
-        <td>Homes for Sale</td>
+    <td>Homes for Sale</td>
     <td><a href="{{ url_for('hothomes_bp.forsalehomes') }}">Homes for Sale</a></td>
     </tr>
     <td>Area Report on Fremont, Ballard</td>
@@ -83,28 +83,31 @@
     </tr>
     <td>Top Homes in North Seattle</td>
     <td><a href="{{ url_for('hothomes_bp.showHotHomes') }}">Hot Homes</a></td>
-    </tr>
+
     </tr>
     <td>Neighbourhood Report</td>
     <td><a href="{{ url_for('neighbourhoodreport.neigh_report') }}">Neighbourhood Report</a></td>
     </tr>
 
-        </tr>
     <td>Clickable Map</td>
     <td><a href="{{ url_for('clickablemap_bp.clickablemap') }}">Clickable Map</a></td>
     </tr>
-        <td>Investment Analysis</td>
+    <td>Clickable Map2</td>
+    <td><a href="{{ url_for('clickablemap_bp.clickablemap2') }}">Clickable Map2</a></td>
+
+    </tr>
+    <td>Investment Analysis</td>
     <td><a href="{{ url_for('rental_bp.good_investment') }}">Investment</a></td>
     </tr>
-        <td>FSBO</td>
+    <td>FSBO</td>
     <td><a href="{{ url_for('fsbo_bp.getfsbo') }}">FSBO</a></td>
     </tr>
     </tr>
-        <td>Transaction High Level Summary</td>
+    <td>Transaction High Level Summary</td>
     <td><a href="{{ url_for('citystats_interesting.citystats') }}">Transactions by City</a></td>
     </tr>
-        </tr>
-        <td>Customer Interest</td>
+    </tr>
+    <td>Customer Interest</td>
     <td><a href="{{ url_for('customer_interest_bp.displayCustomerInterest') }}">Customer Interest</a></td>
     </tr>
 

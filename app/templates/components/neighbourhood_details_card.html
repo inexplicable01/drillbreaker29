@@ -18,20 +18,12 @@
                 <td><strong>Sold (Last 7 Days)</strong></td>
                 <td>
                     {% for home in sold7_SFH %}
-                        <p><strong>Address:</strong> {{ home.streetAddress }}, {{ home.city }}, {{ home.state }}, {{ home.zipcode }}</p>
-                        <p><strong>Price:</strong> ${{ home.price }}</p>
-                        <p><strong>Bedrooms:</strong> {{ home.bedrooms }}, <strong>Bathrooms:</strong> {{ home.bathrooms }}</p>
-                        <p><a href="https://www.zillow.com/{{ home.hdpUrl }}" target="_blank">View Listing</a></p>
-                        <br/>
+                        {% include "components/neighbourhood_details_card_mini.html" %}
                     {% endfor %}
                 </td>
                 <td>
                     {% for home in sold7_TCA %}
-                        <p><strong>Address:</strong> {{ home.streetAddress }}, {{ home.city }}, {{ home.state }}, {{ home.zipcode }}</p>
-                        <p><strong>Price:</strong> ${{ home.price }}</p>
-                        <p><strong>Bedrooms:</strong> {{ home.bedrooms }}, <strong>Bathrooms:</strong> {{ home.bathrooms }}</p>
-                        <p><a href="https://www.zillow.com/{{ home.hdpUrl }}" target="_blank">View Listing</a></p>
-                        <br/>
+                        {% include "components/neighbourhood_details_card_mini.html" %}
                     {% endfor %}
                 </td>
             </tr>
@@ -39,20 +31,12 @@
                 <td><strong>Pending (Last 7 Days)</strong></td>
                 <td>
                     {% for home in pending7_SFH %}
-                        <p><strong>Address:</strong> {{ home.streetAddress }}, {{ home.city }}, {{ home.state }}, {{ home.zipcode }}</p>
-                        <p><strong>Price:</strong> ${{ home.price }}</p>
-                        <p><strong>Bedrooms:</strong> {{ home.bedrooms }}, <strong>Bathrooms:</strong> {{ home.bathrooms }}</p>
-                        <p><a href="https://www.zillow.com/{{ home.hdpUrl }}" target="_blank">View Listing</a></p>
-                        <br/>
+                        {% include "components/neighbourhood_details_card_mini.html" %}
                     {% endfor %}
                 </td>
                 <td>
                     {% for home in pending7_TCA %}
-                        <p><strong>Address:</strong> {{ home.streetAddress }}, {{ home.city }}, {{ home.state }}, {{ home.zipcode }}</p>
-                        <p><strong>Price:</strong> ${{ home.price }}</p>
-                        <p><strong>Bedrooms:</strong> {{ home.bedrooms }}, <strong>Bathrooms:</strong> {{ home.bathrooms }}</p>
-                        <p><a href="https://www.zillow.com/{{ home.hdpUrl }}" target="_blank">View Listing</a></p>
-                        <br/>
+                        {% include "components/neighbourhood_details_card_mini.html" %}
                     {% endfor %}
                 </td>
             </tr>
@@ -60,20 +44,12 @@
                 <td><strong>New Listings (Last 7 Days)</strong></td>
                 <td>
                     {% for home in forsaleadded7_SFH %}
-                        <p><strong>Address:</strong> {{ home.streetAddress }}, {{ home.city }}, {{ home.state }}, {{ home.zipcode }}</p>
-                        <p><strong>Price:</strong> ${{ home.price }}</p>
-                        <p><strong>Bedrooms:</strong> {{ home.bedrooms }}, <strong>Bathrooms:</strong> {{ home.bathrooms }}</p>
-                        <p><a href="https://www.zillow.com/{{ home.hdpUrl }}" target="_blank">View Listing</a></p>
-                        <br/>
+                        {% include "components/neighbourhood_details_card_mini.html" %}
                     {% endfor %}
                 </td>
                 <td>
                     {% for home in forsaleadded7_TCA %}
-                        <p><strong>Address:</strong> {{ home.streetAddress }}, {{ home.city }}, {{ home.state }}, {{ home.zipcode }}</p>
-                        <p><strong>Price:</strong> ${{ home.price }}</p>
-                        <p><strong>Bedrooms:</strong> {{ home.bedrooms }}, <strong>Bathrooms:</strong> {{ home.bathrooms }}</p>
-                        <p><a href="https://www.zillow.com/{{ home.hdpUrl }}" target="_blank">View Listing</a></p>
-                        <br/>
+                        {% include "components/neighbourhood_details_card_mini.html" %}
                     {% endfor %}
                 </td>
             </tr>

@@ -27,6 +27,13 @@ def replace_none(obj):
 
 geojson_features = replace_none(geojson_data['features'])
 
+file_path = 'app/MapTools/WSDOT_-_City_Limits.geojson'
+with open(file_path, 'r') as f:
+    WA_geojson_data = json.load(f)
+WA_geojson_features = WA_geojson_data['features']
+
+WA_geojson_features = replace_none(WA_geojson_data['features'])
+
 
 
 def get_neighborhood_in_Seattle(lat, lon):
