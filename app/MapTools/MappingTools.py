@@ -27,13 +27,22 @@ def replace_none(obj):
 
 geojson_features = replace_none(geojson_data['features'])
 
+
 file_path = 'app/MapTools/WSDOT_-_City_Limits.geojson'
 with open(file_path, 'r') as f:
     WA_geojson_data = json.load(f)
 WA_geojson_features = WA_geojson_data['features']
+file_path = 'app/MapTools/kirkland_neighborhoods.geojson'
+with open(file_path, 'r') as f:
+    kirkland_neighborhoods_geojson_data = json.load(f)
+file_path = 'app/MapTools/shoreline_neighborhoods.geojson'
+with open(file_path, 'r') as f:
+    shoreline_geojson_data = json.load(f)
+file_path = 'app/MapTools/Bellevue_neighbourhoods.geojson'
+with open(file_path, 'r') as f:
+    bellevue_geojson_data = json.load(f)
 
-WA_geojson_features = replace_none(WA_geojson_data['features'])
-
+WA_geojson_features = WA_geojson_data['features']+kirkland_neighborhoods_geojson_data['features']+shoreline_geojson_data['features']+ bellevue_geojson_data['features']
 
 
 def get_neighborhood_in_Seattle(lat, lon):
@@ -192,4 +201,108 @@ def generateMap(brieflistings, neighbourhoods,showneighbounds):
         ).add_to(m)
 
     map_html = m._repr_html_()
+    return map_html
+
+from folium import GeoJson
+import copy
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import os
+import time
+
+def create_map(geojson_features, neighbourhoods_subs, cities, map_html_path,map_image_path):
+    # Create a base map
+    m = folium.Map(location=[47.6791, -122.3270], zoom_start=13)
+
+    geojson_features_clone = copy.deepcopy(geojson_features)
+    # Iterate through GeoJSON features and add them to the map
+    for feature in geojson_features_clone:
+        if feature["geometry"]["type"] == "Polygon":
+            # Adjust coordinates for Leaflet format
+            polygon_coords= [
+                [[coord[1], coord[0]] for coord in ring]  # Swap x, y
+                for ring in feature["geometry"]["coordinates"]
+            ]
+        elif feature["geometry"]["type"] == "MultiPolygon":
+            polygon_coords= [
+                [
+                    [[coord[1], coord[0]] for coord in ring]  # Swap x, y
+                    for ring in polygon
+                ]
+                for polygon in feature["geometry"]["coordinates"]
+            ]
+
+        # Determine color based on cities or neighbourhoods
+        color = "gray"  # Default color
+        label = "Unknown"
+        if "CityName" in feature["properties"]:
+            city_name = feature["properties"]["CityName"]
+            color = "orange" if city_name in cities else "purple"
+            label = city_name
+        elif "S_HOOD" in feature["properties"]:
+            neighbourhood = feature["properties"]["S_HOOD"]
+            color = "orange" if neighbourhood in neighbourhoods_subs else "purple"
+            label = neighbourhood
+
+        # Add a polygon to the map
+        # poly = GeoJson(
+        #     feature,
+        #     style_function=lambda x, color=color: {
+        #         "fillColor": color,
+        #         "color": color,
+        #         "weight": 2,
+        #         "fillOpacity": 0.5
+        #     }
+        # )
+
+        pgGON = folium.Polygon(
+            locations=polygon_coords[0],
+            # Reverse coordinates (longitude, latitude -> latitude, longitude)
+            color=color,
+            fill=True,
+            fill_opacity=0.5,
+            popup = folium.Popup(label)
+        )
+
+        # Create a polygon object
+        # polygon = shapely.geometry.Polygon(polygon_coords[0])
+        #
+        # # Calculate the centroid of the polygon
+        # centroid = polygon.centroid
+        # folium.Marker(
+        #     location=[centroid.y, centroid.x],
+        #     popup=label
+        # ).add_to(m)
+
+        # poly.add_child(folium.Tooltip(label))
+        # poly.add_to(m)
+
+        pgGON.add_child(folium.Tooltip(label, permanent=True))
+
+        # Add the polygon to the map
+        pgGON.add_to(m)
+
+    # Save the map as an HTML file
+    map_html = m._repr_html_()
+
+    m.save(map_html_path)  # Save the map as an HTML file
+    # Configure Selenium to run headless
+    options = Options()
+    options.add_argument("--headless")
+    driver = webdriver.Chrome(options=options)
+
+    # Open the saved HTML map
+    driver.get("file://" + os.path.abspath(map_html_path))
+
+    # Wait to ensure map is fully loaded
+    time.sleep(2)
+
+    # Save screenshot of the map
+    # image_path = f"static/map.png"
+    driver.save_screenshot(map_image_path)
+
+    # Close the browser session
+    driver.quit()
+
+    print(f"Map image saved at {map_image_path}")
     return map_html

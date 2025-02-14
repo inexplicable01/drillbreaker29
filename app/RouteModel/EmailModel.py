@@ -3,16 +3,21 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 # from run import app
 import os
-from flask import render_template
+from flask import render_template, flash
 from app.config import Config
 from app.NewListing import NewListing,NewListingForEmail
 from app.EmailHelper.EmailSender import send_email , send_emailforOpenHouse
-from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,loadPropertyDataFromBrief
+from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
 from app.DBFunc.CityStatsCacheController import citystatscachecontroller
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBModels.BriefListing import BriefListing
-from datetime import datetime
+from app.DBModels.Customer import Customer
 import pytz
+from datetime import datetime, timedelta
+from app.MapTools.MappingTools import WA_geojson_features
+from flask_mail import Mail, Message
+from jinja2 import Environment, FileSystemLoader
+
 # from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,
 defaultrecipient = 'waichak.luk@gmail.com'
 def sendEmailwithNewListing():
@@ -44,10 +49,42 @@ def sendEmailtimecheck(message=None):
                html_content=html_content,
                recipient =defaultrecipient)
 
+from pathlib import Path
 
-from datetime import datetime, timedelta
-import pytz
-from jinja2 import Environment, FileSystemLoader
+def sendCustomerEmail(customer:Customer,locations,
+                      cities, neighbourhoods_subs, forsalehomes):
+
+    # Fetch customer’s neighborhood interests
+    interests = customer.interests  # Assuming a relationship is defined
+    # output_dir = Path("app/static/maps")
+    # output_dir.mkdir(parents=True, exist_ok=True)  # Ensure the folder exists
+    # map_html_path = output_dir / f"map_{customer.name}.html"
+    # map_image_path = output_dir / f"map_{customer.name}_screenshot.png"
+    url_image_path= f"https://www.drillbreaker29.com/static/maps/map_{customer.name}_screenshot.png"
+    # Create the email body
+    email_subject = "Your Neighborhood Interests"
+    email_html_content = render_template(
+        'InterestReport/NeighbourhoodInterest.html',
+        customer=customer,
+        locations=locations,
+        cities=cities,
+        neighbourhoods_subs=neighbourhoods_subs,
+        geojson_features=WA_geojson_features,
+        Webpage=False,
+        # homes_with_comments=homes_with_comments,
+        url_image_path=url_image_path
+    )
+
+    try:
+        send_email(
+            subject=email_subject,
+            recipient='waichak.luk@gmail.com',#customer.email,  # Email address of the customer
+            html_content=email_html_content
+        )
+        flash("The email was sent successfully!", "success")
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        flash("An error occurred while sending the email.", "danger")
 
 
 def sendEmailpending():

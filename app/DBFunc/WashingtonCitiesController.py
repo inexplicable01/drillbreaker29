@@ -1,4 +1,4 @@
-from app.DBModels.WACities import WashingtonCities
+from app.DBModels.WashingtonCities import WashingtonCities
 from sqlalchemy.sql import func, or_, distinct
 from app.extensions import db
 from app.useful_func import safe_float_conversion,safe_int_conversion,print_and_log

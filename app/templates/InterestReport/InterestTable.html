@@ -1,0 +1,47 @@
+<h2>Neighborhoods of Interest</h2>
+{% if locations %}
+    <table>
+        <thead>
+        <tr>
+        <tr>
+            <th rowspan="2">City</th>
+            <th rowspan="2">Sub-Neighborhood</th>
+            <th rowspan="2">Total ForSale Listings</th>
+            <th colspan="3">Single Family Home (Last 7 days)</th>
+            <th colspan="3">TownHomes/Condos/Apartments (Last 7 days)</th>
+            <th rowspan="2">Details</th>
+        </tr>
+        <tr>
+            <th>New Listings</th>
+            <th>Pending</th>
+            <th>Sold</th>
+            <th>New Listings</th>
+            <th>Pending</th>
+            <th>Sold</th>
+        </tr>
+        </tr>
+        </thead>
+        <tbody>
+        {% for area in locations %}
+            <tr>
+                <td>{{ area.city }}</td>
+                <td>{{ area.neighbourhood_sub }}</td>
+                <td>{{ area.forsale }}</td>
+                <td>{{ area.forsaleadded7_SFH }}</td>
+                <td>{{ area.pending7_SFH }}</td>
+                <td>{{ area.sold7_SFH }}</td>
+                <td>{{ area.forsaleadded7_TCA }}</td>
+                <td>{{ area.pending7_TCA }}</td>
+                <td>{{ area.sold7_TCA }}</td>
+                <td>
+                    <button onclick="fetchNeighbourhoodDetails('{{ area.city }}', '{{ area.neighbourhood_sub }}')">
+                        View Details
+                    </button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No neighbourhoods of interest found for this customer.</p>
+{% endif %}

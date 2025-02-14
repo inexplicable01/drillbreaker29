@@ -14,8 +14,8 @@ from app.DBFunc.AIListingController import ailistingcontroller
 
 maintanance_bp = Blueprint('maintanance_bp', __name__, url_prefix='/maintanance')
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
-    loadPropertyDataFromBrief,FindHomesByCities, ListingStatus
-from app.ZillowAPI.ZillowAPICall import SearchZillowHomesByCity,SearchZillowByZPID,SearchZillowHomesFSBO, SearchZillowHomesByLocation
+    loadPropertyDataFromBrief, ListingStatus
+from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID,SearchZillowHomesFSBO, SearchZillowHomesByLocation
 from datetime import datetime
 @maintanance_bp.route('/neighcleanup', methods=['POST'])
 def neighcleanup():
@@ -97,7 +97,16 @@ def maintainListings_full():
             doz = int(request.form.get('doz'))
 
             for city in Config.CITIES:
-                soldbrieflistingarr, forsalebrieflistingarr = FindHomesByCities(city, doz) ## Found all listings for Sold and For Sale
+                soldbrieflistingarr = []
+                soldrawdata = SearchZillowHomesByLocation(city, status="recentlySold", doz=doz)
+                for briefhomedata in soldrawdata:
+                    soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+
+                forsalebrieflistingarr = []
+                forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz="any")
+                for briefhomedata in forsalerawdata:
+                    forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+
 
                 forsalebrief_ids = [listing.zpid for listing in forsalebrieflistingarr]
                 forsaleAPIbrief_dict = {listing.zpid: listing for listing in forsalebrieflistingarr}
@@ -132,19 +141,14 @@ def maintainListings_full():
                         continue
                     try:
                         print(f"{ccc} out of {soldbrieflistingarr.__len__()}")
-                        propertydata = loadPropertyDataFromBrief(brieflisting)
-                        listresults = ListingLengthbyBriefListing(propertydata)
-                        brieflisting.updateListingLength(listresults)
-                        brieflisting.hdpUrl = propertydata['hdpUrl']
+                        brieflisting.getPropertyData()
                         newsoldbriefs.append(brieflisting)  # looking for new sold stuff
-                        if len(newsoldbriefs) > 100:
+                        if len(newsoldbriefs) > 100 or ccc==len(soldbrieflistingarr)-1:
                             brieflistingcontroller.SaveBriefListingArr(
                                 newsoldbriefs)  # if its sold then maybe it was pending at some point. This line updates it.
                             newsoldbriefs = []
                     except Exception as e:
                         print(e, brieflisting)
-                brieflistingcontroller.SaveBriefListingArr(
-                    newsoldbriefs)  # if its sold then maybe it was pending at some point. This line updates it.
 
                 newsalebriefs = []
                 for brieflisting in forsalebrieflistingarr:
@@ -154,8 +158,7 @@ def maintainListings_full():
                     ## write code here to do this:  forsaleinarea is a list of ids that are for sale in the database, the forsalebriefarr is a list of brieflistings that are currently on sale as extracted by the API.
                     ## if any id in forsaleinarea is not in forsalebriefarr, then that means that id is no longer selling and I have to create an array of that.
                     try:
-                        propertydata = loadPropertyDataFromBrief(brieflisting)
-                        brieflisting.hdpUrl = propertydata['hdpUrl']
+                        brieflisting.getPropertyData()
                         newsalebriefs.append(brieflisting)
                     except Exception as e:
                         print(e, brieflisting)
@@ -177,7 +180,18 @@ def maintainListings():
             doz = int(request.form.get('doz'))
             city= request.form.get('city')
 
-            soldbrieflistingarr, forsalebrieflistingarr = FindHomesByCities(city, doz) ## Found all listings for Sold and For Sale
+            soldbrieflistingarr = []
+            soldrawdata = SearchZillowHomesByLocation(city, status="recentlySold", doz=doz)
+            for briefhomedata in soldrawdata:
+                soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+
+            forsalebrieflistingarr = []
+            forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz="any")
+            for briefhomedata in forsalerawdata:
+                forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+
+            for briefhomedata in forsalerawdata:
+                forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
 
             forsalebrief_ids = [listing.zpid for listing in forsalebrieflistingarr]
             forsaleAPIbrief_dict = {listing.zpid: listing for listing in forsalebrieflistingarr}
@@ -217,10 +231,7 @@ def maintainListings():
                     continue
                 try:
                     print(f"{ccc} out of {soldbrieflistingarr.__len__()}")
-                    propertydata = loadPropertyDataFromBrief(brieflisting)
-                    listresults = ListingLengthbyBriefListing(propertydata)
-                    brieflisting.updateListingLength(listresults)
-                    brieflisting.hdpUrl = propertydata['hdpUrl']
+                    brieflisting.getPropertyData()
                     newsoldbriefs.append(brieflisting)  # looking for new sold stuff
                     if len(newsoldbriefs) > 100:
                         brieflistingcontroller.SaveBriefListingArr(
@@ -246,8 +257,7 @@ def maintainListings():
                 ## write code here to do this:  forsaleinarea is a list of ids that are for sale in the database, the forsalebriefarr is a list of brieflistings that are currently on sale as extracted by the API.
                 ## if any id in forsaleinarea is not in forsalebriefarr, then that means that id is no longer selling and I have to create an array of that.
                 try:
-                    propertydata = loadPropertyDataFromBrief(brieflisting)
-                    brieflisting.hdpUrl = propertydata['hdpUrl']
+                    brieflisting.getPropertyData()
                     newsalebriefs.append(brieflisting)
                 except Exception as e:
                     print(e, brieflisting)
@@ -329,7 +339,14 @@ def updatefsbo():
         maxpage = 2
         while (maxpage+1) > lastpage:
             try:
-                fsbolistingarr, lastpage, maxpage =  SearchZillowHomesFSBO(city, lastpage, maxpage, 'forSale')
+                houseresult, lastpage, maxpage =  SearchZillowHomesFSBO(city, lastpage, maxpage, 'forSale')
+
+                fsbolistingarr = []
+                for briefhomedata in houseresult:
+                    if 'is_forAuction' in briefhomedata['listing_sub_type'].keys():
+                        continue
+                    # print(briefhomedata['listing_sub_type'])
+                    fsbolistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
             except Exception as e:
                 print(e, "seattle")
             fsboarr = fsboarr + fsbolistingarr
@@ -414,30 +431,18 @@ def updateathing():
                 brieflistingcontroller.updateBriefListing(brieflisting)
         except Exception as e:
             print(e, brieflisting)
-    # {'list2penddays': list2penddays,
-    #  'list2solddays': list2solddays,
-    #  'listprice': listprice,
-    #  'listdate': listdate,
-    #  'penddate': penddate,
-    #  'solddate': solddate
-    #  }
-    # seattlelistings = BriefListing.query.filter(
-    #     BriefListing.city == 'Seattle',
-    # )
-    #
-    # count =1
-    # for brieflisting in seattlelistings:
-    #     # get_neighborhood(brieflisting.latitude, brieflisting.longitude)
-    #     [neighbourhood, neighbourhood_sub] =get_neighborhood_in_Seattle(brieflisting.latitude, brieflisting.longitude)
-    #     brieflisting.neighbourhood_sub =neighbourhood_sub
-    #     brieflistingcontroller.updateBriefListing(brieflisting)
-    #     print(brieflisting.zpid, neighbourhood_sub)
-    #     # count += 1
-    #     # if count>50:
-    #     #     break
 
 
     return {"Seattle Neighbourhood_subs updated":other.count()}, 200
+
+@maintanance_bp.route('/updateathing2', methods=['post'])
+def updateathing2():
+    allbrieflistings = brieflistingcontroller.getALLlistings()
+    for brieflisting in allbrieflistings:
+        brieflisting.getPropertyData()
+        brieflistingcontroller.updateBriefListing(brieflisting)
+
+    return {"Seattle Neighbourhood_subs updated":'done'}, 200
 
 
 # @maintanance_bp.route('/export-pdf',methods=['get'])

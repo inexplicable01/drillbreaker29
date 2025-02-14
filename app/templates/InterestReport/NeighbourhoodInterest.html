@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Neighborhood Interests</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            max-width: 2000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #map {
+            height: 500px;
+            margin-top: 20px;
+        }
+
+        .zone-label {
+            font-size: 14px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #000;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        #details-container {
+            margin-top: 20px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            display: none;
+        }
+
+        #map-container {
+            display: flex;
+            justify-content: center; /* Centers horizontally */
+            align-items: center; /* Centers vertically */
+            height: 33vh; /* 1/3 of the viewport height */
+        }
+
+        #map-container img {
+            height: 100%; /* Ensures it fits within the container */
+            width: 100%; /* Maintain aspect ratio */
+            object-fit: contain; /* Keeps the image from being cropped */
+        }
+    </style>
+
+    <script>
+        function fetchNeighbourhoodDetails(city, neighbourhoodSub) {
+            fetch(`/customer_interest/get_neighbourhood_details`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({city: city, neighbourhood_sub: neighbourhoodSub})
+            })
+                .then(response => response.json())
+                .then(data => {
+                    let detailsContainer = document.getElementById('details-container');
+                    detailsContainer.style.display = 'block';
+                    detailsContainer.innerHTML = data.html;
+                })
+                .catch(error => console.error('Error fetching details:', error));
+        }
+
+        async function submitZpid() {
+            let zpid = document.getElementById("zpid").value;
+            if (!zpid) {
+                alert("Please enter a ZPID.");
+                return;
+            }
+
+            let response = await fetch("/customer_interest/evaluate_listing", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({zpid: zpid})
+            });
+
+            let data = await response.json();
+
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            document.getElementById("result").innerHTML =
+                `<h3>Likelihood Score: ${data.likelihood_score}%</h3><h3>Reason: ${data.reason}%</h3>`;
+        }
+    </script>
+</head>
+<body>
+<div class="container">
+    {% if Webpage %}
+        <h1>Customer Neighborhood Interests</h1>
+        <button onclick="window.location.href='{{ url_for('customer_interest_bp.listCustomers') }}'">
+            Back to Customers
+        </button>
+        <form action="{{ url_for('customer_interest_bp.send_email', customer_id=customer.id) }}" method="POST"
+              style="margin-top: 20px;">
+            <button type="submit">Send Neighborhood Interests to Email</button>
+        </form>
+        {#       #}
+        {#        <div id="map"></div>#}
+        {#    <div id="label">Click on a shape</div>#}
+        {#    <div id="result"></div>#}
+
+
+
+    {% endif %}
+    {#    <h2>Customer Details</h2>#}
+    {#    <p><strong>Name:</strong> {{ customer.name }}</p>#}
+    {#    <p><strong>Email:</strong> {{ customer.email }}</p>#}
+    {#    <p><strong>Phone:</strong> {{ customer.phone }}</p>#}
+
+    {#        <div>#}
+    {#            <h2>Submit a ZPID for AI Evaluation</h2>#}
+    {##}
+    {#            <input type="text" id="zpid" placeholder="Enter ZPID" required>#}
+    {#            <button onclick="submitZpid()">Submit</button>#}
+    {##}
+    {#            <div id="result"></div>#}
+    {##}
+    {#        </div>#}
+
+    {% if Webpage %}
+    <div id="map"></div>
+
+    <!-- Include Leaflet and jQuery -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        // Initialize Leaflet Map
+        var map = L.map('map');
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Function to handle region click
+        function handleClick(region) {
+            document.getElementById('label').innerHTML = region;
+
+            $.ajax({
+                url: '/clickablemap/process',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({region: region}),
+                success: function (response) {
+                    document.getElementById('result').innerHTML = response.message;
+                },
+                error: function (error) {
+                    console.error('Error:', error);
+                }
+            });
+        }
+
+        // Convert GeoJSON data
+        var geojson_features = {{ geojson_features | tojson }};
+        var neighbourhoodsSubs = {{ neighbourhoods_subs | tojson }};
+        var cities = {{ cities | tojson }};
+
+        console.log("Processing GeoJSON Data...");
+
+        // Create a bounding box for fitting the map
+        var bounds = L.latLngBounds();
+
+        // Iterate over each GeoJSON feature
+        geojson_features.forEach(feature => {
+            let { geometry, properties } = feature;
+
+            // Ensure correct coordinate order (Leaflet requires [lat, lon])
+            if (geometry.type === "Polygon") {
+                geometry.coordinates = geometry.coordinates.map(ring =>
+                    ring.map(coord => [coord[1], coord[0]])
+                );
+            } else if (geometry.type === "MultiPolygon") {
+                geometry.coordinates = geometry.coordinates.map(polygon =>
+                    polygon.map(ring =>
+                        ring.map(coord => [coord[1], coord[0]])
+                    )
+                );
+            }
+
+            let zoneName = properties.CityName || properties.S_HOOD || "Unknown";
+            let color = "gray";
+            let shouldExtendBounds = false;
+
+            // Determine color based on CityName or Neighborhood
+            if (properties.CityName && cities.includes(properties.CityName)) {
+                color = "orange";
+                shouldExtendBounds = true;
+            } else if (properties.S_HOOD && neighbourhoodsSubs.includes(properties.S_HOOD)) {
+                color = "orange";
+                shouldExtendBounds = true;
+            } else {
+                color = "purple";
+            }
+
+            // Create the polygon layer
+            let poly;
+            if (geometry.type === "Polygon") {
+                poly = L.polygon(geometry.coordinates, { color }).addTo(map);
+            } else if (geometry.type === "MultiPolygon") {
+                geometry.coordinates.forEach(polygon => {
+                    poly = L.polygon(polygon, { color }).addTo(map);
+                });
+            }
+
+            // Extend bounds only if it's an orange area
+            if (shouldExtendBounds && poly) {
+                bounds.extend(poly.getBounds());
+            }
+
+            // Bind tooltip (Always visible)
+            if (poly) {
+                poly.bindTooltip(zoneName, {
+                    permanent: true,
+                    direction: "center",
+                    className: "zone-label"
+                }).openTooltip();
+
+                poly.on('click', () => handleClick(properties.L_HOOD + ',' + properties.S_HOOD));
+            }
+        });
+
+        // Adjust map view based on bounds (only for orange areas)
+        if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [20, 20] });
+        } else {
+            map.setView([47.6062, -122.3321], 10); // Default to Seattle if no orange areas
+        }
+    </script>
+
+    {% else %}
+        <div id="map-container">
+            <img src="{{ url_image_path }}" alt="Map Image">
+        </div>
+    {% endif %}
+
+
+    <div>
+        {% for home, aicomments in homes_with_comments %}
+            {% include "components/neighbourhood_details_card_mini.html" with context %}
+        {% endfor %}
+    </div>
+
+    {% include "InterestReport/InterestTable.html" with context %}
+
+    <div id="details-container"></div>
+</div>
+</body>
+</html>

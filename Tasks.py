@@ -6,8 +6,8 @@ getcitylisturl = base + "maintanance/getCityList"
 url3 = base + "maintanance/listingscheck"
 getlistingsurl = base + "maintanance/maintainListings"
 # url3 = f"https://www.drillbreaker29.com/maintanance/listingscheck"
-urlfsbo = f"https://www.drillbreaker29.com/maintanance/fsbo"
-urlopen = f"https://www.drillbreaker29.com/maintanance/updateopenhouse"
+urlfsbo = f"{base}maintanance/fsbo"
+urlopen = f"{base}maintanance/updateopenhouse"
 
 payload = {}
 headers = {}
@@ -35,7 +35,7 @@ response = requests.request("POST", base+"citystats/update", headers=headers, da
 
 
 
-url_health = "https://www.drillbreaker29.com/email/email_healthcheck"
+url_health = f"{base}email/email_healthcheck"
 payload = {'message': "completed listing maintenance"}
 response = requests.request("GET", url_health, headers=headers, data=payload)
 

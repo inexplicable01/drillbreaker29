@@ -5,8 +5,8 @@ from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.config import Config,SW
 fsbo_bp = Blueprint('fsbo_bp', __name__, url_prefix='/fsbo')
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
-    loadPropertyDataFromBrief,FindHomesByNeighbourhood, ListingStatus
-from app.ZillowAPI.ZillowAPICall import SearchZillowHomesByCity,SearchZillowByZPID,SearchZillowHomesFSBO
+    loadPropertyDataFromBrief, ListingStatus
+
 from datetime import datetime
 from math import radians, sin, cos, sqrt, atan2
 from app.DBModels.FSBOStatus import FSBOStatus

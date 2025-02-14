@@ -1,6 +1,6 @@
 from app.MapTools.MappingTools import generateMap
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
-    loadPropertyDataFromBrief,FindHomesByNeighbourhood, ListingStatus
+    loadPropertyDataFromBrief, ListingStatus
 import matplotlib.pyplot as plt
 
 import base64

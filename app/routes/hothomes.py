@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
 from flask import Blueprint, redirect, url_for
 # from app.RouteModel.EmailModel import sendEmailwithListingforclient
-from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,loadPropertyDataFromBrief
+# from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,loadPropertyDataFromBrief
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.ZillowAPI.ZillowAPICall import *
@@ -56,29 +56,32 @@ def showHotHomes():
             print(e)
     return render_template('HotHomes.html', infodump=infodump)
 
-@hothomes_bp.route('/ballard', methods=['POST'])
-def getUpdatedHomes():
-
-    clientinterest={
-        'area':['Fremont','Ballard','Wallingford'],
-        'bedrooms_min':1,
-        'bedrooms_max': 4,
-        'bathrooms_min':1.5,
-        'pricemax': 1700000
-    }
-    forsalebriefdata = ZillowSearchForForSaleHomes(clientinterest)
-
-    for brieflisting in forsalebriefdata:
-
-        try:
-            propertydata = loadPropertyDataFromBrief(brieflisting)
-            brieflisting.hdpUrl = propertydata['hdpUrl']
-        except Exception as e:
-            print(e, brieflisting)
-
-    changebrieflistingarr,oldbrieflistingarr=brieflistingcontroller.SaveBriefListingArr(forsalebriefdata)
-
-    return render_template('HotHomes.html')
+# @hothomes_bp.route('/ballard', methods=['POST'])
+# def getUpdatedHomes():
+#
+#     clientinterest={
+#         'area':['Fremont','Ballard','Wallingford'],
+#         'bedrooms_min':1,
+#         'bedrooms_max': 4,
+#         'bathrooms_min':1.5,
+#         'pricemax': 1700000
+#     }
+#     forsalebriefdata = ZillowSearchForForSaleHomes(clientinterest)
+#     forsalebriefdata=[]
+#     for raw in homesbeingsoldraw:
+#         forsalebriefdata.append(BriefListing.CreateBriefListing(raw, None, None, location))
+#
+#     for brieflisting in forsalebriefdata:
+#
+#         try:
+#             propertydata = loadPropertyDataFromBrief(brieflisting)
+#             brieflisting.hdpUrl = propertydata['hdpUrl']
+#         except Exception as e:
+#             print(e, brieflisting)
+#
+#     changebrieflistingarr,oldbrieflistingarr=brieflistingcontroller.SaveBriefListingArr(forsalebriefdata)
+#
+#     return render_template('HotHomes.html')
 # @openhouse_bp.route('/showopenhouseopportunity', methods=['GET','POST'])
 # def SearchForOpenHouseRoute():
 #     map_html = SearchForOpenHouses()

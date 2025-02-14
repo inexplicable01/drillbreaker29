@@ -70,8 +70,12 @@
             );
         }
         // Slightly shift the Bellevue polygon's coordinates for each iteration
-        {#console.log(`Value from geojson_features: ${value.properties.L_HOOD}`);#}
-        var zoneName = value.properties.S_HOOD;
+        console.log(`Value from geojson_features: ${value.properties.L_HOOD}`);
+    // Check if S_HOOD exists and is not null/empty, otherwise use CityName
+        var zoneName = value.properties.S_HOOD && value.properties.S_HOOD.trim() !== ""
+            ? value.properties.S_HOOD
+            : value.properties.CityName;
+        console.log(`Value from geojson_features: ${zoneName}`);
         var poly = L.polygon(value.geometry.coordinates, {color: 'red'}).addTo(map);
 
         // Bind a tooltip (always visible)

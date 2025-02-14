@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field, InitVar, fields
 from typing import Optional, Dict
 from sqlalchemy.orm import relationship
-from app.DBModels.WACities import WashingtonCities
+from app.DBModels.WashingtonCities import WashingtonCities
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime , Numeric , ForeignKey
 Base = declarative_base()

@@ -24,6 +24,7 @@ class Customer(db.Model):
 
     interests = db.relationship('CustomerNeighbourhoodInterest', back_populates='customer')
 
+
     def __str__(self):
         return (
             f"Customer(ID: {self.id}, Name: {self.name}, Email: {self.email}, "

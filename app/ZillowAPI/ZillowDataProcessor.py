@@ -12,7 +12,7 @@ from app.ZillowAPI.ZillowAPICall import SearchZillowNewListingByLocation,\
     SearchZillowNewListingByInterest,\
     SearchZillowHomesByLocation
 
-from app.DBModels.BriefListing import BriefListing, filter_dataclass_fields
+# from app.DBModels.BriefListing import BriefListing
 from os.path import join
 import os
 import json
@@ -33,45 +33,6 @@ def date_difference(date1: str, date2: str) -> int:
     # Return the number of days
     return abs(difference.days)
 
-# def ListingLength(soldhouse, Listing, db):
-#
-#     if soldhouse.list2pendCheck==0:
-#         url = "https://zillow56.p.rapidapi.com/property"
-#         querystring = {"zpid":soldhouse.zpid}
-#         headers = {
-#             "X-RapidAPI-Key": rapidapikey,
-#             "X-RapidAPI-Host": "zillow56.p.rapidapi.com"
-#         }
-#         response = requests.get(url, headers=headers, params=querystring)
-#         # print(response.json())
-#         houseresult = response.json()
-#         if PRICEHISTORY in houseresult.keys():
-#             soldposs =[]
-#             for event in houseresult[PRICEHISTORY]:
-#
-#                 if event['event']=='Listed for sale':
-#                     print(event['date'] + 'Listed for Sale ' + soldhouse.streetAddress)
-#                     for e in soldposs:
-#                         if e['event'] == 'Pending sale':
-#                             print(e['date'] + '  Pending  ' + soldhouse.streetAddress)
-#
-#                             list2penddays = date_difference(e['date'], event['date'])
-#                             print(soldhouse.streetAddress + ' Took ' + str(list2penddays) + ' to be UnderContract')
-#                             soldhouse.list2pend = list2penddays
-#                             soldhouse.list2pendCheck = 1
-#                             db.session.commit()
-#                         if e['event'] == 'Sold':
-#                             print(e['date'] + '  Sold  ' + soldhouse.streetAddress)
-#                             print(soldhouse.streetAddress + ' Took ' + str(date_difference(e['date'],event['date']))+ ' to sell')
-#                     break
-#                 else:
-#                     soldposs.append(event)
-#             soldhouse.list2pendCheck = 1
-#             db.session.commit()
-#         else:
-#             print('Lack of History Data for ' + soldhouse.streetAddress)
-#             soldhouse.list2pendCheck = 1
-#             db.session.commit()
 
 def SearchAllNewListing(location, daysonzillow):
     houseresult = SearchZillowNewListingByLocation(location, daysonzillow)
@@ -126,22 +87,21 @@ def SearchAllNewListing(location, daysonzillow):
 #     return filtered_houses
 #
 
-def ZillowSearchForForSaleHomes(clientinterest):
-    forsalehomesarr = []
-    for area in clientinterest['area']:
-        location = area + ' seattle'
-        homesbeingsoldraw = SearchZillowNewListingByInterest(location=location,
-                                                        beds_min=clientinterest['bedrooms_min'],
-                                                        beds_max=clientinterest['bedrooms_max'],
-                                                        baths_min=clientinterest['bathrooms_min'],
-                                                        price_max=clientinterest['pricemax'],
-                                                        daysonzillow=7)
-        for raw in homesbeingsoldraw:
-            forsalehomesarr.append(BriefListing.CreateBriefListing(raw, None, None,location))
-
-    # for forsalebriefdata in forsalehomesarr:
-    #     print(forsalebriefdata)
-    return forsalehomesarr
+# def ZillowSearchForForSaleHomes(clientinterest):
+#     forsalehomesarr = []
+#     for area in clientinterest['area']:
+#         location = area + ' seattle'
+#         homesbeingsoldraw = SearchZillowNewListingByInterest(location=location,
+#                                                         beds_min=clientinterest['bedrooms_min'],
+#                                                         beds_max=clientinterest['bedrooms_max'],
+#                                                         baths_min=clientinterest['bathrooms_min'],
+#                                                         price_max=clientinterest['pricemax'],
+#                                                         daysonzillow=7)
+#
+#
+#     # for forsalebriefdata in forsalehomesarr:
+#     #     print(forsalebriefdata)
+#     return forsalehomesarr
     # return filtered_houses
 
 
@@ -261,62 +221,29 @@ def savePropertyData(propertydata):
             f.write(json_string)
 
 
-def FindSoldHomesByLocation(search_neigh, doz):
-    soldrawdata = SearchZillowHomesByLocation(search_neigh,status="recentlySold",doz=doz)
-    soldbriefhomedata = []
-    for briefhomedata in soldrawdata:
-            soldbriefhomedata.append(BriefListing.CreateBriefListing(briefhomedata,None,None,search_neigh))
-    return soldbriefhomedata
 
-def FindHomesByNeighbourhood(search_neigh, doz):
-    interval=100
-    minhomesize=4000
-    maxhomesize=interval+minhomesize
-    soldbrieflistingarr = []
-    while maxhomesize < 6000:
-        soldrawdata = SearchZillowHomesByLocation(search_neigh,status="recentlySold",doz=doz,minhomesize=minhomesize,maxhomesize=maxhomesize)
-        for briefhomedata in soldrawdata:
-                soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
-        print(f"Finished searching {minhomesize} to {maxhomesize}")
-        minhomesize = minhomesize + interval
-        maxhomesize = maxhomesize + interval
-    forsalerawdata = SearchZillowHomesByLocation(search_neigh,status="forSale",duration="any")
-    forsalebrieflistingarr = []
-    for briefhomedata in forsalerawdata:
-            forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
-    return soldbrieflistingarr,forsalebrieflistingarr
-
-def FindHomesByCities(city, doz):
-    soldbrieflistingarr = []
-    soldrawdata = SearchZillowHomesByLocation(city, status="recentlySold", doz=doz)
-    for briefhomedata in soldrawdata:
-        soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
-
-    forsalebrieflistingarr=[]
-    forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz="any")
-    for briefhomedata in forsalerawdata:
-        forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
-
-    return soldbrieflistingarr,forsalebrieflistingarr
+# def FindHomesByNeighbourhood(search_neigh, doz):
+#     interval=100
+#     minhomesize=4000
+#     maxhomesize=interval+minhomesize
+#     soldbrieflistingarr = []
+#     while maxhomesize < 6000:
+#         soldrawdata = SearchZillowHomesByLocation(search_neigh,status="recentlySold",doz=doz,minhomesize=minhomesize,maxhomesize=maxhomesize)
+#         for briefhomedata in soldrawdata:
+#                 soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
+#         print(f"Finished searching {minhomesize} to {maxhomesize}")
+#         minhomesize = minhomesize + interval
+#         maxhomesize = maxhomesize + interval
+#     forsalerawdata = SearchZillowHomesByLocation(search_neigh,status="forSale",duration="any")
+#     forsalebrieflistingarr = []
+#     for briefhomedata in forsalerawdata:
+#             forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,search_neigh))
+#     return soldbrieflistingarr,forsalebrieflistingarr
 
 
-def loadPropertyDataFromBrief(brieflisting:BriefListing):
-    filepath = os.path.join(os.getenv('ADDRESSJSON'), brieflisting.ref_address().replace('/','div') + '.txt')
+def loadPropertyDataFromBrief(brieflisting):
+
     print('Load property : ',brieflisting)
     propertydata = SearchZillowByZPID(brieflisting.zpid)
-    # if not os.path.exists(filepath):
-    #
-    #     json_string = json.dumps(propertydata, indent=4)
-    #     with open(filepath, 'w') as f:
-    #         f.write(json_string)
-    # else:
-    #     with open(filepath, 'r') as file:
-    #         # Read the content of the file
-    #         text_content = file.read()
-    #         propertydata = json.loads(text_content)
 
-
-            # {
-            #     "message": "You have exceeded the rate limit per second for your plan, ULTRA, by the API provider"
-            # }
     return propertydata

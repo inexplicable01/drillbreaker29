@@ -473,26 +473,41 @@ class BriefListingController():
 
         return recent_sold
 
-    def forSaleListingsByCity(self, city, fromdays=365 , neighbourhood_sub=None, homeType=None, maxprice=None,minprice=None):
-        fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
-        # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
-        for_Sale = BriefListing.query.filter(
+    def forSaleListingsByCity(self, city, fromdays=365, neighbourhood_sub=None, homeType=None, maxprice=None,
+                              minprice=None):
+        # Calculate the cutoff datetime
+        fromdays_ago = datetime.now() - timedelta(days=fromdays)
+        # Start with the base filters
+        filters = [
             BriefListing.homeStatus == 'FOR_SALE',
             BriefListing.city == city,
             BriefListing.listtime >= fromdays_ago
-        )
+        ]
+        # Add optional parameters dynamically
         if neighbourhood_sub:
-            for_Sale = for_Sale.filter(BriefListing.neighbourhood_sub == neighbourhood_sub)
+            filters.append(BriefListing.neighbourhood_sub == neighbourhood_sub)
         if homeType:
-            if isinstance(homeType, list):
-                for_Sale = for_Sale.filter(BriefListing.homeType.in_(homeType))
-            else:
-                for_Sale = for_Sale.filter(BriefListing.homeType == homeType)
+            filters.append(
+                BriefListing.homeType.in_(homeType) if isinstance(homeType,
+                                                                  list) else BriefListing.homeType == homeType)
         if maxprice:
-            for_Sale = for_Sale.filter(BriefListing.price <= maxprice)
+            filters.append(BriefListing.price <= maxprice)
         if minprice:
-            for_Sale = for_Sale.filter(BriefListing.price >= minprice)
+            filters.append(BriefListing.price >= minprice)
+        # Execute the query with all filters applied at once
+        return BriefListing.query.filter(*filters)
 
-        return for_Sale
+    def getALLlistings(self):
+        """
+        Retrieve all listings from the BriefListing table.
+
+        :return: List of BriefListing objects
+        """
+        try:
+            all_listings = self.BriefListing.query.all()
+            return all_listings
+        except Exception as e:
+            print(f"Error retrieving all listings: {str(e)}")
+            return []
 
 brieflistingcontroller = BriefListingController()

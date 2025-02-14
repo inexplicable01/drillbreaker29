@@ -1,11 +1,7 @@
 from app.DBModels.SeattleNeighbourhoods import SeattleNeighbourhoods
-from sqlalchemy.sql import func
 from app.extensions import db
 from app.DBModels.Customer import Customer
 from app.DBModels.CustomerNeighbourhoodInterest import CustomerNeighbourhoodInterest
-from datetime import datetime, timedelta
-from app.config import Config
-import pytz
 from typing import Optional
 
 class CustomerNeighbourhoodInterestController:

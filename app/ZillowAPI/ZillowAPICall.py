@@ -2,7 +2,7 @@ import requests
 import os
 from warnings import warn
 import time
-from app.DBModels.BriefListing import BriefListing
+
 import sqlite3
 url = "https://zillow56.p.rapidapi.com/search"
 # url ="https://zillow-com4.p.rapidapi.com/properties/search"
@@ -274,32 +274,7 @@ def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, duratio
     return houseresult
 
 
-def SearchZillowHomesByCity(city, lastpage, maxpage, status="forSale", duration=14):
-    #Brief Listing
 
-    houseresult=[]
-    print('Search in location ' + status + ' : ', city)
-    # lastpage = 1
-    # maxpage = 2
-
-    querystring = {"location":city + ", wa","page": str(lastpage),"status": status}
-    response = requests.get(url, headers=headers, params=querystring)
-    time.sleep(0.5)
-    if response.status_code==502:
-        raise('502 on ' + city)
-    try:
-        result = response.json()
-        houseresult = houseresult+ result['results']
-        maxpage = result['totalPages']
-        print('lastpage:' + str(lastpage) + ' out of ' + str(maxpage))
-        lastpage = lastpage + 1
-    except Exception as e:
-        raise(f"Search Zillow failed due to an exception")
-
-    forsalebrieflistingarr = []
-    for briefhomedata in houseresult:
-            forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,city))
-    return forsalebrieflistingarr, lastpage, maxpage
 
 def SearchZillowHomesFSBO(city, lastpage, maxpage, status="forSale", duration=14):
 
@@ -324,15 +299,10 @@ def SearchZillowHomesFSBO(city, lastpage, maxpage, status="forSale", duration=14
     except Exception as e:
         raise(f"Search Zillow failed due to an exception")
 
-    brieflistingarr = []
-    for briefhomedata in houseresult:
-        if 'is_forAuction' in briefhomedata['listing_sub_type'].keys():
-            continue
-        # print(briefhomedata['listing_sub_type'])
-        brieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None,None,city))
 
 
-    return brieflistingarr, lastpage, maxpage
+
+    return houseresult, lastpage, maxpage
 # def UpdateListfromLocation(location):
 #     querystring = {"location":location + ", wa","status":"recentlySold","doz":"30"}
 #     response = requests.get(url, headers=headers, params=querystring)

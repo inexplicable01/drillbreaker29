@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field, InitVar, fields
 from typing import Optional, Dict
-
-from openpyxl.pivot.fields import Boolean
+from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
+    loadPropertyDataFromBrief, ListingStatus
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime , Numeric
 Base = declarative_base()
@@ -9,10 +9,15 @@ from app.extensions import db
 from datetime import datetime, timedelta
 from app.useful_func import safe_float_conversion,safe_int_conversion
 import decimal
+# from app.DBModels.CustomerZpid import CustomerZpid
+# from app.models.brief_listing import BriefListing
+
+
 class BriefListing(db.Model):
     __tablename__= 'BriefListing'
 
     zpid = db.Column(db.BigInteger, primary_key=True, nullable=True)
+    NWMLS_id = db.Column(db.Integer, nullable=True)
     bathrooms = db.Column(db.Float, nullable=True, default=1.0)
     bedrooms = db.Column(db.Float, nullable=True, default=1.0)
     city = db.Column(db.String(255), nullable=True)  # Specify length here
@@ -70,6 +75,11 @@ class BriefListing(db.Model):
 
     # Define the one-to-one relationship to FSBOStatus
     fsbo_status = db.relationship('FSBOStatus', backref='brief_listing', uselist=False, lazy=True)
+    # customers = db.relationship(
+    #     'CustomerZpid',
+    #     back_populates="brief_listing",  # Bidirectional relationship
+    #     cascade="all, delete-orphan"
+    # )
 
     def __post_init__(self, extras):
         # This method now accepts `extras` but does nothing with it,
@@ -109,6 +119,17 @@ class BriefListing(db.Model):
             'hdpUrl': self.hdpUrl,
             'imgSrc': self.imgSrc,
         }
+
+    def getPropertyData(self):
+        propertydata = loadPropertyDataFromBrief(self)
+        listresults = ListingLengthbyBriefListing(propertydata)
+        self.updateListingLength(listresults)
+        self.hdpUrl = propertydata['hdpUrl']
+        try:
+            self.NWMLS_id = propertydata['attributionInfo']['mlsId']
+        except Exception as e:
+            print(e, self)
+
 
     @classmethod
     def CreateBriefListing(cls, briefhomedata, neighbourhood, zillowapi_neighbourhood, search_neigh):
