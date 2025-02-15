@@ -52,6 +52,16 @@
     </style>
 </head>
 <body>
+     {% with messages = get_flashed_messages(with_categories=true) %}
+         {% if messages %}
+             <ul>
+                 {% for category, message in messages %}
+                     <li class="{{ category }}">{{ message }}</li>
+                 {% endfor %}
+             </ul>
+         {% endif %}
+     {% endwith %}
+
     <div class="container">
         <h1>Customer List</h1>
         <table>
@@ -63,28 +73,46 @@
                 </tr>
             </thead>
 <tbody>
+<tbody>
+
+
     {% for customer in customers %}
     <tr>
         <td>{{ customer.id }}</td>
         <td>{{ customer.name }}</td>
-    <td>
-        <!-- Display related BriefListing (zpid) objects -->
-        <ul>
-            {% for customerzpid in customer.customerzpid_array %}
-            <li>{{ customerzpid.brief_listing.NWMLS_id }} - {{ customerzpid.brief_listing.streetAddress }}</li>
-            {% endfor %}
-        </ul>
-    </td>
         <td>
+            <!-- Display related BriefListing (zpid) objects -->
+            <ul>
+                {% for customerzpid in customer.customerzpid_array %}
+                    <li>
+                        {{ customerzpid.brief_listing.NWMLS_id }} - {{ customerzpid.brief_listing.streetAddress }}
+
+                        <!-- Retire button for each customerzpid -->
+                        {% if not customerzpid.is_retired %}
+                            <form method="post" action="{{ url_for('customer_interest_bp.retire_zpid') }}" style="display:inline;">
+                                <input type="hidden" name="customer_id" value="{{ customer.id }}">
+                                <input type="hidden" name="zpid" value="{{ customerzpid.zpid }}">
+                                <button type="submit" style="color:red;">Retire</button>
+                            </form>
+                        {% else %}
+                            <span style="color:gray;">(Retired)</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </td>
+        <td>
+            <!-- Save MLS/ZPID form appears only once for each customer -->
             <form method="post" action="{{ url_for('customer_interest_bp.save_zpid') }}">
                 <input type="hidden" name="customer_id" value="{{ customer.id }}">
-                <input type="text" name="zpid" placeholder="Enter ZPID" required>
+{#                <input type="text" name="zpid" placeholder="Enter ZPID" required>#}
                 <input type="text" name="NWMLS_id" placeholder="Enter MLS" required>
-                <button type="submit">Save ZPID</button>
+                <button type="submit">Save</button>
             </form>
         </td>
     </tr>
     {% endfor %}
+</tbody>
 </tbody>
         </table>
     </div>

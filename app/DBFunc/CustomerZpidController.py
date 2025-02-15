@@ -30,6 +30,15 @@ class CustomerZpidController():
         except Exception as e:
             print_and_log(f"Error retrieving CustomerZpid by ID: {str(e)}")
             return None
+    def retire_customer_zpid(self,customer_id,zpid):
+        customer_zpid = CustomerZpid.query.filter_by(customer_id=customer_id, zpid=zpid).first()
+        if customer_zpid:
+            customer_zpid.is_retired = True
+            self.db.session.merge(customer_zpid)
+            self.db.session.commit()
+            return True
+        return False
+
 
     # Save a new CustomerZpid or update an existing one
     def saveCustomerzpid(self, brieflisting, customer):

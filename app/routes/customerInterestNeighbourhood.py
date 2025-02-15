@@ -2,7 +2,7 @@
 from datetime import datetime
 import pytz
 from app.DBFunc.CityStatsCacheController import citystatscachecontroller
-from flask import Blueprint, render_template, redirect, url_for, request,jsonify
+from flask import flash,Blueprint, render_template, redirect, url_for, request,jsonify
 # from app.RouteModel.EmailModel import sendEmailwithNewListing
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,ListAllNeighhourhoodsByCities
@@ -16,6 +16,7 @@ from app.MapTools.MappingTools import WA_geojson_features, create_map
 from app.RouteModel.AIModel import AIModel
 from app.RouteModel.EmailModel import sendCustomerEmail
 from app.DBFunc.CustomerZpidController import customerzpidcontroller
+from app.ZillowAPI.ZillowAPICall import SearchZilowByMLSID, SearchZillowByZPID
 
 
 @customer_interest_bp.route('/customers', methods=['GET'])
@@ -48,18 +49,67 @@ def display_customer_interests():
 
 @customer_interest_bp.route('/save_zpid', methods=['POST'])
 def save_zpid():
-    customer_id = request.form.get('customer_id')
-    zpid = request.form.get('zpid')
+    customer_id = request.form.get('customer_id')  # Retrieve customer ID from the form
+    NWMLS_id = request.form.get('NWMLS_id')       # Retrieve MLS ID (highest priority)
+    zpid = request.form.get('zpid')              # Retrieve ZPID (fallback)
 
     customer = customercontroller.getCustomerByID(customer_id)
-    brieflisting = brieflistingcontroller.get_listing_by_zpid(zpid)
-    if customer and brieflisting:
-        customerzpidcontroller.saveCustomerzpid(brieflisting, customer)
-        print("ZPID saved successfully!", "success")
+
+    if not customer:
+        print("Customer not found.", "error")
+        return "Customer not found.", 400
+
+    # Step 2: Try to fetch the brieflisting using NWMLS_id first.
+    brieflisting = None
+    if NWMLS_id:
+        brieflisting = brieflistingcontroller.get_listing_by_mls_id(NWMLS_id)
+    elif zpid:
+        # Fallback to zpid if NWMLS_id is not provided
+        brieflisting = brieflistingcontroller.get_listing_by_zpid(zpid)
+
+    if not brieflisting:
+        if NWMLS_id:
+            print(f"Listing with NWMLS_id '{NWMLS_id}' not found, attempting to fetch via Zillow API...")
+            zpid = SearchZilowByMLSID(NWMLS_id)  # Attempt API lookup with MLS ID
+            if zpid:
+                propertydata = SearchZillowByZPID(zpid)
+                brieflisting = brieflistingcontroller.CreateBriefListingFromPropertyData(propertydata)
+                brieflistingcontroller.updateBriefListing(brieflisting)
+        elif zpid:
+            print(f"Listing with ZPID '{zpid}' not found, attempting to fetch via Zillow API...")
+            propertydata = SearchZillowByZPID(zpid)  # Attempt API lookup with ZPID
+            brieflisting = brieflistingcontroller.CreateBriefListingFromPropertyData(propertydata)
+            brieflistingcontroller.updateBriefListing(brieflisting)
+        else:
+            # If neither NWMLS_id nor ZPID exists, don't proceed with saving
+            print("No NWMLS_id or ZPID provided. Cannot find listing.", "error")
+            return "No NWMLS_id or ZPID provided. Cannot find listing.", 400
+
+
+    if brieflisting:
+        customerzpidcontroller.saveCustomerzpid(brieflisting, customer)  # Save the relationship to DB
+        flash("ZPID saved successfully!", "success")  # Flash a success message
+        return redirect(url_for('customer_interest_bp.listCustomersforAlerts'))
     else:
-        print("Customer or listing not found.", "error")
+        flash("Failed to fetch brieflisting from Zillow API.", "error")  # Flash an error message
+        return redirect(url_for('customer_interest_bp.listCustomersforAlerts'))
 
     return redirect(url_for('customer_interest_bp.listCustomersforAlerts'))  # Replace 'customer_list' with your route name
+
+@customer_interest_bp.route('/retire_zpid', methods=['POST'])
+def retire_zpid():
+    customer_id = request.form['customer_id']
+    zpid = request.form['zpid']
+
+    if customerzpidcontroller.retire_customer_zpid(customer_id, zpid):
+        return redirect(url_for('customer_interest_bp.listCustomersforAlerts')) # customer_list renders the table
+    else:
+        return "ZPID not found or unable to retire", 404
+    # Query the specific ZPID for the customer and mark it as retired
+
+
+
+
 
 def gatherCustomerData(customer_id):
     customer_data, locations = customerneighbourhoodinterestcontroller.get_customer_neighbourhood_interest(customer_id)

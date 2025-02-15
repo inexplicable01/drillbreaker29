@@ -1,7 +1,8 @@
 def safe_float_conversion(value, default=0.0):
+
     try:
         return float(value)
-    except ValueError:
+    except Exception:
         return default
 
 
@@ -9,7 +10,7 @@ def safe_float_conversion(value, default=0.0):
 def safe_int_conversion(value, default=0):
     try:
         return int(value)
-    except ValueError:
+    except Exception:
         return default
 
 def print_and_log(message):

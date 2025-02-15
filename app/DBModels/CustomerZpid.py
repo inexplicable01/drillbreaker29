@@ -15,12 +15,13 @@ class CustomerZpid(db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey('Customer.id', ondelete="CASCADE"))
     zpid = db.Column(db.BigInteger, db.ForeignKey('BriefListing.zpid', ondelete="CASCADE"))
     created_at = db.Column(db.DateTime, default=datetime.utcnow())
+    is_retired = db.Column(db.Boolean, default=False)
 
-
-    def __init__(self, customer_id, zpid,created_at):
+    def __init__(self, customer_id, zpid,created_at,is_retired=False):
         self.customer_id = customer_id
         self.zpid = zpid
         self.created_at=created_at
+        self.is_retired=is_retired
 
     def __repr__(self):
         return f"<CustomerZpids id={self.id} customer_id={self.customer_id} zpid={self.zpid}>"

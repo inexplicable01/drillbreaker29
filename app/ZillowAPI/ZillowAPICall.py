@@ -37,6 +37,35 @@ def SearchZillowByZPID(ZPID):
         warn(f"Search Zillow zpid {ZPID} failed due to an exception: {e}")
         return None
 
+def SearchZilowByMLSID(MLSID):
+    querystring = {"mls": MLSID}
+    url = "https://zillow56.p.rapidapi.com/search_mls"
+    response = requests.get(url, headers=headers, params=querystring)
+    time.sleep(0.5)
+    try:
+        data = response.json()
+
+        # Iterate through response data to find the zpid for WA
+        for property_data in data['data']:
+            if "address" in property_data:
+                # Extract and split the address to validate state
+                address_parts = property_data["address"].split(",")  # Split address by commas
+
+                if len(address_parts) >= 2:  # Ensure there's a city/state part and look at the last part
+                    state_zip = address_parts[-1].strip()  # Get the last component of the address
+
+                    # Validate state as "WA" (strict match)
+                    if state_zip.startswith("WA "):  # Handle cases like "WA 98937"
+                        return property_data["zpid"]
+        warn(f"No property in WA found for MLSID {MLSID}.")
+        return None
+
+    except Exception as e:
+        warn(f"Search Zillow zpid {MLSID} failed due to an exception: {e}")
+        return None
+
+
+
 def SearchZillowByAddress(addressStr):
     # querystring = {"location":location + ", wa","page": str(lastpage),"status":"forSale","doz":"14"}
     querystring = {"address": addressStr}
@@ -198,12 +227,12 @@ def SearchZillowNewListingByInterest(location, beds_min,beds_max,baths_min,price
 
 
 
-def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, duration=14):
+def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, timeOnZillow=14):
     houseresult = []
     print(f'Searching {status} homes in location: {location}')
 
     interval = 10000
-    minhomesize = 1
+    minhomesize = 0
     maxhomesize = interval + minhomesize
 
     while True:
@@ -213,16 +242,20 @@ def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, duratio
 
         while maxpage >= lastpage:
             querystring = {
-                "location": f"{location}, wa",
+                "location": f"{location}, WA",
                 "page": str(lastpage),
                 "status": status,
+                "output": "json",
+                "sortSelection": "priorityscore",
+                "listing_type": "by_agent",
                 "sqft_min": str(minhomesize),
                 "sqft_max": str(maxhomesize),
-                "doz": doz if status == "recentlySold" else None,
-                "timeOnZillow": duration if status == "forSale" else None,
+                "doz": doz if status == "recentlySold" else doz,
+                "timeOnZillow": timeOnZillow if status == "forSale" else None,
                 "isMultiFamily": "false",
             }
             querystring = {k: v for k, v in querystring.items() if v is not None}
+
             print(f"Search {minhomesize} to {maxhomesize} with status{status}.")
             response = requests.get(url, headers=headers, params=querystring)
             time.sleep(0.5)

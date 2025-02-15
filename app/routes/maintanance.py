@@ -186,10 +186,7 @@ def maintainListings():
                 soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
 
             forsalebrieflistingarr = []
-            forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz="any")
-            for briefhomedata in forsalerawdata:
-                forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
-
+            forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz="any", timeOnZillow="any")
             for briefhomedata in forsalerawdata:
                 forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
 
@@ -437,12 +434,12 @@ def updateathing():
 
 @maintanance_bp.route('/updateathing2', methods=['post'])
 def updateathing2():
-    allbrieflistings = brieflistingcontroller.getALLlistings()
-    for brieflisting in allbrieflistings:
+    listings = brieflistingcontroller.getFirstTenListingsWhereMLSisNull()
+    for brieflisting in listings:
         brieflisting.getPropertyData()
         brieflistingcontroller.updateBriefListing(brieflisting)
 
-    return {"Seattle Neighbourhood_subs updated":'done'}, 200
+    return {"Seattle Neighbourhood_subs updated":listings.__len__()}, 200
 
 
 # @maintanance_bp.route('/export-pdf',methods=['get'])

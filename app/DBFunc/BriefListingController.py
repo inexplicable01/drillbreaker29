@@ -36,9 +36,22 @@ class BriefListingController():
             print_and_log(f"Error during update or insert: {str(e)}")
             self.db.session.rollback()
 
-    def updateBriefListing(self,updatedbrieflisting, fsbo_status=None):
+    def CreateBriefListingFromPropertyData(self,propertydata):
         try:
-            print_and_log('Updating existing listing for ' + updatedbrieflisting.streetAddress)
+            gapis_neighbourhood = get_neighborhood(propertydata['latitude'], propertydata['longitude'])
+
+            neighbourhood = findNeighbourhoodfromCoord(gapis_neighbourhood.city, propertydata['latitude'],
+                                                                    propertydata['longitude'])
+        except Exception as e:
+            gapis_neighbourhood = None
+            neighbourhood = None
+
+        return BriefListing.CreateBriefListingFromPropertyData(propertydata,neighbourhood,gapis_neighbourhood,None)
+
+    def updateBriefListing(self,updatedbrieflisting:BriefListing, fsbo_status=None):
+        ##METHOD WORKS EVEN IF upddatedbrieflisting does not exist in db yet.
+        try:
+            print_and_log(f'Updating existing listing for { updatedbrieflisting.streetAddress} , {updatedbrieflisting.NWMLS_id}' )
             self.db.session.merge(updatedbrieflisting)
             # If FSBO status is provided, update it as well
             if fsbo_status:
@@ -127,7 +140,7 @@ class BriefListingController():
                                 elif attr=='homeStatus':
                                     if not existing_value==new_value:
                                         needs_update = True
-                                        updatereason = updatereason+ ',' +  attr + 'from ' + existing_listing + ' to ' + new_value
+                                        updatereason = updatereason+ ',' +  attr + 'from ' + existing_listing.__str__() + ' to ' + new_value
                                 elif existing_value != new_value:
                                     # For all other data types, use standard comparison
                                     needs_update = True
@@ -229,6 +242,11 @@ class BriefListingController():
         # Query the database for listings with the given ids
         listings = BriefListing.query.filter(BriefListing.zpid.in_(ids)).all()
         return listings
+
+    def get_listing_by_mls_id(self, NWMLS_id):
+        # Query the database for the listing with the given zpid
+        listing = BriefListing.query.filter_by(NWMLS_id=NWMLS_id).first()
+        return listing
 
     def forSaleInNeighbourhood(self, neighbourhood, days_ago):
         # Calculate the date for the given days ago from today
@@ -508,6 +526,21 @@ class BriefListingController():
             return all_listings
         except Exception as e:
             print(f"Error retrieving all listings: {str(e)}")
+            return []
+
+    def getFirstTenListingsWhereMLSisNull(self):
+        """
+        Retrieve the first ten listings from the BriefListing table where NWMLS_id is NULL.
+
+        :return: List of the first ten BriefListing objects with NWMLS_id = NULL
+        """
+        try:
+            first_ten_listings = (self.BriefListing.query.filter(self.BriefListing.NWMLS_id == None)
+                                  .filter(self.BriefListing.dateSold > 1730400000000)
+                                  .all())
+            return first_ten_listings
+        except Exception as e:
+            print(f"Error retrieving the first ten listings where NWMLS_id is null: {str(e)}")
             return []
 
 brieflistingcontroller = BriefListingController()

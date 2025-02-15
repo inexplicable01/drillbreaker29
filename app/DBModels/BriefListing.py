@@ -193,6 +193,68 @@ class BriefListing(db.Model):
             print('Create Listing Error', e)
             return None
 
+    @classmethod
+    def CreateBriefListingFromPropertyData(cls, propertydata,neighbourhood, zillowapi_neighbourhood, search_neigh):
+        try:
+            new_listing = cls()
+            new_listing.zpid = propertydata.get('zpid')
+            new_listing.neighbourhood = neighbourhood
+            new_listing.zillowapi_neighbourhood = zillowapi_neighbourhood
+            new_listing.search_neigh = search_neigh
+            new_listing.bathrooms = safe_float_conversion(propertydata.get('bathrooms', 1.0))
+            new_listing.bedrooms = safe_float_conversion(propertydata.get('bedrooms', 1.0))
+            new_listing.city = propertydata.get('city', 'Missing')
+            new_listing.country = propertydata.get('country', 'Missing')
+            # new_listing.currency = briefhomedata.get('currency', 'Missing')
+            new_listing.livingArea=safe_float_conversion(propertydata.get('livingArea', 1.0))
+            new_listing.dateSold = safe_int_conversion(
+                propertydata.get('dateSold', 0))  # Consider datetime conversion if necessary
+            new_listing.daysOnZillow = safe_int_conversion(propertydata.get('daysOnZillow', 0))
+            new_listing.homeStatus = propertydata.get('homeStatus', 'Missing')
+            new_listing.homeStatusForHDP = propertydata.get('homeStatusForHDP', 'Missing')
+            new_listing.homeType = propertydata.get('homeType', 'Missing')
+            new_listing.imgSrc = propertydata.get('imgSrc', 'Missing')
+            new_listing.isFeatured = propertydata.get('isFeatured', False)
+            new_listing.isNonOwnerOccupied = propertydata.get('isNonOwnerOccupied', False)
+            new_listing.isPreforeclosureAuction = propertydata.get('isPreforeclosureAuction', False)
+            new_listing.isPremierBuilder = propertydata.get('isPremierBuilder', False)
+            new_listing.isShowcaseListing = propertydata.get('isShowcaseListing', False)
+            new_listing.isUnmappable = propertydata.get('isUnmappable', False)
+            new_listing.isZillowOwned = propertydata.get('isZillowOwned', False)
+            new_listing.latitude = decimal.Decimal(propertydata.get('latitude', '0.0000000'))
+            new_listing.longitude = decimal.Decimal(propertydata.get('longitude', '0.0000000'))
+            new_listing.price = safe_int_conversion(propertydata.get('price', 0))
+            new_listing.state = propertydata.get('state', 'Missing')
+            new_listing.streetAddress = propertydata.get('streetAddress', 'Missing')
+            new_listing.zipcode = propertydata.get('zipcode', 'Missing')
+            new_listing.list2penddays = safe_int_conversion(propertydata.get('list2penddays', 0))
+            new_listing.list2solddays = safe_int_conversion(propertydata.get('list2solddays', 0))
+            new_listing.listprice = safe_int_conversion(propertydata.get('listprice', 0))
+            new_listing.zestimate = safe_int_conversion(propertydata.get('zestimate', 0))
+            new_listing.taxAssessedValue = safe_float_conversion(propertydata.get('taxAssessedValue', 0.0))
+            new_listing.lotAreaUnit = propertydata.get('lotAreaUnit', 'Missing')
+            new_listing.lotAreaValue = safe_float_conversion(propertydata.get('lotAreaValue', 0.0))
+            # Assuming `listing_sub_type` is passed as a dictionary and directly assignable
+            new_listing.listing_sub_type = propertydata.get('listing_sub_type', {})
+            new_listing.rentZestimate = safe_int_conversion(propertydata.get('rentZestimate', 0))
+            # Assuming that for optional fields without defaults you want to use None or a sentinel value
+            new_listing.unit = propertydata.get('unit', None)  # Handling for 'unit' as optional
+            new_listing.videoCount = propertydata.get('videoCount', '0')  # Assuming '0' as default for missing
+            # new_listing.isRentalWithBasePrice = briefhomedata.get('isRentalWithBasePrice', False)
+            new_listing.newConstructionType = propertydata.get('newConstructionType', 'Missing')
+            new_listing.hdpUrl = propertydata.get('hdpUrl', 'Missing')
+            new_listing.pricedelta = safe_int_conversion(propertydata.get('pricedelta', 0))
+
+            listing_time = datetime.utcnow() - timedelta(seconds=safe_int_conversion(propertydata.get('timeOnZillow', 0))/1000)
+            new_listing.listtime = int(listing_time.timestamp())
+            new_listing.soldBy = "AGENT"
+
+            return new_listing
+
+        except Exception as e:
+            print('Create Listing Error', e)
+            return None
+
 # Example usage:
 response = {
     'bathrooms': 3.0,
