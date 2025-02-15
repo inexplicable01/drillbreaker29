@@ -116,7 +116,7 @@ def gatherCustomerData(customer_id):
     customer = customerneighbourhoodinterestcontroller.get_customer(customer_id)
 
     if not customer:
-        return f"Customer with ID {customer_id} not found", 404
+        return None, None, None, None, None
     homeType=None
     forsalehomes=[]#SW.SINGLE_FAMILY
     # Loop through neighborhoods to extract data when city is 'Seattle'
