@@ -49,6 +49,28 @@ def sendEmailtimecheck(message=None):
                html_content=html_content,
                recipient =defaultrecipient)
 
+def sendEmailListingChange(message=None, title=None, hdpUrl=None):
+    # subject, body, recipient = defaultrecipient, html_content = None
+    seattle_tz = pytz.timezone('America/Los_Angeles')
+    current_time = datetime.now(seattle_tz)
+    formatted_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+
+    # Prepare the email content
+    html_content = f"""
+    <html>
+        <body>
+            <p>The email was sent on {formatted_time} (Seattle Time).</p>
+            <p>{message}</p>
+            <a href='https://www.zillow.com{hdpUrl}' target='_blank'>House Link</a>
+        </body>
+    </html>
+    """
+    # html_content=''
+
+    send_email(subject=title,
+               html_content=html_content,
+               recipient =defaultrecipient)
+
 from pathlib import Path
 
 def sendCustomerEmail(customer:Customer,locations,

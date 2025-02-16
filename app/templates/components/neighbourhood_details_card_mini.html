@@ -21,10 +21,12 @@
         </div>
 
         <div>
-            {{ home.zpid }}
+            <p style="margin: 2px 0; font-size: 8px;">
+            Zpid {{ home.zpid }} MLS {{  home.NWMLS_id}}
+                </p>
             <p style="margin: 2px 0; font-size: 14px;">
                 <strong>Address:</strong> {{ home.streetAddress }}, {{ home.city }}, {{ home.state }}, {{ home.zipcode }}
-            </p>
+
             <p style="margin: 2px 0; font-size: 20px;">
                 <strong>Price:</strong> ${{ home.price }}
             </p>

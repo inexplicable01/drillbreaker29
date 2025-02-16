@@ -85,13 +85,14 @@
             <ul>
                 {% for customerzpid in customer.customerzpid_array %}
                     <li>
-                        {{ customerzpid.brief_listing.NWMLS_id }} - {{ customerzpid.brief_listing.streetAddress }}
-
+                        {% set home = customerzpid.brief_listing %}
+                        {% include "components/neighbourhood_details_card_mini.html" with context%}
                         <!-- Retire button for each customerzpid -->
                         {% if not customerzpid.is_retired %}
                             <form method="post" action="{{ url_for('customer_interest_bp.retire_zpid') }}" style="display:inline;">
                                 <input type="hidden" name="customer_id" value="{{ customer.id }}">
                                 <input type="hidden" name="zpid" value="{{ customerzpid.zpid }}">
+                                <input type="hidden" name="customerzpid_id" value="{{ customerzpid.id }}">
                                 <button type="submit" style="color:red;">Retire</button>
                             </form>
                         {% else %}

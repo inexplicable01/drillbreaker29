@@ -21,7 +21,7 @@
 <body style="background-color: white">
 {% for neighbourhood, averageprice,housesoldpriceaverage, map in neighdata %}
     <h1>
-    {{ neighbourhood }} : average price : {{ averageprice }}
+{#    {{ neighbourhood }} : average price : {{ averageprice }}#}
     </h1>
 {#    {% include 'components/house_component.html' %}#}
     <div class="map-container">
@@ -47,19 +47,19 @@
 
                 <!-- Table data -->
                 <tbody>
-                {% for key,housegenre in housesoldpriceaverage.items() %}
-                    <tr>
-                        <td>{{ key }}</td>
-                        <td>{{ housegenre.beds }}</td>
-                        <td>{{ housegenre.baths }}</td>
-                        <td>{{ housegenre.count }}</td>
-                        <td>{{ housegenre.minprice }}</td>
-                        <td>{{ housegenre.aveprice }}</td>
-
-                        <td>{{ housegenre.maxprice }}</td>
-
-                    </tr>
-                {% endfor %}
+{#                {% for key,housegenre in housesoldpriceaverage.items() %}#}
+{#                    <tr>#}
+{#                        <td>{{ key }}</td>#}
+{#                        <td>{{ housegenre.beds }}</td>#}
+{#                        <td>{{ housegenre.baths }}</td>#}
+{#                        <td>{{ housegenre.count }}</td>#}
+{#                        <td>{{ housegenre.minprice }}</td>#}
+{#                        <td>{{ housegenre.aveprice }}</td>#}
+{##}
+{#                        <td>{{ housegenre.maxprice }}</td>#}
+{##}
+{#                    </tr>#}
+{#                {% endfor %}#}
                 </tbody>
             </table>
         </div>

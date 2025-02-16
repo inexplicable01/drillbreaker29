@@ -25,37 +25,6 @@ def neighcleanup():
 
 
 
-# @maintanance_bp.route('/updatelistings', methods=['POST'])
-# def updatelistings():
-#     cities= washingtoncitiescontroller.getallcities()
-#     for city in cities:
-#         lastpage = 1
-#         maxpage = 2
-#         while (maxpage+1) > lastpage:
-#             try:
-#                 forsalebrieflistingarr, lastpage, maxpage =  SearchZillowHomesByCity(city, lastpage, maxpage, 'forSale')
-#             except Exception as e:
-#                 print(e, city)
-#             forsalebrief_ids = [listing.zpid for listing in forsalebrieflistingarr]
-#             for_sale_DB = brieflistingcontroller.forSaleInCity(city)
-#
-#             newsalebriefs = []
-#             for brieflisting in forsalebrieflistingarr:
-#                 if brieflistingcontroller.get_listing_by_zpid(brieflisting.zpid) is not None:
-#                     ##code to remove brieflisting from soldbriefarr
-#                     continue
-#                 ## write code here to do this:  forsaleinarea is a list of ids that are for sale in the database, the forsalebriefarr is a list of brieflistings that are currently on sale as extracted by the API.
-#                 ## if any id in forsaleinarea is not in forsalebriefarr, then that means that id is no longer selling and I have to create an array of that.
-#                 try:
-#                     propertydata = loadPropertyDataFromBrief(brieflisting)
-#                     brieflisting.hdpUrl = propertydata['hdpUrl']
-#                     newsalebriefs.append(brieflisting)
-#                 except Exception as e:
-#                     print(e, brieflisting)
-#             brieflistingcontroller.SaveBriefListingArr(newsalebriefs)
-#
-#     return "Done", 200
-
 @maintanance_bp.route('/updateopenhouse', methods=['PATCH'])
 def updateopenhouse():
     openhouses = []
@@ -90,88 +59,28 @@ def updateopenhouse():
                 print(e,brieflisting)
     return jsonify({'status': 'success', 'message': 'Data gathering complete.','list':[item.to_dict() for item in openhouses]}), 200
 
-@maintanance_bp.route('/maintainListings_full', methods=['PATCH'])
-def maintainListings_full():
-    if request.method == 'PATCH':
-        try:
-            doz = int(request.form.get('doz'))
-
-            for city in Config.CITIES:
-                soldbrieflistingarr = []
-                soldrawdata = SearchZillowHomesByLocation(city, status="recentlySold", doz=doz)
-                for briefhomedata in soldrawdata:
-                    soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
-
-                forsalebrieflistingarr = []
-                forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz="any")
-                for briefhomedata in forsalerawdata:
-                    forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
-
-
-                forsalebrief_ids = [listing.zpid for listing in forsalebrieflistingarr]
-                forsaleAPIbrief_dict = {listing.zpid: listing for listing in forsalebrieflistingarr}
-                for_sale_DB = brieflistingcontroller.forSaleInNeighbourhood(city, doz)
-                ## This is a good daily check
-                for brieflisting in for_sale_DB:
-                    if brieflisting.zpid in forsalebrief_ids:
-                        print(brieflisting.__str__() + ' is still for sale.')
-                        continue
-                    try:
-                        status = forsaleAPIbrief_dict[brieflisting.zpid].homeStatus
-                        if status == 'PENDING' or status == 'RECENTLY_SOLD':
-                            brieflisting.homeStatus = status
-                            print(brieflisting.__str__() + ' has changed from Selling to Pending or Sold!!!')
-                            brieflistingcontroller.updateBriefListing(brieflisting)
-                        else:
-                            brieflisting.homeStatus = status
-                            print('Looking into this status ' + status + '  : ' + brieflisting.__str__())
-                    except Exception as e:
-                        print(e, brieflisting)
-
-                # #Updating the Sold Properties
-                solddb = brieflistingcontroller.SoldHomesinNeighbourhood(city, doz)
-                solddb_ids = [listing.zpid for listing in solddb]
-                newsoldbriefs = []
-
-                for ccc, brieflisting in enumerate(soldbrieflistingarr):
-                    if brieflisting.zpid in solddb_ids:
-                        ##code to remove brieflisting from soldbriefarr
-                        continue
-                    if brieflistingcontroller.get_listing_by_zpid(brieflisting.zpid) is not None:
-                        continue
-                    try:
-                        print(f"{ccc} out of {soldbrieflistingarr.__len__()}")
-                        brieflisting.getPropertyData()
-                        newsoldbriefs.append(brieflisting)  # looking for new sold stuff
-                        if len(newsoldbriefs) > 100 or ccc==len(soldbrieflistingarr)-1:
-                            brieflistingcontroller.SaveBriefListingArr(
-                                newsoldbriefs)  # if its sold then maybe it was pending at some point. This line updates it.
-                            newsoldbriefs = []
-                    except Exception as e:
-                        print(e, brieflisting)
-
-                newsalebriefs = []
-                for brieflisting in forsalebrieflistingarr:
-                    if brieflisting.zpid in forsalebrief_ids:
-                        ##code to remove brieflisting from soldbriefarr
-                        continue
-                    ## write code here to do this:  forsaleinarea is a list of ids that are for sale in the database, the forsalebriefarr is a list of brieflistings that are currently on sale as extracted by the API.
-                    ## if any id in forsaleinarea is not in forsalebriefarr, then that means that id is no longer selling and I have to create an array of that.
-                    try:
-                        brieflisting.getPropertyData()
-                        newsalebriefs.append(brieflisting)
-                    except Exception as e:
-                        print(e, brieflisting)
-                brieflistingcontroller.SaveBriefListingArr(newsalebriefs)
-            # If the function successfully completes, return a success message
-            return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200
-        except Exception as e:
-            # If the function fails, return a failure message with details
-            return jsonify({'status': 'failure', 'message': 'Data gathering failed.', 'details': str(e)}), 500
 
 @maintanance_bp.route('/getCityList', methods=['GET'])
 def cityList():
     return {"cities":washingtoncitiescontroller.getallcities()}, 200
+
+from app.DBFunc.CustomerZpidController import customerzpidcontroller
+from app.RouteModel.EmailModel import sendEmailListingChange
+
+@maintanance_bp.route('/checkInterestedListingsChange', methods=['GET'])
+def checkInterestedListingsChange():
+    customerzpids = customerzpidcontroller.getAllCustomerzpids()
+    for customerzpid in customerzpids:
+        if customerzpid.is_retired:
+            continue
+        brieflisting = brieflistingcontroller.get_listing_by_zpid(customerzpid.zpid)
+        print(brieflisting)
+        pricechanged, homestatuschanged, message, title = brieflistingcontroller.hasListingChanged(brieflisting)
+        if pricechanged or homestatuschanged:
+            print('SendEMAIL')
+            sendEmailListingChange(message, title, brieflisting.hdpUrl)
+
+    return {"changed and alerted":"changed"}, 200
 
 @maintanance_bp.route('/maintainListings', methods=['PATCH'])
 def maintainListings():
@@ -456,3 +365,83 @@ def updateathing2():
 #     response.headers['Content-Disposition'] = 'attachment; filename=exported_page.pdf'
 #
 #     return response
+
+
+# @maintanance_bp.route('/maintainListings_full', methods=['PATCH'])
+# def maintainListings_full():
+#     if request.method == 'PATCH':
+#         try:
+#             doz = int(request.form.get('doz'))
+#
+#             for city in Config.CITIES:
+#                 soldbrieflistingarr = []
+#                 soldrawdata = SearchZillowHomesByLocation(city, status="recentlySold", doz=doz)
+#                 for briefhomedata in soldrawdata:
+#                     soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+#
+#                 forsalebrieflistingarr = []
+#                 forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz="any")
+#                 for briefhomedata in forsalerawdata:
+#                     forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+#
+#
+#                 forsalebrief_ids = [listing.zpid for listing in forsalebrieflistingarr]
+#                 forsaleAPIbrief_dict = {listing.zpid: listing for listing in forsalebrieflistingarr}
+#                 for_sale_DB = brieflistingcontroller.forSaleInNeighbourhood(city, doz)
+#                 ## This is a good daily check
+#                 for brieflisting in for_sale_DB:
+#                     if brieflisting.zpid in forsalebrief_ids:
+#                         print(brieflisting.__str__() + ' is still for sale.')
+#                         continue
+#                     try:
+#                         status = forsaleAPIbrief_dict[brieflisting.zpid].homeStatus
+#                         if status == 'PENDING' or status == 'RECENTLY_SOLD':
+#                             brieflisting.homeStatus = status
+#                             print(brieflisting.__str__() + ' has changed from Selling to Pending or Sold!!!')
+#                             brieflistingcontroller.updateBriefListing(brieflisting)
+#                         else:
+#                             brieflisting.homeStatus = status
+#                             print('Looking into this status ' + status + '  : ' + brieflisting.__str__())
+#                     except Exception as e:
+#                         print(e, brieflisting)
+#
+#                 # #Updating the Sold Properties
+#                 solddb = brieflistingcontroller.SoldHomesinNeighbourhood(city, doz)
+#                 solddb_ids = [listing.zpid for listing in solddb]
+#                 newsoldbriefs = []
+#
+#                 for ccc, brieflisting in enumerate(soldbrieflistingarr):
+#                     if brieflisting.zpid in solddb_ids:
+#                         ##code to remove brieflisting from soldbriefarr
+#                         continue
+#                     if brieflistingcontroller.get_listing_by_zpid(brieflisting.zpid) is not None:
+#                         continue
+#                     try:
+#                         print(f"{ccc} out of {soldbrieflistingarr.__len__()}")
+#                         brieflisting.getPropertyData()
+#                         newsoldbriefs.append(brieflisting)  # looking for new sold stuff
+#                         if len(newsoldbriefs) > 100 or ccc==len(soldbrieflistingarr)-1:
+#                             brieflistingcontroller.SaveBriefListingArr(
+#                                 newsoldbriefs)  # if its sold then maybe it was pending at some point. This line updates it.
+#                             newsoldbriefs = []
+#                     except Exception as e:
+#                         print(e, brieflisting)
+#
+#                 newsalebriefs = []
+#                 for brieflisting in forsalebrieflistingarr:
+#                     if brieflisting.zpid in forsalebrief_ids:
+#                         ##code to remove brieflisting from soldbriefarr
+#                         continue
+#                     ## write code here to do this:  forsaleinarea is a list of ids that are for sale in the database, the forsalebriefarr is a list of brieflistings that are currently on sale as extracted by the API.
+#                     ## if any id in forsaleinarea is not in forsalebriefarr, then that means that id is no longer selling and I have to create an array of that.
+#                     try:
+#                         brieflisting.getPropertyData()
+#                         newsalebriefs.append(brieflisting)
+#                     except Exception as e:
+#                         print(e, brieflisting)
+#                 brieflistingcontroller.SaveBriefListingArr(newsalebriefs)
+#             # If the function successfully completes, return a success message
+#             return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200
+#         except Exception as e:
+#             # If the function fails, return a failure message with details
+#             return jsonify({'status': 'failure', 'message': 'Data gathering failed.', 'details': str(e)}), 500

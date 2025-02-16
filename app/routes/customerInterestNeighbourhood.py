@@ -100,8 +100,8 @@ def save_zpid():
 def retire_zpid():
     customer_id = request.form['customer_id']
     zpid = request.form['zpid']
-
-    if customerzpidcontroller.retire_customer_zpid(customer_id, zpid):
+    customerzpid_id = request.form['customerzpid_id']
+    if customerzpidcontroller.retire_customer_zpid(customerzpid_id):
         return redirect(url_for('customer_interest_bp.listCustomersforAlerts')) # customer_list renders the table
     else:
         return "ZPID not found or unable to retire", 404

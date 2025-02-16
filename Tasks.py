@@ -16,15 +16,10 @@ response = requests.request("GET", getcitylisturl, headers=headers, data=payload
 
 for i,city in enumerate(response.json()["cities"]):
     print(city)
-    # if i<185:
-    #     continue
-
 
     payload = {'doz': '365',
                'city': city}
-    files = [
-
-    ]
+    files = []
     headers = {}
 
     res = requests.request("PATCH", getlistingsurl, headers=headers, data=payload, files=files)

@@ -10,6 +10,7 @@ from sqlalchemy import distinct
 from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
 from app.MapTools.MappingTools import findNeighbourhoodfromCoord
 from app.DBModels.FSBOStatus import FSBOStatus
+from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID
 
 
 import os
@@ -527,6 +528,21 @@ class BriefListingController():
         except Exception as e:
             print(f"Error retrieving all listings: {str(e)}")
             return []
+
+    def hasListingChanged(self, brieflisting:BriefListing):
+        pricechanged = False
+        homestatuschanged = False
+        propertyData = SearchZillowByZPID(brieflisting.zpid)
+        title = f'{brieflisting.__str__()} has changed.'
+        message=''
+        if propertyData['price']!=brieflisting.price:
+            pricechanged = True
+            message+=f'Price Went {brieflisting.price} to {propertyData["price"]}\n'
+        if propertyData['homeStatus']!= brieflisting.homeStatus:
+            homestatuschanged = True
+            message+=f'Home Status Went {brieflisting.homeStatus} to {propertyData["homeStatus"]}\n'
+        return pricechanged,homestatuschanged, message, title
+
 
     def getFirstTenListingsWhereMLSisNull(self):
         """
