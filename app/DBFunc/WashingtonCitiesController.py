@@ -19,6 +19,7 @@ class WashingtonCitiesController():
     def getallcities(self):
         return [c.city for c in WashingtonCities.query.all()]
 
-
+    def getCity(self, city):
+        return self.WashingtonCities.query.filter_by(City=city).first()
 
 washingtoncitiescontroller = WashingtonCitiesController()

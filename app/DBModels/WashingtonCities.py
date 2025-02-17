@@ -15,3 +15,7 @@ class WashingtonCities(db.Model):
 
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+    def __repr__(self):
+        return (f"<WashingtonCities(city={self.city}, city_id={self.city_id}, county={self.county}")
+

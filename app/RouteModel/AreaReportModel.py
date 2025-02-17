@@ -9,7 +9,8 @@ from app.DBFunc.BriefListingController import brieflistingcontroller
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-
+from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
+from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 # model = load('linear_regression_model.joblib')
 def AreaReportGatherData(neighbourhoods, doz):
     # soldbriefarr=[]
@@ -18,8 +19,8 @@ def AreaReportGatherData(neighbourhoods, doz):
 
 
 
-def ListAllNeighhourhoodsByCities(cities):
-    return brieflistingcontroller.UniqueNeighbourhoodsByCities(cities)
+def ListAllNeighhourhoodsByCities(neighbourhoods, doz):
+    return brieflistingcontroller.ListingsByCities(neighbourhoods, doz)
 
 def displayModel(neighbourhoods, selectedhometypes):
     unfiltered_soldhomes=brieflistingcontroller.ListingsByNeighbourhoodsAndHomeTypes(neighbourhoods, selectedhometypes, 30, 'RECENTLY_SOLD')
@@ -64,14 +65,23 @@ def displayModel(neighbourhoods, selectedhometypes):
 
     return base64.b64encode(buf2.read()).decode('utf-8')
 
-def AreaReportModelRun(neighbourhoods, selectedhometypes,doz):
+
+
+
+
+def AreaReportModelRun(selected_zones, selectedhometypes,doz):
     ## Calls zillow data Process
     ## Zillow Data Process puts listing in BriefListing Array
     housesoldpriceaverage = initiateSummarydata()
     unfiltered_soldhomes = []
-    for neighbourhood in neighbourhoods:
+
+
+    for zone in selected_zones:
+        neighbour = washingtonzonescontroller.getWashingtonZones(zone)
+        if neighbour is None:
+            city = washingtoncitiescontroller.getCity(zone)
         ## Gathering the Locations
-        unfiltered_soldhomes = unfiltered_soldhomes + brieflistingcontroller.ListingsByNeighbourhood(neighbourhood, doz)
+        # unfiltered_soldhomes = unfiltered_soldhomes + brieflistingcontroller.ListingsByNeighbourhood(neighbourhood, doz)
     ## Gets List of briefhomedataraw
     # for neighbourhood in neighbourhoods:
         ## Gathering the Locations

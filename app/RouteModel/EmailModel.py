@@ -8,7 +8,7 @@ from app.config import Config
 from app.NewListing import NewListing,NewListingForEmail
 from app.EmailHelper.EmailSender import send_email , send_emailforOpenHouse
 from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
-from app.DBFunc.CityStatsCacheController import citystatscachecontroller
+from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBModels.BriefListing import BriefListing
 from app.DBModels.Customer import Customer
@@ -116,10 +116,10 @@ def sendEmailpending():
     formatted_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z')
 
     # Fetch all city statistics
-    citiesdata = citystatscachecontroller.get_all_city_stats()
+    citiesdata = zonestatscachecontroller.get_all_zone_stats()
 
     # Prepare city statistics for the template
-    city_stats = [
+    zone_stats = [
         {
             "city_name": citydata.city_name,
             "sold": citydata.sold,
@@ -148,7 +148,7 @@ def sendEmailpending():
     html_content = render_template(
         'Email_PendingTemplate.html',  # Your template in app/templates
         formatted_time=formatted_time,
-        city_stats=city_stats,
+        zone_stats=zone_stats,
         listings_data=listings_data
     )
 

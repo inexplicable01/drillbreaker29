@@ -76,14 +76,14 @@
 <tbody>
 
 
-    {% for customer in customers %}
+    {% for customer in customers|sort(attribute='id') %}
     <tr>
         <td>{{ customer.id }}</td>
         <td>{{ customer.name }}</td>
         <td>
             <!-- Display related BriefListing (zpid) objects -->
             <ul>
-                {% for customerzpid in customer.customerzpid_array %}
+                {% for customerzpid in customer.customerzpid_array if not customerzpid.is_retired%}
                     <li>
                         {% set home = customerzpid.brief_listing %}
                         {% include "components/neighbourhood_details_card_mini.html" with context%}

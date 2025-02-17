@@ -12,9 +12,9 @@ class CustomerNeighbourhoodInterest(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('Customer.id'), nullable=False)
-    neighbourhood_id = db.Column(db.Integer, db.ForeignKey('SeattleNeighbourhoods.id'), nullable=False)
+    neighbourhood_id = db.Column(db.Integer, db.ForeignKey('WashingtonZones.id'), nullable=False)
     city_id = db.Column(db.Integer, db.ForeignKey('WashingtonCities.city_id'), nullable=False)
 
     customer = db.relationship('Customer', back_populates='interests')
-    neighbourhood = db.relationship('SeattleNeighbourhoods', back_populates='interests')
+    neighbourhood = db.relationship('WashingtonZones', back_populates='interests')
     WashingtonCities = db.relationship('WashingtonCities', back_populates='interests')

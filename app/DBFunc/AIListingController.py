@@ -2,11 +2,11 @@ from app.DBModels.AIListingComments import AIListingComments
 from sqlalchemy.sql import func
 
 from app.extensions import db
-# from app.DB
-from datetime import datetime, timedelta
-from app.DBFunc.SeattlleNeighbourhoodsController import seattleneighbourhoodcontroller
-from app.config import Config, SW
-import pytz
+# # from app.DB
+# from datetime import datetime, timedelta
+# from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
+# from app.config import Config, SW
+# import pytz
 
 class AIListingController:
     def __init__(self):

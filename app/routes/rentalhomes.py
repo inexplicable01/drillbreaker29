@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
-from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,ListAllNeighhourhoodsByCities
+from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun
 from app.config import Config,SW
 rental_bp = Blueprint('rental_bp', __name__,url_prefix='/rentalhomes')
 from app.DBFunc.BriefListingController import brieflistingcontroller

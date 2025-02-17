@@ -14,7 +14,7 @@ from .platformSMSsupport import platformSMSBP
 from .email_monitor import emailmonitorbp
 from .rentalhomes import rental_bp
 from .fsbo import fsbo_bp
-from .statsByCity import citystats_bp
+from .statsByZone import zonestats_bp
 from .customerInterestNeighbourhood import customer_interest_bp
 
 def register_blueprints(app: Flask):
@@ -32,5 +32,5 @@ def register_blueprints(app: Flask):
     app.register_blueprint(emailmonitorbp)
     app.register_blueprint(rental_bp)
     app.register_blueprint(fsbo_bp)
-    app.register_blueprint(citystats_bp)
+    app.register_blueprint(zonestats_bp)
     app.register_blueprint(customer_interest_bp)

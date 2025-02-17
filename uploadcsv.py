@@ -49,7 +49,7 @@ with sshtunnel.SSHTunnelForwarder(
         df = pd.read_csv(csv_file_path)
 
         # Define the table name where you want to upload the data
-        table_name = 'SeattleNeighbourhoods'
+        table_name = 'WashingtonZones'
 
         # Upload the DataFrame to the database
         df.to_sql(table_name, con=engine, if_exists='replace', index=False)

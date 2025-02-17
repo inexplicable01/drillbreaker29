@@ -6,7 +6,7 @@ from app.DBModels.BriefListing import BriefListing
 from app.config import Config,SW
 #from flask import Flask, render_template, make_response
 # from weasyprint import HTML
-#from app.MapTools.MappingTools import get_neighborhood_in_Seattle, get_neighborhood_List_in_Seattle
+from app.MapTools.MappingTools import WA_geojson_features
 from app.DBFunc.CustomerNeighbourhoodInterestController import customerneighbourhoodinterestcontroller
 from app.RouteModel.AIModel import AIModel
 from app.DBFunc.AIListingController import ailistingcontroller
@@ -138,6 +138,7 @@ def maintainListings():
                 try:
                     print(f"{ccc} out of {soldbrieflistingarr.__len__()}")
                     brieflisting.getPropertyData()
+                    brieflistingcontroller.setZoneForBriefListing(brieflisting)
                     newsoldbriefs.append(brieflisting)  # looking for new sold stuff
                     if len(newsoldbriefs) > 100:
                         brieflistingcontroller.SaveBriefListingArr(
@@ -164,7 +165,12 @@ def maintainListings():
                 ## if any id in forsaleinarea is not in forsalebriefarr, then that means that id is no longer selling and I have to create an array of that.
                 try:
                     brieflisting.getPropertyData()
+                    brieflistingcontroller.setZoneForBriefListing(brieflisting)
                     newsalebriefs.append(brieflisting)
+                    if len(newsalebriefs) > 100:
+                        brieflistingcontroller.SaveBriefListingArr(
+                            newsalebriefs)  # if its sold then maybe it was pending at some point. This line updates it.
+                        newsalebriefs = []
                 except Exception as e:
                     print(e, brieflisting)
             brieflistingcontroller.SaveBriefListingArr(newsalebriefs)
@@ -349,6 +355,16 @@ def updateathing2():
         brieflistingcontroller.updateBriefListing(brieflisting)
 
     return {"Seattle Neighbourhood_subs updated":listings.__len__()}, 200
+
+@maintanance_bp.route('/updateathing3', methods=['post'])
+def updateathing3():
+    # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
+    listings = brieflistingcontroller.getFirstXListingsWhereZoneisNull(1000)
+    for brieflisting in listings:
+        brieflistingcontroller.setZoneForBriefListing(brieflisting)
+        brieflistingcontroller.updateBriefListing(brieflisting)
+
+    return {"Seattle Neighbourhood_subs updated":'listings.__len__()'}, 200
 
 
 # @maintanance_bp.route('/export-pdf',methods=['get'])

@@ -1,4 +1,4 @@
-from app.DBModels.SeattleNeighbourhoods import SeattleNeighbourhoods
+from app.DBFunc.WashingtonZonesController import WashingtonZones
 from app.extensions import db
 from app.DBModels.Customer import Customer
 from app.DBModels.CustomerNeighbourhoodInterest import CustomerNeighbourhoodInterest
@@ -7,7 +7,7 @@ from typing import Optional
 class CustomerNeighbourhoodInterestController:
     def __init__(self):
         self.db = db
-        self.SeattleNeighbourhoods = SeattleNeighbourhoods
+        self.WashingtonZones = WashingtonZones
         self.Customer = Customer
         self.CustomerNeighbourhoodInterest = CustomerNeighbourhoodInterest
 

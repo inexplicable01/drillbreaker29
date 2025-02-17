@@ -1,6 +1,7 @@
 from app.DBModels.Customer import Customer
 from app.DBModels.BriefListing import BriefListing
 from app.DBModels.CustomerZpid import CustomerZpid
+from app.DBFunc.WashingtonZonesController import WashingtonZones
 from app import db
 
 # Define relationships explicitly
@@ -24,4 +25,16 @@ CustomerZpid.customer = db.relationship(
 CustomerZpid.brief_listing = db.relationship(
     "BriefListing",
     back_populates="customers"
+)
+
+BriefListing.zone = db.relationship(
+    "WashingtonZones",
+    back_populates="brief_listings",
+    lazy=True
+)
+
+WashingtonZones.brief_listings = db.relationship(
+    "BriefListing",
+    back_populates="zone",
+    lazy=True
 )

@@ -32,6 +32,9 @@ file_path = 'app/MapTools/WSDOT_-_City_Limits.geojson'
 with open(file_path, 'r') as f:
     WA_geojson_data = json.load(f)
 WA_geojson_features = WA_geojson_data['features']
+file_path = 'app/MapTools/Neighborhood_Seattle.geojson'
+with open(file_path, 'r') as f:
+    Neighborhood_Seattle_geojson_data = json.load(f)
 file_path = 'app/MapTools/kirkland_neighborhoods.geojson'
 with open(file_path, 'r') as f:
     kirkland_neighborhoods_geojson_data = json.load(f)
@@ -42,7 +45,53 @@ file_path = 'app/MapTools/Bellevue_neighbourhoods.geojson'
 with open(file_path, 'r') as f:
     bellevue_geojson_data = json.load(f)
 
-WA_geojson_features = WA_geojson_data['features']+kirkland_neighborhoods_geojson_data['features']+shoreline_geojson_data['features']+ bellevue_geojson_data['features']
+file_path = 'app/MapTools/redmond_neighborhoods.geojson'
+with open(file_path, 'r') as f:
+    redmond_geojson_data = json.load(f)
+
+# file_path = 'app/MapTools/renton_neighborhoods.geojson'
+# with open(file_path, 'r') as f:
+#     renton_geojson_data = json.load(f)
+
+WA_geojson_features = (WA_geojson_data['features']+kirkland_neighborhoods_geojson_data['features']+
+                       shoreline_geojson_data['features']+ bellevue_geojson_data['features']
+                       +redmond_geojson_data['features'] + Neighborhood_Seattle_geojson_data['features'])
+citygeojson_features = {'Seattle':Neighborhood_Seattle_geojson_data['features'],
+                        'Kirkland':kirkland_neighborhoods_geojson_data['features'],
+                        'Redmond':redmond_geojson_data['features'],
+                        'Bellevue':bellevue_geojson_data['features'],
+                        'Shoreline':shoreline_geojson_data['features']}
+
+featureAreas= {}
+for feature in WA_geojson_data['features']:
+    if feature['properties']:
+        if 'CityName' in feature['properties'].keys() and 'S_HOOD' not in feature['properties'].keys():
+            featureAreas[feature['properties']['CityName']] = []
+
+for feature in WA_geojson_features:
+    if feature['properties']:
+        if 'CityName' in feature['properties'].keys() and 'S_HOOD' in feature['properties'].keys():
+            if feature['properties']['CityName'] not in featureAreas.keys():
+                featureAreas[feature['properties']['CityName']] = []
+            else:
+                featureAreas[feature['properties']['CityName']].append(feature['properties']['S_HOOD'])
+
+
+citywithneighbourhoods=['Seattle','Kirkland','Redmond','Bellevue','Shoreline']
+def get_zone(lat, lon, CityName):
+    point = Point(lon, lat)
+    if CityName in citywithneighbourhoods:
+        for feature in citygeojson_features[CityName]:
+            polygon = shape(feature['geometry'])
+            if polygon.contains(point):
+                return feature['properties']['CityName'], feature['properties']['S_HOOD']
+    else:
+        for feature in WA_geojson_features:
+            polygon = shape(feature['geometry'])
+            if polygon.contains(point):
+                return feature['properties']['CityName'], None
+    return None, None
+
 
 
 def get_neighborhood_in_Seattle(lat, lon):

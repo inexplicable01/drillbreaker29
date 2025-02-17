@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
-from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,AreaReportGatherData,ListAllNeighhourhoodsByCities
+from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,AreaReportGatherData, initiateSummarydata
 from app.config import Config,SW
+from app.MapTools.MappingTools import WA_geojson_features, featureAreas
 soldhomes_bp = Blueprint('soldhomes_bp', __name__,url_prefix='/soldhomes')
 @soldhomes_bp.route('/update-graph', methods=['POST'])
 def update_graph():
@@ -14,35 +15,72 @@ def update_graph():
     # Return the new graph data
     return jsonify({'new_plot_url': plot_url})
 
+# @soldhomes_bp.route('/areareport', methods=['GET','POST','PATCH'])
+# def AreaReport():
+#
+#     doz_options = Config.doz_options
+#     AllNeighbourhoods = featureAreas.keys()
+#     if request.method == 'POST':
+#         selectedhometypes = request.form.getlist('home_type')
+#         selectedlocations = request.form.getlist('location')
+#         selected_doz = int(request.form.get('selected_doz'))
+#         # Process the selections as needed
+#     elif request.method == 'GET':
+#         selectedlocations = []
+#         selectedhometypes = Config.HOMETYPES
+#         selected_doz = 30
+#
+#
+#
+#
+#     map_html,soldhouses, housesoldpriceaverage, plot_url,plot_url2 =AreaReportModelRun(selectedlocations, selectedhometypes,selected_doz)
+#     # send_emailforOpenHouse(filtered_houses)
+#     return render_template('AreaReport.html',
+#                            m=map_html,
+#                            HOMETYPES=Config.HOMETYPES,
+#                            doz_options=doz_options,
+#                            selected_doz=selected_doz,
+#                            selectedhometypes= selectedhometypes,
+#                            LOCATIONS=AllNeighbourhoods,
+#                            soldhouses = soldhouses,
+#                            housesoldpriceaverage=housesoldpriceaverage,
+#                            selected_locations=selectedlocations,
+#                            plot_url=plot_url,
+#                            plot_url2=plot_url2)
+
+
 @soldhomes_bp.route('/areareport', methods=['GET','POST','PATCH'])
 def AreaReport():
 
     doz_options = Config.doz_options
-    AllNeighbourhoods = ListAllNeighhourhoodsByCities(Config.CITIES)
+    # AllNeighbourhoods = featureAreas.keys()
     if request.method == 'POST':
         selectedhometypes = request.form.getlist('home_type')
         selectedlocations = request.form.getlist('location')
         selected_doz = int(request.form.get('selected_doz'))
+
+        selected_zones= request.form.getlist('selected_zones')
         # Process the selections as needed
     elif request.method == 'GET':
         selectedlocations = []
         selectedhometypes = Config.HOMETYPES
         selected_doz = 30
 
-
-
-
-    map_html,soldhouses, housesoldpriceaverage, plot_url,plot_url2 =AreaReportModelRun(selectedlocations, selectedhometypes,selected_doz)
+    housesoldpriceaverage = initiateSummarydata()
+    map_html,soldhouses, housesoldpriceaverage, plot_url,plot_url2 =AreaReportModelRun(selected_zones, selectedhometypes,selected_doz)
     # send_emailforOpenHouse(filtered_houses)
-    return render_template('AreaReport.html',
-                           m=map_html,
-                           HOMETYPES=Config.HOMETYPES,
+    return render_template('ClickAbleMap2.html',HOMETYPES=Config.HOMETYPES,
+                           geojson_features=WA_geojson_features,
+                           housesoldpriceaverage=housesoldpriceaverage,
                            doz_options=doz_options,
                            selected_doz=selected_doz,
-                           selectedhometypes= selectedhometypes,
-                           LOCATIONS=AllNeighbourhoods,
-                           soldhouses = soldhouses,
-                           housesoldpriceaverage=housesoldpriceaverage,
+                           selectedhometypes=selectedhometypes,
+                           LOCATIONS=[],
                            selected_locations=selectedlocations,
-                           plot_url=plot_url,
-                           plot_url2=plot_url2)
+                           )
+
+                           # soldhouses = soldhouses,
+                           # housesoldpriceaverage=housesoldpriceaverage,
+                           # selected_locations=selectedlocations,
+                           # plot_url=plot_url,
+                           # plot_url2=plot_url2)

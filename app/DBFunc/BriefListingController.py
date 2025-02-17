@@ -11,7 +11,9 @@ from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
 from app.MapTools.MappingTools import findNeighbourhoodfromCoord
 from app.DBModels.FSBOStatus import FSBOStatus
 from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID
-
+import traceback
+from app.MapTools.MappingTools import get_zone
+from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
 
 import os
 def is_equal_with_tolerance(val1, val2, tolerance=1e-4):
@@ -52,7 +54,7 @@ class BriefListingController():
     def updateBriefListing(self,updatedbrieflisting:BriefListing, fsbo_status=None):
         ##METHOD WORKS EVEN IF upddatedbrieflisting does not exist in db yet.
         try:
-            print_and_log(f'Updating existing listing for { updatedbrieflisting.streetAddress} , {updatedbrieflisting.NWMLS_id}' )
+            print_and_log(f'Updating existing listing for { updatedbrieflisting.streetAddress} ,{ updatedbrieflisting.city}, {updatedbrieflisting.NWMLS_id}' )
             self.db.session.merge(updatedbrieflisting)
             # If FSBO status is provided, update it as well
             if fsbo_status:
@@ -89,91 +91,91 @@ class BriefListingController():
     def SaveBriefListingArr(self,brieflistingarr):
         changebrieflistingarr=[]
         oldbrieflistingarr=[]
-        file_path = os.path.join(os.getcwd(), 'unique_neighbourhoods.txt')
-        with open(file_path, 'a') as file:
 
-            for index,brieflisting in enumerate(brieflistingarr):
-                print(index)
-                try:
-                    # print(brieflisting.ref_address())
-                    existing_listing = self.db.session.query(BriefListing).filter_by(zpid=brieflisting.zpid).first()
-                    if existing_listing:
-                        needs_update = False
-                        updatereason=''
-                        gapis_neighbourhood = get_neighborhood(brieflisting.latitude, brieflisting.longitude)
-                        brieflisting.gapis_neighbourhood=gapis_neighbourhood
-                        brieflisting.neighbourhood=findNeighbourhoodfromCoord(brieflisting.city,brieflisting.longitude,brieflisting.latitude)
-                        # print_and_log('Updating existing listing for ' + brieflisting.streetAddress)
-                        if brieflisting.neighbourhood != existing_listing.neighbourhood:
-                            print('===============================Rewriting neighbourhood==============================')
-                            print(existing_listing)
-                            print(brieflisting)
-                            needs_update = True
-                            print('=============================================================')
+        for index,brieflisting in enumerate(brieflistingarr):
+            print(index)
+            try:
+                # print(brieflisting.ref_address())
+                existing_listing = self.db.session.query(BriefListing).filter_by(zpid=brieflisting.zpid).first()
+                if existing_listing:
+                    needs_update = False
+                    updatereason=''
+                    gapis_neighbourhood = get_neighborhood(brieflisting.latitude, brieflisting.longitude)
+                    brieflisting.gapis_neighbourhood=gapis_neighbourhood
+                    brieflisting.neighbourhood=findNeighbourhoodfromCoord(brieflisting.city,brieflisting.longitude,brieflisting.latitude)
+                    # print_and_log('Updating existing listing for ' + brieflisting.streetAddress)
+                    if brieflisting.neighbourhood != existing_listing.neighbourhood:
+                        print('===============================Rewriting neighbourhood==============================')
+                        print(existing_listing)
+                        print(brieflisting)
+                        needs_update = True
+                        print('=============================================================')
 
-                        for attr in vars(brieflisting):
-                            if attr == '_sa_instance_state':
-                                continue
-                            if attr == 'daysOnZillow':
-                                continue
-                            if attr == 'listtime':
-                                if not is_equal_with_tolerance(existing_value, new_value, 100):
+                    for attr in vars(brieflisting):
+                        if attr == '_sa_instance_state':
+                            continue
+                        if attr == 'daysOnZillow':
+                            continue
+                        if attr == 'listtime':
+                            if not is_equal_with_tolerance(existing_value, new_value, 100):
+                                needs_update = True
+                                updatereason= updatereason+ ',' +  attr + ' value update'
+                                break
+                            continue
+                        if hasattr(existing_listing, attr):
+                            existing_value = getattr(existing_listing, attr)
+                            new_value = getattr(brieflisting, attr)
+                            if isinstance(existing_value, decimal.Decimal) and isinstance(new_value, decimal.Decimal):
+                                # For float values, use the tolerance-based comparison
+                                if not is_equal_with_tolerance(existing_value, new_value):
+                                    needs_update = True
+                                    updatereason= updatereason+ ',' + attr + ' value update'
+                                    break
+                            elif isinstance(existing_value, float) and isinstance(new_value, float):
+                                # For float values, use the tolerance-based comparison
+                                if not is_equal_with_tolerance(existing_value, new_value, 0.1):
                                     needs_update = True
                                     updatereason= updatereason+ ',' +  attr + ' value update'
                                     break
-                                continue
-                            if hasattr(existing_listing, attr):
-                                existing_value = getattr(existing_listing, attr)
-                                new_value = getattr(brieflisting, attr)
-                                if isinstance(existing_value, decimal.Decimal) and isinstance(new_value, decimal.Decimal):
-                                    # For float values, use the tolerance-based comparison
-                                    if not is_equal_with_tolerance(existing_value, new_value):
-                                        needs_update = True
-                                        updatereason= updatereason+ ',' + attr + ' value update'
-                                        break
-                                elif isinstance(existing_value, float) and isinstance(new_value, float):
-                                    # For float values, use the tolerance-based comparison
-                                    if not is_equal_with_tolerance(existing_value, new_value, 0.1):
-                                        needs_update = True
-                                        updatereason= updatereason+ ',' +  attr + ' value update'
-                                        break
 
-                                elif attr=='homeStatus':
-                                    if not existing_value==new_value:
-                                        needs_update = True
-                                        updatereason = updatereason+ ',' +  attr + 'from ' + existing_listing.__str__() + ' to ' + new_value
-                                elif existing_value != new_value:
-                                    # For all other data types, use standard comparison
+                            elif attr=='homeStatus':
+                                if not existing_value==new_value:
                                     needs_update = True
-                                    updatereason =  updatereason+ ',' + attr + ' value update'
-                                    break
-                        if needs_update:
-                            print_and_log('Updating existing listing for ' + brieflisting.streetAddress)
-                            print_and_log(updatereason)
-                            # Update all relevant fields you want to update
-                            # for attr, value in vars(brieflisting).items():
-                            #     if hasattr(existing_listing, attr):  # Optional: Check if the attribute should be updated
-                            #         setattr(existing_listing, attr, value)
-                            # Since merge is used, it will update if the primary key exists, otherwise insert.
-                            self.db.session.merge(brieflisting)
-                            changebrieflistingarr.append(brieflisting)
-                        else:
-                            oldbrieflistingarr.append(brieflisting)
-                            print('No updates necessary for ' + brieflisting.streetAddress)
-                            continue
-                    else:
-                        gapis_neighbourhood = get_neighborhood(brieflisting.latitude, brieflisting.longitude)
-                        brieflisting.gapis_neighbourhood=gapis_neighbourhood
-                        brieflisting.neighbourhood=findNeighbourhoodfromCoord(brieflisting.city,brieflisting.longitude,brieflisting.latitude)
-                        brieflisting.listday= datetime.now()
-                        print_and_log('Adding new listing for ' + brieflisting.ref_address())
-                        self.db.session.add(brieflisting)
+                                    updatereason = updatereason+ ',' +  attr + 'from ' + existing_listing.__str__() + ' to ' + new_value
+                            elif existing_value != new_value:
+                                # For all other data types, use standard comparison
+                                needs_update = True
+                                updatereason =  updatereason+ ',' + attr + ' value update'
+                                break
+                    if needs_update:
+                        print_and_log('Updating existing listing for ' + brieflisting.streetAddress)
+                        print_and_log(updatereason)
+                        # Update all relevant fields you want to update
+                        # for attr, value in vars(brieflisting).items():
+                        #     if hasattr(existing_listing, attr):  # Optional: Check if the attribute should be updated
+                        #         setattr(existing_listing, attr, value)
+                        # Since merge is used, it will update if the primary key exists, otherwise insert.
+                        self.db.session.merge(brieflisting)
                         changebrieflistingarr.append(brieflisting)
-                    print_and_log('Committing ' + brieflisting.ref_address())
-                    self.db.session.commit()
-                except Exception as e:
-                    print_and_log(f"Error during update or insert: {str(e)}")
-                    self.db.session.rollback()
+                    else:
+                        oldbrieflistingarr.append(brieflisting)
+                        print('No updates necessary for ' + brieflisting.streetAddress)
+                        continue
+                else:
+                    gapis_neighbourhood = get_neighborhood(brieflisting.latitude, brieflisting.longitude)
+                    brieflisting.gapis_neighbourhood=gapis_neighbourhood
+                    brieflisting.neighbourhood=findNeighbourhoodfromCoord(brieflisting.city,brieflisting.longitude,brieflisting.latitude)
+                    brieflisting.listday= datetime.now()
+                    print_and_log('Adding new listing for ' + brieflisting.ref_address())
+                    self.db.session.add(brieflisting)
+                    changebrieflistingarr.append(brieflisting)
+                print_and_log('Committing ' + brieflisting.ref_address())
+                self.db.session.commit()
+            except Exception as e:
+                print_and_log(f"Error during update or insert: {str(e)}")
+                print_and_log("Traceback details:")
+                print_and_log(traceback.format_exc())  # Outputs the full stack trace as a string
+                self.db.session.rollback()
         return changebrieflistingarr,oldbrieflistingarr
 
     def UpdateBriefListing(self,brieflisting):
@@ -423,6 +425,20 @@ class BriefListingController():
 
         return latest_time
 
+    def setZoneForBriefListing(self,brieflisting:BriefListing):
+        try:
+            cityname, neighbourhood = get_zone(brieflisting.latitude, brieflisting.longitude, brieflisting.city)
+            if cityname is None and neighbourhood is None:
+                brieflisting.outsideZones = True
+            zone = washingtonzonescontroller.get_zone_id_by_name(cityname, neighbourhood)
+            print(zone)
+            if zone:
+                brieflisting.zone_id = zone.id
+        except Exception as e:
+            print(e, brieflisting)
+            print(brieflisting.latitude, brieflisting.longitude)
+            print(brieflisting.__str__())
+
     def getListingsWithStatus(self, fromdays, homeStatus):  #pendingListings(self, fromdays):
         days_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
@@ -557,6 +573,27 @@ class BriefListingController():
             return first_ten_listings
         except Exception as e:
             print(f"Error retrieving the first ten listings where NWMLS_id is null: {str(e)}")
+            return []
+
+    def getFirstXListingsWhereZoneisNull(self,X):
+        """
+        Retrieve the first ten listings from the BriefListing table where zone_id is NULL
+        and where dateSold is greater than 1730400000000.
+
+        :return: List of the first ten BriefListing objects with zone_id = NULL
+        """
+        try:
+            # Query for listings where zone_id is NULL and dateSold is greater than 1730400000000
+            first_ten_listings = (self.BriefListing.query
+                                  .filter(self.BriefListing.zone_id == None)
+                                  .filter(self.BriefListing.outsideZones == False)
+                                  .filter(self.BriefListing.dateSold > 1730400000000)
+                                  .limit(X)  # Limit to 10 instead of 100
+                                  .all())
+            return first_ten_listings
+        except Exception as e:
+            # Exception handling with proper error formatting
+            print(f"Error retrieving the first ten listings where zone_id is NULL: {str(e)}")
             return []
 
 brieflistingcontroller = BriefListingController()

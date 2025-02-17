@@ -1,7 +1,7 @@
 # email_bp.py
 from datetime import datetime
 import pytz
-from app.DBFunc.CityStatsCacheController import citystatscachecontroller
+from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from flask import flash,Blueprint, render_template, redirect, url_for, request,jsonify
 # from app.RouteModel.EmailModel import sendEmailwithNewListing
 from app.DBFunc.BriefListingController import brieflistingcontroller
@@ -9,7 +9,7 @@ from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,ListA
 from app.config import Config,SW
 customer_interest_bp = Blueprint('customer_interest_bp', __name__, url_prefix='/customer_interest')
 from app.DBFunc.CustomerNeighbourhoodInterestController import customerneighbourhoodinterestcontroller
-from app.DBFunc.CityStatsCacheController import citystatscachecontroller
+from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from app.DBFunc.AIListingController import ailistingcontroller
 from app.DBFunc.CustomerController import customercontroller
 from app.MapTools.MappingTools import WA_geojson_features, create_map
@@ -126,7 +126,7 @@ def gatherCustomerData(customer_id):
         if city_name == "Seattle":
             # Query the database to fetch the full row for this neighborhood
             print(f"{city_name}, {area['neighbourhood_sub']}")
-            city_row = citystatscachecontroller.get_city_stats_by_name(city_name,area["neighbourhood_sub"])
+            city_row = zonestatscachecontroller.get_zone_stats_by_name(city_name,area["neighbourhood_sub"])
             forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType,
                                                                              neighbourhood_sub=area["neighbourhood_sub"]).all()
             if city_row:
@@ -139,7 +139,7 @@ def gatherCustomerData(customer_id):
                 area["forsaleadded7_TCA"] = city_row.forsaleadded7_TCA
                 area["sold"] = city_row.sold
         else:
-            city_row = citystatscachecontroller.get_city_stats_by_name(city_name)
+            city_row = zonestatscachecontroller.get_zone_stats_by_name(city_name)
             forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType
                                                                               ).all()
             print(f"{city_name}")
@@ -236,11 +236,11 @@ def displayCustomerInterest():
 
 
 
-# @citystats_bp.route('/update', methods=['POST'])
-# def update_city_stats():
+# @zonestats_bp.route('/update', methods=['POST'])
+# def update_zone_stats():
 #     try:
 #         cities = washingtoncitiescontroller.getallcities()
-#         citystatscachecontroller.refresh_city_stats(cities, brieflistingcontroller)
+#         zonestatscachecontroller.refresh_zone_stats(cities, brieflistingcontroller)
 #         return jsonify({"status": "success", "message": "City stats updated successfully."})
 #     except Exception as e:
 #         return jsonify({"status": "error", "message": str(e)}), 500
@@ -253,7 +253,7 @@ def get_neighbourhood_details():
     if neighbourhood_sub=='None':
         neighbourhood_sub = None
 
-    city_stats = citystatscachecontroller.get_city_stats_by_name(city, neighbourhood_sub)
+    zone_stats = zonestatscachecontroller.get_zone_stats_by_name(city, neighbourhood_sub)
 
     sold7_SFH = brieflistingcontroller.soldListingsByCity(city, 7, homeType=SW.SINGLE_FAMILY, neighbourhood_sub=neighbourhood_sub).all()
     sold7_TCA = brieflistingcontroller.soldListingsByCity(city, 7,
@@ -282,9 +282,9 @@ def get_neighbourhood_details():
         "html": render_template('components/neighbourhood_details_card.html',
                                  city=city,
                                  neighbourhood_sub=neighbourhood_sub,
-                                 recent_sales=city_stats.sold,
-                                 avg_price=city_stats.avg_price if hasattr(city_stats, 'avg_price') else "N/A",
-                                 trends=city_stats.trends if hasattr(city_stats, 'trends') else "N/A",
+                                 recent_sales=zone_stats.sold,
+                                 avg_price=zone_stats.avg_price if hasattr(zone_stats, 'avg_price') else "N/A",
+                                 trends=zone_stats.trends if hasattr(zone_stats, 'trends') else "N/A",
                                  sold7_SFH=sold7_SFH_homes,
                                 sold7_TCA=sold7_TCA_homes,
                                 pending7_SFH=pending7_SFH_homes,

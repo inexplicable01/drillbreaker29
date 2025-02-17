@@ -18,6 +18,7 @@ class BriefListing(db.Model):
 
     zpid = db.Column(db.BigInteger, primary_key=True, nullable=True)
     NWMLS_id = db.Column(db.Integer, nullable=True)
+    zone_id = db.Column(db.Integer, db.ForeignKey('WashingtonZones.id'), nullable=True)
     bathrooms = db.Column(db.Float, nullable=True, default=1.0)
     bedrooms = db.Column(db.Float, nullable=True, default=1.0)
     city = db.Column(db.String(255), nullable=True)  # Specify length here
@@ -72,8 +73,9 @@ class BriefListing(db.Model):
     soldBy = db.Column(db.String(100), nullable=True)
     waybercomments = db.Column(db.String(255), nullable=True)
     openhouseneed = db.Column(db.Boolean,nullable=True)
-
+    outsideZones = db.Column(db.Boolean, nullable=True, default=False)
     # Define the one-to-one relationship to FSBOStatus
+    # zone = db.relationship('WashingtonZones', backref='brief_listings', lazy=True)
     fsbo_status = db.relationship('FSBOStatus', backref='brief_listing', uselist=False, lazy=True)
     # customers = db.relationship(
     #     'CustomerZpid',
@@ -129,6 +131,14 @@ class BriefListing(db.Model):
             self.NWMLS_id = propertydata['attributionInfo']['mlsId']
         except Exception as e:
             print(e, self)
+
+
+    def isBriefListingInZone(self,WA_geojson_features):
+        if self.latitude is not None and self.longitude is not None:
+            for feature in WA_geojson_features:
+                if feature['geometry']['coordinates'][0] == self.longitude and feature['geometry']['coordinates'][1] == self.latitude:
+                    return True
+        return False
 
 
     @classmethod

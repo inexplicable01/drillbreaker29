@@ -1,7 +1,7 @@
 from app.extensions import db
 
-class CityStatsCache(db.Model):
-    __tablename__ = 'CityStatsCache'
+class ZoneStatsCache(db.Model):
+    __tablename__ = 'ZoneStatsCache'
 
     city_name = db.Column(db.String(255), primary_key=True)  # City name as primary key
     sold = db.Column(db.Integer, nullable=True)  # Number of sold listings
@@ -23,7 +23,7 @@ class CityStatsCache(db.Model):
     neighbourhood_sub = db.Column(db.String(50),nullable=True)  # Number of sold listings
 
     def __repr__(self):
-        return (f"<CityStatsCache(city_name={self.city_name}, sold={self.sold}, pending={self.pending}, "
+        return (f"<ZoneStatsCache(city_name={self.city_name}, sold={self.sold}, pending={self.pending}, "
                 f"pending7_SFH={self.pending7_SFH},"
                 f"pending7_TCA={self.pending7_TCA},"
                 f""
