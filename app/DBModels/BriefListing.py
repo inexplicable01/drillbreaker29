@@ -89,7 +89,7 @@ class BriefListing(db.Model):
         pass
 
     def ref_address(self):
-        return f"{self.streetAddress}_{self.city}_{self.zipcode}".replace(' ', '_')
+        return f"{self.streetAddress}, {self.city} {self.zipcode}, NWMLS {self.NWMLS_id}, zpid: {self.zpid}"
 
     def updateListingLength(self,listinglength):
         self.list2penddays=listinglength['list2penddays']
@@ -99,7 +99,10 @@ class BriefListing(db.Model):
             self.pricedelta=self.price-self.listprice
 
     def __str__(self):
-        return str(self.zpid) + ' ' + self.streetAddress + ' ' + self.city
+        return self.ref_address()
+
+    def __repr__(self):
+        return self.ref_address()
 
     def to_dict(self):
         return {
@@ -120,6 +123,7 @@ class BriefListing(db.Model):
             'bedrooms': self.bedrooms,
             'hdpUrl': self.hdpUrl,
             'imgSrc': self.imgSrc,
+            'list2penddays':self.list2penddays
         }
 
     def getPropertyData(self):

@@ -1,0 +1,171 @@
+<style>
+        /* General Reset */
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #333; /* Neutral text color */
+            line-height: 1.5;
+        }
+
+        /* Main Layout */
+        #main-content {
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping for small screens */
+            height: 100%;
+            overflow: hidden; /* Prevent vertical and horizontal scrolling */
+            padding: 15px;
+        }
+
+        #map-container {
+            flex: 2;
+            height: 100%;
+            flex-direction: column; /* Stack child elements vertically */
+            background: #f5f5f5; /* Light background for distinction */
+        }
+
+
+        #topSection {
+            height: 300px; /* Fixed height */
+            flex-shrink: 0; /* Ensure it doesn't shrink */
+            background-color: #f0f0f0; /* Light background for distinction */
+            border-bottom: 1px solid #ccc; /* Optional: Add a separator line */
+        }
+
+        #side-section {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            background: #fafafa;
+            border-left: 1px solid #ddd;
+        }
+
+        #data-section, #comments-section {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+            max-height: 400px; /* Set your desired maximum height */
+            overflow-y: auto; /* Enable vertical scrolling */
+            border: 1px solid #ccc; /* Optional: Add a border for clarity */
+            padding: 10px; /* Add some padding */
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #007acc;
+        }
+
+        /* Styling Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white; /* Solid background to offset the table */
+            margin-bottom: 15px;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left; /* Aligning for easy readability */
+        }
+
+        table th {
+            background-color: #007acc; /* Header background */
+            color: white;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #f9f9f9; /* Alternate row color */
+        }
+
+        table tr:hover {
+            background-color: #f1f1f1; /* Highlight row on hover */
+        }
+
+        /* Links */
+        a {
+            color: #007acc;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        #areaLinks a {
+            margin-right: 10px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        /* Form Styling */
+        form {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        form div {
+            flex: 1;
+            margin: 10px;
+            min-width: 150px; /* Ensure space for smaller screens */
+        }
+
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+
+        button {
+            display: inline-block;
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 15px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #005f99;
+        }
+
+        /* Map Styling */
+        #map {
+            height: calc(100% - 250px); /* Deduct height of form above */
+            border: 1px solid #ddd;
+            margin-top: 15px;
+            flex: 2;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #main-content {
+                flex-direction: column;
+            }
+
+            #map-container {
+                flex: 1;
+                height: 50%; /* Reduce height for smaller view */
+            }
+
+            #side-section {
+                height: auto;
+            }
+        }
+    </style>

@@ -1,0 +1,31 @@
+<h2>Sold Houses</h2>
+<img id="graphImage" src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
+<button onclick="updateGraph()">Update Graph</button>
+<table>
+    <thead>
+    <tr>
+        <th>Address</th>
+        <th>Sqft</th>
+        <th>Bed</th>
+        <th>Bath</th>
+        <th>List Price</th>
+        <th>Sold Price</th>
+        <th>To Contract</th>
+        <th>Delta</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for house in soldhouses %}
+        <tr>
+            <td><a href="https://www.zillow.com{{ house.hdpUrl }}" target="_blank">{{ house.streetAddress }}</a></td>
+            <td>{{ house.livingArea }}</td>
+            <td>{{ house.bedrooms }}</td>
+            <td>{{ house.bathrooms }}</td>
+            <td>${{ house.listprice }}</td>
+            <td>${{ house.price }}</td>
+            <td>{{ house.list2penddays }}</td>
+            <td>${{ house.pricedelta }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

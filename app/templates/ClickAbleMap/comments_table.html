@@ -1,0 +1,27 @@
+<h2>Summary</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Type</th>
+        <th>Beds</th>
+        <th>Bath</th>
+        <th>Count</th>
+        <th>Min</th>
+        <th>Average</th>
+        <th>Max</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for key, housegenre in housesoldpriceaverage.items() %}
+        <tr>
+            <td>{{ key }}</td>
+            <td>{{ housegenre.beds }}</td>
+            <td>{{ housegenre.baths }}</td>
+            <td>{{ housegenre.count }}</td>
+            <td>${{ housegenre.minprice }}</td>
+            <td>${{ housegenre.aveprice }}</td>
+            <td>${{ housegenre.maxprice }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
