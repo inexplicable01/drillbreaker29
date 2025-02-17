@@ -70,16 +70,15 @@ def displayModel(neighbourhoods, selectedhometypes):
 
 
 def AreaReportModelRun(selected_zones, selectedhometypes,doz):
-    ## Calls zillow data Process
-    ## Zillow Data Process puts listing in BriefListing Array
-    housesoldpriceaverage = initiateSummarydata()
     unfiltered_soldhomes = []
-
-
     for zone in selected_zones:
-        neighbour = washingtonzonescontroller.getWashingtonZones(zone)
-        if neighbour is None:
-            city = washingtoncitiescontroller.getCity(zone)
+        wzone = washingtonzonescontroller.getzonebyName(zone)
+        if wzone:
+            unfiltered_soldhomes=unfiltered_soldhomes+wzone.brief_listings
+            for brieflisting in wzone.brief_listings:
+                print(brieflisting.__str__())
+        # if neighbour is None:
+        #     city = washingtoncitiescontroller.getCity(zone)
         ## Gathering the Locations
         # unfiltered_soldhomes = unfiltered_soldhomes + brieflistingcontroller.ListingsByNeighbourhood(neighbourhood, doz)
     ## Gets List of briefhomedataraw
@@ -92,43 +91,26 @@ def AreaReportModelRun(selected_zones, selectedhometypes,doz):
     for brieflisting in unfiltered_soldhomes:
         if brieflisting.homeType not in selectedhometypes:
             continue
-        # # if brieflisting.latitude
-        # if brieflisting.latitude<47.3842:
-        #     continue
-        # if brieflisting.longitude<-122.03385:
-        #     continue
         soldhomes.append(brieflisting)
-
+    housesoldpriceaverage={}
     for brieflisting in soldhomes:
         try:
-            bedbathcode = int(brieflisting.bedrooms)+float(brieflisting.bathrooms)*100
-            if 101<=bedbathcode<=102:
-                housesoldpriceaverage["1bed1bath"]["count"] +=1
-                housesoldpriceaverage["1bed1bath"]["totalprice"] += brieflisting.price
-                housesoldpriceaverage["1bed1bath"]["houses"].append(brieflisting)
-            elif 201.5<=bedbathcode<=202.5:
-                housesoldpriceaverage["2bed2bath"]["count"] +=1
-                housesoldpriceaverage["2bed2bath"]["totalprice"] += brieflisting.price
-                housesoldpriceaverage["2bed2bath"]["houses"].append(brieflisting)
-            elif 302 <= bedbathcode <= 302.5:
-                housesoldpriceaverage["3bed2bath"]["count"] +=1
-                housesoldpriceaverage["3bed2bath"]["totalprice"] += brieflisting.price
-                housesoldpriceaverage["3bed2bath"]["houses"].append(brieflisting)
-            elif 302.5 < bedbathcode <= 304:
-                housesoldpriceaverage["3bed3bath"]["count"] +=1
-                housesoldpriceaverage["3bed3bath"]["totalprice"] += brieflisting.price
-                housesoldpriceaverage["3bed3bath"]["houses"].append(brieflisting)
-            elif 400 <= bedbathcode <= 402:
-                housesoldpriceaverage["4bed2-bath"]["count"] +=1
-                housesoldpriceaverage["4bed2-bath"]["totalprice"] += brieflisting.price
-                housesoldpriceaverage["4bed2-bath"]["houses"].append(brieflisting)
-            elif 402 < bedbathcode <= 404:
-                housesoldpriceaverage["4bed3+bath"]["count"] +=1
-                housesoldpriceaverage["4bed3+bath"]["totalprice"] += brieflisting.price
-                housesoldpriceaverage["4bed3+bath"]["houses"].append(brieflisting)
+            # Create dynamic key based on bedrooms and bathrooms
+            bed_bath_key = f"{int(brieflisting.bedrooms)}bed{int(brieflisting.bathrooms)}bath"
+            # Initialize the dictionary for this key if it doesn't already exist
+            if bed_bath_key not in housesoldpriceaverage:
+                housesoldpriceaverage[bed_bath_key] = {
+                    "count": 0,
+                    "totalprice": 0,
+                    "houses": []
+                }
 
+            # Update the values for the current key
+            housesoldpriceaverage[bed_bath_key]["count"] += 1
+            housesoldpriceaverage[bed_bath_key]["totalprice"] += brieflisting.price
+            housesoldpriceaverage[bed_bath_key]["houses"].append(brieflisting)
         except Exception as e:
-            print('Error with ', brieflisting)
+            print(f"Error processing brieflisting: {e}")
     # Create a map centered around Ballard, Seattle
 
     for key, value in housesoldpriceaverage.items():
@@ -232,55 +214,12 @@ def AreaReportModelRun(selected_zones, selectedhometypes,doz):
 
     plot_url2 = base64.b64encode(buf2.read()).decode('utf-8')
 
-    return generateMap(soldhomes, neighbourhoods, True), soldhomes,housesoldpriceaverage, plot_url, plot_url2
+    return housesoldpriceaverage, plot_url, plot_url2, soldhomes
 
+    #
 
+# generateMap(soldhomes, neighbourhoods, True), soldhomes,
 # def ListingLength(soldhouse, Listing, db):
 #
 #     if soldhouse.list2pendCheck==0
 
-def initiateSummarydata():
-    return{
-        "1bed1bath": {
-            "beds": 1,
-            "baths": 1,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        },
-        "2bed2bath": {
-            "beds": 2,
-            "baths": 2,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        },
-        "3bed2bath": {
-            "beds": 3,
-            "baths": 2,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        },
-        "3bed3bath": {
-            "beds": 3,
-            "baths": 3,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        },
-        "4bed2-bath": {
-            "beds": 4,
-            "baths": 2,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        },
-        "4bed3+bath": {
-            "beds": 4,
-            "baths": 3,
-            "count": 0,
-            "totalprice": 0,
-            "houses": []
-        }
-    }

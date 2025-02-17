@@ -44,16 +44,28 @@ class WashingtonZonesController:
     def getneighbourhood(self,neighbourhood):
         return self.WashingtonZones.query.filter_by(neighbourhood_sub=neighbourhood).first()
 
+    def getzonebyName(self,zone):
+        wzone = (self.WashingtonZones.query
+                .filter_by(neighbourhood_sub=zone)
+                .first())
+        if wzone:
+            return wzone
+        else:
+            return (self.WashingtonZones.query
+                    .filter_by(City=zone)
+                    .first())
+
     def get_zone_id_by_name(self,cityname,neighbourhood ):
         if neighbourhood is not None:
             zone = (self.WashingtonZones.query
-                    .filter_by(neighbourhood_sub=neighbourhood)
+                    .filter(self.WashingtonZones.neighbourhood_sub.ilike(f"%{neighbourhood.strip()}%"))  # Fuzzy match
                     .first())
             if zone:
                 return zone
+
         # If no neighbourhood match, try to retrieve by city name
         return (self.WashingtonZones.query
-                .filter_by(City=cityname)
+                .filter(self.WashingtonZones.City.ilike(f"%{cityname.strip()}%"))  # Fuzzy match on city
                 .first())
 
     def update_geometry_from_geojson(self, geojson_features):

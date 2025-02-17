@@ -430,11 +430,14 @@ class BriefListingController():
             cityname, neighbourhood = get_zone(brieflisting.latitude, brieflisting.longitude, brieflisting.city)
             if cityname is None and neighbourhood is None:
                 brieflisting.outsideZones = True
+                brieflisting.zone_id = None
                 return
             zone = washingtonzonescontroller.get_zone_id_by_name(cityname, neighbourhood)
             print(zone)
             if zone:
                 brieflisting.zone_id = zone.id
+            else:
+                print(zone)
         except Exception as e:
             print(e, brieflisting)
             print(brieflisting.latitude, brieflisting.longitude)

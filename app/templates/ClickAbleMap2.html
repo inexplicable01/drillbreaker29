@@ -52,6 +52,10 @@
             padding: 15px;
             overflow-y: auto;
             border-bottom: 1px solid #ddd;
+            max-height: 400px; /* Set your desired maximum height */
+            overflow-y: auto; /* Enable vertical scrolling */
+            border: 1px solid #ccc; /* Optional: Add a border for clarity */
+            padding: 10px; /* Add some padding */
         }
 
         h2 {
@@ -177,11 +181,6 @@
 <div id="main-content">
     <div id="map-container">
         <div id="topSection">
-            <div>
-                <button id="toggleButton" onclick="toggleSelection()">Enable Selection</button>
-                <div id="selectedZones" style="margin-top: 10px; font-size: 14px; color: #333;">
-                </div>
-            </div>
             <form method="POST">
                 <!-- Filter Form -->
 
@@ -195,6 +194,7 @@
                             </option>
                         {% endfor %}
                     </select>
+                    <button type="submit">Search</button>
                 </div>
 
                 <div>
@@ -210,7 +210,15 @@
                 </div>
                 <input type="hidden" id="selectedZonesInput" name="selected_zones" value="">
                 <div>
-                    <button type="submit">Search</button>
+
+                    <p>Currently Displaying Data for {{ selected_zones }}</p>
+                    <br/>
+                    <p>To Show Data for Zones below Hit Search</p>
+                    <div id="selectedZones" style="margin-top: 10px; font-size: 14px; color: #333;">
+
+
+                </div>
+
                 </div>
             </form>
 
@@ -319,7 +327,8 @@
     var geojson_features = {{ geojson_features | tojson }};
 
     var selectionEnabled = false;
-    var selectedZones = [];
+    var selectedZones = {{ selected_zones | tojson }};
+    console.log('Selected Zones:', selectedZones);
 
     function updateHiddenInput() {
         document.getElementById('selectedZonesInput').value = selectedZones.join(','); // Convert to comma-separated string
@@ -330,22 +339,6 @@
         updateHiddenInput(); // Populate the hidden input with selected zones
     });
     {#// Function to handle toggle behavior#}
-
-    function toggleSelection() {
-        selectionEnabled = !selectionEnabled;
-        document.getElementById('toggleButton').innerText = selectionEnabled ? 'Disable Selection' : 'Enable Selection';
-        if (!selectionEnabled) {
-            resetSelection();
-        }
-    }
-
-    // Function to reset polygon colors and selection display
-    function resetSelection() {
-        selectedZones = [];
-        document.getElementById('selectedZones').innerText = '';
-        polygons.forEach(poly => poly.setStyle({color: 'red'}));
-    }
-
     {#// Array to keep track of all polygons#}
     var polygons = [];
 
@@ -365,13 +358,17 @@
             );
         }
         // Slightly shift the Bellevue polygon's coordinates for each iteration
-        console.log(`Value from geojson_features: ${value.properties.L_HOOD}`);
+        //console.log(`Value from geojson_features: ${value.properties.L_HOOD}`);
         // Check if S_HOOD exists and is not null/empty, otherwise use CityName
         var zoneName = value.properties.S_HOOD && value.properties.S_HOOD.trim() !== ""
             ? value.properties.S_HOOD
             : value.properties.CityName;
-        console.log(`Value from geojson_features: ${zoneName}`);
-        var poly = L.polygon(value.geometry.coordinates, {color: 'red'}).addTo(map);
+
+        // Determine the color based on whether zoneName is in selectedZones
+        var color = selectedZones.includes(zoneName) ? 'green' : 'red';
+
+        // Add the polygon to the map with the determined color
+        var poly = L.polygon(value.geometry.coordinates, {color: color}).addTo(map);
         polygons.push(poly); // Add polygon to the array
         // Bind a tooltip (always visible)
         poly.bindTooltip(zoneName, {permanent: true, direction: "center", className: "zone-label"}).openTooltip();
@@ -381,7 +378,6 @@
 
         // Add click event to polygon
         poly.on('click', function () {
-            if (selectionEnabled) {
                 if (selectedZones.includes(zoneName)) {
                     // Deselect if already selected
                     selectedZones = selectedZones.filter(zone => zone !== zoneName);
@@ -397,7 +393,7 @@
 
                 // Update the hidden input field
                 document.getElementById('selectedZonesInput').value = selectedZones.join(',');
-            }
+
         });
     });
 

@@ -359,7 +359,8 @@ def updateathing2():
 @maintanance_bp.route('/updateathing3', methods=['post'])
 def updateathing3():
     # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
-    listings = brieflistingcontroller.getFirstXListingsWhereZoneisNull(1000)
+    iter_value = request.args.get('iter')
+    listings = brieflistingcontroller.getFirstXListingsWhereZoneisNull(int(iter_value))
     for brieflisting in listings:
         brieflistingcontroller.setZoneForBriefListing(brieflisting)
         brieflistingcontroller.updateBriefListing(brieflisting)

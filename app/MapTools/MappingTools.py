@@ -86,7 +86,7 @@ def get_zone(lat, lon, CityName):
             if polygon.contains(point):
                 return feature['properties']['CityName'], feature['properties']['S_HOOD']
     else:
-        for feature in WA_geojson_features:
+        for feature in WA_geojson_data['features']:
             polygon = shape(feature['geometry'])
             if polygon.contains(point):
                 return feature['properties']['CityName'], None

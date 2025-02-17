@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
-from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,AreaReportGatherData, initiateSummarydata
+from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,AreaReportGatherData
 from app.config import Config,SW
 from app.MapTools.MappingTools import WA_geojson_features, featureAreas
 soldhomes_bp = Blueprint('soldhomes_bp', __name__,url_prefix='/soldhomes')
@@ -65,18 +65,25 @@ def AreaReport():
         selectedlocations = []
         selectedhometypes = Config.HOMETYPES
         selected_doz = 30
+        selected_zones=[]
 
-    housesoldpriceaverage = initiateSummarydata()
-    map_html,soldhouses, housesoldpriceaverage, plot_url,plot_url2 =AreaReportModelRun(selected_zones, selectedhometypes,selected_doz)
+    # housesoldpriceaverage = initiateSummarydata()
+    # map_html,soldhouses, housesoldpriceaverage, plot_url,plot_url2 =(
+
+    housesoldpriceaverage, plot_url, plot_url2 , soldhomes=AreaReportModelRun(selected_zones, selectedhometypes,selected_doz)
     # send_emailforOpenHouse(filtered_houses)
     return render_template('ClickAbleMap2.html',HOMETYPES=Config.HOMETYPES,
                            geojson_features=WA_geojson_features,
                            housesoldpriceaverage=housesoldpriceaverage,
                            doz_options=doz_options,
                            selected_doz=selected_doz,
+                           selected_zones=selected_zones,
                            selectedhometypes=selectedhometypes,
                            LOCATIONS=[],
                            selected_locations=selectedlocations,
+                           plot_url=plot_url,
+                           plot_url2=plot_url2,
+                           soldhouses=soldhomes
                            )
 
                            # soldhouses = soldhouses,
