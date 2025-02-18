@@ -4,7 +4,7 @@ from app.extensions import db
 from app.useful_func import safe_float_conversion,safe_int_conversion,print_and_log
 from datetime import  datetime, timedelta
 from app.UsefulAPI.UseFulAPICalls import get_neighborhood
-from app.config import Config
+from app.config import Config , RECENTLYSOLD,FOR_SALE, PENDING
 import decimal
 from sqlalchemy import distinct
 from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
@@ -519,6 +519,8 @@ class BriefListingController():
             BriefListing.city == city,
             BriefListing.listtime >= fromdays_ago
         ]
+
+
         # Add optional parameters dynamically
         if neighbourhood_sub:
             filters.append(BriefListing.neighbourhood_sub == neighbourhood_sub)
@@ -542,8 +544,13 @@ class BriefListingController():
         filters = [
             BriefListing.homeStatus == homeStatus,
             BriefListing.zone_id == zone.id,
-            BriefListing.listtime >= fromdays_ago
         ]
+        if homeStatus== RECENTLYSOLD:
+            filters.append(BriefListing.dateSold >= fromdays_ago*1000)
+        elif homeStatus== FOR_SALE:
+            filters.append(BriefListing.listtime >= fromdays_ago)
+        elif homeStatus==PENDING:
+            filters.append(BriefListing.pendday >= fromdays_ago)
         # Add optional parameters dynamically
         if homeType:
             filters.append(
@@ -610,9 +617,9 @@ class BriefListingController():
         try:
             # Query for listings where zone_id is NULL and dateSold is greater than 1730400000000
             first_ten_listings = (self.BriefListing.query
-                                  .filter(self.BriefListing.zone_id == None)
-                                  .filter(self.BriefListing.outsideZones == False)
-                                  .filter(self.BriefListing.dateSold > 1730400000000)
+                                  # .filter(self.BriefListing.zone_id == None)
+                                  # .filter(self.BriefListing.outsideZones == False)
+                                  .filter(self.BriefListing.listtime > 1730400000000)
                                   .limit(X)  # Limit to 10 instead of 100
                                   .all())
             return first_ten_listings

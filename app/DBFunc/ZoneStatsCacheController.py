@@ -47,7 +47,8 @@ class ZoneStatsCacheController:
         """Retrieve all city statistics from the cache."""
         return self.db.session.query(self.ZoneStatsCache).all()
 
-    def get_zone_stats_by_name(self, city, neighbourhood_sub=None):
+    def get_zone_stats_by_name(self, zone):
+        return self.db.session.query(self.ZoneStatsCache).filter_by(zone_id=zone.id).first()
         """Retrieve city stats for a given CustomerZone object."""
         # if city == "Seattle":  # Assuming city_name is always Seattle
         #     if neighbourhood_sub is None:

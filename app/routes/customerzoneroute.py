@@ -1,12 +1,15 @@
 # email_bp.py
 from datetime import datetime
 import pytz
+
+from app.DBFunc.WashingtonZonesController import WashingtonZonesController, washingtonzonescontroller
 from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from flask import flash,Blueprint, render_template, redirect, url_for, request,jsonify
 # from app.RouteModel.EmailModel import sendEmailwithNewListing
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,ListAllNeighhourhoodsByCities
-from app.config import Config,SW
+from app.config import Config, SW, RECENTLYSOLD, FOR_SALE, PENDING
+
 customer_interest_bp = Blueprint('customer_interest_bp', __name__, url_prefix='/customer_interest')
 from app.DBFunc.CustomerZoneController import customerzonecontroller
 from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
@@ -116,51 +119,58 @@ def gatherCustomerData(customer_id):
     # customer = customerzonecontroller.get_customer(customer_id)
 
     if not customer:
-        return None, None, None, None, None
+        return None, None, None
     homeType=None
     forsalehomes=[]#SW.SINGLE_FAMILY
+    locations=[]
+    locationzonenames=[]
     # Loop through neighborhoods to extract data when city is 'Seattle'
     for customerzone in customer.zones:
         city_name = customerzone.zone.City
         # city_name = area["city"]  # Assuming `city` is in the returned dictionary
         print(customerzone.zone.__str__())
-        city_row = zonestatscachecontroller.get_zone_stats_by_name(city_name, area["neighbourhood_sub"])
-        if city_name == "Seattle":
-            # Query the database to fetch the full row for this neighborhood
+        area={}
+        zonestats = zonestatscachecontroller.get_zone_stats_by_name(customerzone)
+        locationzonenames.append(customerzone.zone.zonename())
+        area["zone"]=customerzone.zone.zonename()
+        area["zone_id"] = customerzone.zone.id
+        # if city_name == "Seattle":
+        #     # Query the database to fetch the full row for this neighborhood
+        #
+        #
+        #     forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType,
+        #                                                                      neighbourhood_sub=area["neighbourhood_sub"]).all()
+        if zonestats:
+            area["forsale"]=zonestats.forsale
+            area["pending7_SFH"] = zonestats.pending7_SFH
+            area["pending7_TCA"] = zonestats.pending7_TCA
+            area["sold7_SFH"] = zonestats.sold7_SFH
+            area["sold7_TCA"] = zonestats.sold7_TCA
+            area["forsaleadded7_SFH"] = zonestats.forsaleadded7_SFH
+            area["forsaleadded7_TCA"] = zonestats.forsaleadded7_TCA
+            area["sold"] = zonestats.sold
+            locations.append(area)
+        # else:
+        #     city_row = zonestatscachecontroller.get_zone_stats_by_name(city_name)
+        #     forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType
+        #                                                                       ).all()
+        #     print(f"{city_name}")
+        #     if city_row:
+        #         area["forsale"]=city_row.forsale
+        #         area["pending7_SFH"] = city_row.pending7_SFH
+        #         area["pending7_TCA"] = city_row.pending7_TCA
+        #         area["sold7_SFH"] = city_row.sold7_SFH
+        #         area["sold7_TCA"] = city_row.sold7_TCA
+        #         area["forsaleadded7_SFH"] = city_row.forsaleadded7_SFH
+        #         area["forsaleadded7_TCA"] = city_row.forsaleadded7_TCA
+        #         area["sold"] = city_row.sold
+    # neighbourhoods_subs = []
+    # cities = []
+    # for n in locations:
+    #     neighbourhoods_subs.append(n["neighbourhood_sub"])
+    #     cities.append(n["city"])
 
-
-            forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType,
-                                                                             neighbourhood_sub=area["neighbourhood_sub"]).all()
-            if city_row:
-                area["forsale"]=city_row.forsale
-                area["pending7_SFH"] = city_row.pending7_SFH
-                area["pending7_TCA"] = city_row.pending7_TCA
-                area["sold7_SFH"] = city_row.sold7_SFH
-                area["sold7_TCA"] = city_row.sold7_TCA
-                area["forsaleadded7_SFH"] = city_row.forsaleadded7_SFH
-                area["forsaleadded7_TCA"] = city_row.forsaleadded7_TCA
-                area["sold"] = city_row.sold
-        else:
-            city_row = zonestatscachecontroller.get_zone_stats_by_name(city_name)
-            forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType
-                                                                              ).all()
-            print(f"{city_name}")
-            if city_row:
-                area["forsale"]=city_row.forsale
-                area["pending7_SFH"] = city_row.pending7_SFH
-                area["pending7_TCA"] = city_row.pending7_TCA
-                area["sold7_SFH"] = city_row.sold7_SFH
-                area["sold7_TCA"] = city_row.sold7_TCA
-                area["forsaleadded7_SFH"] = city_row.forsaleadded7_SFH
-                area["forsaleadded7_TCA"] = city_row.forsaleadded7_TCA
-                area["sold"] = city_row.sold
-    neighbourhoods_subs = []
-    cities = []
-    for n in locations:
-        neighbourhoods_subs.append(n["neighbourhood_sub"])
-        cities.append(n["city"])
-
-    return None, None, None, None, None
+    return customer, locations , locationzonenames
     # return customer, locations, cities, neighbourhoods_subs, forsalehomes
 
 
@@ -170,11 +180,11 @@ def send_email(customer_id):
     # Query the customer and their interests
     # customer = Customer.query.get(customer_id)
 
-    customer, locations, cities, neighbourhoods_subs, forsalehomes = gatherCustomerData(customer_id)
+    customer, locations, locationzonenames = gatherCustomerData(customer_id)
 
     if not customer:
         return "No customers found", 404
-    sendCustomerEmail(customer,locations, cities, neighbourhoods_subs, forsalehomes)
+    sendCustomerEmail(customer,locations)
 
     # Redirect back to the same interests page after sending email
     return redirect(url_for('customer_interest_bp.displayCustomerInterest', customer_id=customer_id))
@@ -187,7 +197,7 @@ def displayCustomerInterest():
     # Mock data for the example
     customer_id = request.args.get("customer_id", type=int, default=None)
 
-    customer, locations, cities, neighbourhoods_subs, forsalehomes = gatherCustomerData(customer_id)
+    customer, locations, locationzonenames= gatherCustomerData(customer_id)
 
     aicomments=[]
     selectedhomes=[]
@@ -212,8 +222,6 @@ def displayCustomerInterest():
     if not os.path.exists(map_html_path):
         map_html = create_map(
             geojson_features=geojson_features,
-            neighbourhoods_subs=neighbourhoods_subs,
-            cities=cities,
             map_html_path=str(map_html_path),
             map_image_path = str(map_image_path)
         )
@@ -228,8 +236,9 @@ def displayCustomerInterest():
                            customer=customer,
                            Webpage=True,
                            locations=locations,
-                           cities=cities,
-                           neighbourhoods_subs=neighbourhoods_subs,
+                           locationzonenames= locationzonenames,
+                           cities=[],
+                           neighbourhoods_subs=[],
                            geojson_features= WA_geojson_features,
                            homes_with_comments=homes_with_comments,
                            url_image_path=url_image_path
@@ -247,32 +256,26 @@ def displayCustomerInterest():
 #         return jsonify({"status": "success", "message": "City stats updated successfully."})
 #     except Exception as e:
 #         return jsonify({"status": "error", "message": str(e)}), 500
-@customer_interest_bp.route('/get_neighbourhood_details', methods=['GET','POST'])
-def get_neighbourhood_details():
+@customer_interest_bp.route('/get_zone_details', methods=['GET','POST'])
+def get_zone_details():
     data = request.get_json()
-    city = data.get('city')
+    zone_id = data.get('zone_id')
 
-    neighbourhood_sub = data.get('neighbourhood_sub')
-    if neighbourhood_sub=='None':
-        neighbourhood_sub = None
+    zone = washingtonzonescontroller.getZonebyID(zone_id)
 
-    zone_stats = zonestatscachecontroller.get_zone_stats_by_name(city, neighbourhood_sub)
+    zone_stats = zonestatscachecontroller.get_zone_stats_by_name(zone)
 
-    sold7_SFH = brieflistingcontroller.soldListingsByCity(city, 7, homeType=SW.SINGLE_FAMILY, neighbourhood_sub=neighbourhood_sub).all()
-    sold7_TCA = brieflistingcontroller.soldListingsByCity(city, 7,
-                                                          homeType=[SW.APARTMENT, SW.TOWNHOUSE, SW.CONDO],
-                                                          neighbourhood_sub=neighbourhood_sub).all()
+    sold7_SFH = brieflistingcontroller.listingsByZoneandStatus(zone, RECENTLYSOLD, 7, homeType=SW.SINGLE_FAMILY).all()
+    sold7_TCA = brieflistingcontroller.listingsByZoneandStatus(zone, RECENTLYSOLD, 7,
+                                                          homeType=[SW.APARTMENT, SW.TOWNHOUSE, SW.CONDO]).all()
 
-    pending7_SFH = brieflistingcontroller.pendingListingsByCity(city, 7, homeType=SW.SINGLE_FAMILY, neighbourhood_sub=neighbourhood_sub).all()
-    pending7_TCA = brieflistingcontroller.pendingListingsByCity(city, 7, homeType=[SW.APARTMENT, SW.TOWNHOUSE,SW.CONDO],
-                                                                neighbourhood_sub=neighbourhood_sub).all()
+    pending7_SFH = brieflistingcontroller.listingsByZoneandStatus(zone, PENDING, 7, homeType=SW.SINGLE_FAMILY).all()
+    pending7_TCA = brieflistingcontroller.listingsByZoneandStatus(zone, PENDING,7, homeType=[SW.APARTMENT, SW.TOWNHOUSE,SW.CONDO]).all()
     # # pending7_Other=brieflistingcontroller.pendingListingsByCity(city, 7).count(),
     #
-    forsaleadded7_SFH = brieflistingcontroller.forSaleListingsByCity(city, 7, homeType=SW.SINGLE_FAMILY,
-                                                                     neighbourhood_sub=neighbourhood_sub).all()
-    forsaleadded7_TCA = brieflistingcontroller.forSaleListingsByCity(city, 7,
-                                                                     homeType=[SW.APARTMENT, SW.TOWNHOUSE,SW.CONDO],
-                                                                     neighbourhood_sub=neighbourhood_sub).all()
+    forsaleadded7_SFH = brieflistingcontroller.listingsByZoneandStatus(zone, FOR_SALE, 7, homeType=SW.SINGLE_FAMILY).all()
+    forsaleadded7_TCA = brieflistingcontroller.listingsByZoneandStatus(zone, FOR_SALE, 7,
+                                                                     homeType=[SW.APARTMENT, SW.TOWNHOUSE,SW.CONDO]).all()
 
     sold7_SFH_homes = [brieflisting.to_dict() for brieflisting in sold7_SFH] if sold7_SFH else []
     sold7_TCA_homes = [brieflisting.to_dict() for brieflisting in sold7_TCA] if sold7_TCA else []
@@ -283,8 +286,7 @@ def get_neighbourhood_details():
 
     return jsonify({
         "html": render_template('components/neighbourhood_details_card.html',
-                                 city=city,
-                                 neighbourhood_sub=neighbourhood_sub,
+                                 zonename=zone.zonename(),
                                  recent_sales=zone_stats.sold,
                                  avg_price=zone_stats.avg_price if hasattr(zone_stats, 'avg_price') else "N/A",
                                  trends=zone_stats.trends if hasattr(zone_stats, 'trends') else "N/A",

@@ -79,11 +79,11 @@
     </style>
 
     <script>
-        function fetchNeighbourhoodDetails(city, neighbourhoodSub) {
-            fetch(`/customer_interest/get_neighbourhood_details`, {
+        function fetchZoneDetails(zone_id) {
+            fetch(`/customer_interest/get_zone_details`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({city: city, neighbourhood_sub: neighbourhoodSub})
+                body: JSON.stringify({zone_id: zone_id})
             })
                 .then(response => response.json())
                 .then(data => {
@@ -191,6 +191,7 @@
         var geojson_features = {{ geojson_features | tojson }};
         var neighbourhoodsSubs = {{ neighbourhoods_subs | tojson }};
         var cities = {{ cities | tojson }};
+        var locationzonenames = {{ locationzonenames | tojson }}
 
         console.log("Processing GeoJSON Data...");
 
@@ -214,18 +215,15 @@
                 );
             }
 
-            let zoneName = properties.CityName || properties.S_HOOD || "Unknown";
+            let zoneName = properties.S_HOOD || properties.CityName || "Unknown";
             let color = "gray";
             let shouldExtendBounds = false;
 
             // Determine color based on CityName or Neighborhood
-            if (properties.CityName && cities.includes(properties.CityName)) {
+            if (locationzonenames.includes(zoneName)) {
                 color = "orange";
                 shouldExtendBounds = true;
-            } else if (properties.S_HOOD && neighbourhoodsSubs.includes(properties.S_HOOD)) {
-                color = "orange";
-                shouldExtendBounds = true;
-            } else {
+            }  else {
                 color = "purple";
             }
 

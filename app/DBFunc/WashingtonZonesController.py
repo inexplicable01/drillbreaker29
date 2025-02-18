@@ -27,6 +27,13 @@ class WashingtonZones(db.Model):
     neighbourhood_sub = db.Column(db.String(255), nullable=True)
     City = db.Column(db.String(255), nullable=False)
     # geometry = db.Column(Geometry('POLYGON'), nullable=True)
+    def zonename(self):
+        if self.neighbourhood_sub is not None:
+            return f"{self.neighbourhood_sub}"
+        elif self.neighbourhood is not None:
+            return f"{self.neighbourhood}"
+        else:
+            return f"{self.City}"
 
     def __repr__(self):
         return (f"<WashingtonZones(id={self.id},neighbourhood={self.neighbourhood}, neighbourhood_sub={self.neighbourhood_sub}, City={self.City})>")
@@ -42,6 +49,9 @@ class WashingtonZonesController:
 
         WashingtonZones = self.WashingtonZones.query.all()
         return WashingtonZones
+
+    def getZonebyID(self,id):
+        return self.WashingtonZones.query.filter_by(id=id).first()
 
     def getneighbourhood(self,neighbourhood):
         return self.WashingtonZones.query.filter_by(neighbourhood_sub=neighbourhood).first()
@@ -162,6 +172,7 @@ class WashingtonZonesController:
                 WaCity = washingtoncitiescontroller.getCity(cityname)
                 if WaCity:
                     zone.city_id = WaCity.city_id
+                    zone.City =WaCity.City
                     db.session.merge(zone)
                     db.session.commit()
                 else:
