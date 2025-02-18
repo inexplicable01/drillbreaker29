@@ -1,19 +1,19 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
-from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,AreaReportGatherData
+from app.RouteModel.AreaReportModel import AreaReportModelRun,AreaReportGatherData
 from app.config import Config,SW
 from app.MapTools.MappingTools import WA_geojson_features, featureAreas
 soldhomes_bp = Blueprint('soldhomes_bp', __name__,url_prefix='/soldhomes')
-@soldhomes_bp.route('/update-graph', methods=['POST'])
-def update_graph():
-    # Extract parameters from the request
-    selectedhometypes = request.form.getlist('home_type')
-    selectedlocations = request.form.getlist('location')
-
-    # Generate the new graph based on the parameters
-    # _, _, _, plot_url, new_plot_url = AreaReport(selectedlocations, selectedhometypes)
-    plot_url = displayModel(selectedlocations, selectedhometypes)
-    # Return the new graph data
-    return jsonify({'new_plot_url': plot_url})
+# @soldhomes_bp.route('/update-graph', methods=['POST'])
+# def update_graph():
+#     # Extract parameters from the request
+#     selectedhometypes = request.form.getlist('home_type')
+#     selectedlocations = request.form.getlist('location')
+#
+#     # Generate the new graph based on the parameters
+#     # _, _, _, plot_url, new_plot_url = AreaReport(selectedlocations, selectedhometypes)
+#     plot_url = displayModel(selectedlocations, selectedhometypes)
+#     # Return the new graph data
+#     return jsonify({'new_plot_url': plot_url})
 
 # @soldhomes_bp.route('/areareport', methods=['GET','POST','PATCH'])
 # def AreaReport():

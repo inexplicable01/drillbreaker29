@@ -197,7 +197,7 @@ def displayCustomerInterest():
     # Mock data for the example
     customer_id = request.args.get("customer_id", type=int, default=None)
 
-    customer, locations, locationzonenames= gatherCustomerData(customer_id)
+    customer, locations, locationzonenames = gatherCustomerData(customer_id)
 
     aicomments=[]
     selectedhomes=[]
@@ -213,7 +213,6 @@ def displayCustomerInterest():
 
     # Define file paths
     output_dir = Path("app/static/maps")
-    output_dir.mkdir(parents=True, exist_ok=True)  # Ensure the folder exists
     map_html_path = output_dir / f"map_{customer.name}.html"
     map_image_path = output_dir / f"map_{customer.name}_screenshot.png"
     url_image_path= f"maps/map_{customer.name}_screenshot.png"
@@ -232,16 +231,19 @@ def displayCustomerInterest():
     # Step 3: Serve the map image in the template
     map_image_url = f"/static/maps/{map_image_path.name}"
 
+    housesoldpriceaverage, plot_url, plot_url2, soldhomes = AreaReportModelRun(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],7)
+
     return render_template('InterestReport/NeighbourhoodInterest.html',
                            customer=customer,
                            Webpage=True,
                            locations=locations,
                            locationzonenames= locationzonenames,
-                           cities=[],
-                           neighbourhoods_subs=[],
                            geojson_features= WA_geojson_features,
                            homes_with_comments=homes_with_comments,
-                           url_image_path=url_image_path
+                           url_image_path=url_image_path,
+                           plot_url=plot_url,
+                           soldhouses=soldhomes,
+                           selected_doz=7
                            )
 
 

@@ -1,6 +1,9 @@
-<h2>Sold Houses</h2>
-<img id="graphImage" src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
-<button onclick="updateGraph()">Update Graph</button>
+
+<div style="text-align: center;">
+    <h2>Sold Houses in the last {{ selected_doz }} days</h2>
+    <img id="graphImage" src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
+</div>
+{#<button onclick="updateGraph()">Update Graph</button>#}
 <table>
     <thead>
     <tr>
@@ -17,7 +20,7 @@
     <tbody>
     {% for house in soldhouses %}
         <tr>
-            <td><a href="https://www.zillow.com{{ house.hdpUrl }}" target="_blank">{{ house.streetAddress }}</a></td>
+            <td><a href="https://www.zillow.com{{ house.hdpUrl }}" target="_blank">{{ house.streetAddress }}, {{ house.city }} {{ house.zipcode }}</a></td>
             <td>{{ house.livingArea }}</td>
             <td>{{ house.bedrooms }}</td>
             <td>{{ house.bathrooms }}</td>

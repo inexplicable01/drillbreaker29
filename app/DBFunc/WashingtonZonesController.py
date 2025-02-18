@@ -62,10 +62,19 @@ class WashingtonZonesController:
                 .first())
         if wzone:
             return wzone
-        else:
-            return (self.WashingtonZones.query
-                    .filter_by(City=zone)
-                    .first())
+        wzone = (self.WashingtonZones.query
+                 .filter_by(City=zone)
+                 .first())
+        if wzone:
+            return wzone
+        city_result = (self.WashingtonCities.query
+                       .filter_by(City=zone)
+                       .first())
+        wzone = (self.WashingtonZones.query
+                       .filter_by(city_id=city_result.city_id)
+                       .first())
+        if wzone:
+            return wzone
 
     def get_zone_id_by_name(self,cityname,neighbourhood ):
         if neighbourhood is not None:
@@ -156,31 +165,40 @@ class WashingtonZonesController:
         citycount['General']=0
         for zone in WashingtonZones:
             # print(zone)
-            if zone.city:
-                print(zone.city.City)
-                if zone.city.City in citygeojson_features:
-                    S_HOOD = citygeojson_features[zone.city.City][citycount[zone.city.City]]['properties']['S_HOOD']
-                    print(S_HOOD)
-                    citycount[zone.city.City] +=1
-                    zone.neighbourhood_sub = S_HOOD
-                    db.session.merge(zone)
-                    db.session.commit()
+            try:
+                if zone.id<241:
+                    continue
+                    # print(zone.city.City)
+                    # if zone.city.City in citygeojson_features:
+                    #     S_HOOD = citygeojson_features[zone.city.City][citycount[zone.city.City]]['properties']['S_HOOD']
+                    #     print(S_HOOD)
+                    #     citycount[zone.city.City] +=1
+                    #     zone.neighbourhood_sub = S_HOOD
+                    #     db.session.merge(zone)
+                    #     db.session.commit()
 
-            else:
-                cityname = WA_geojson_features[citycount['General']]['properties']['CityName']
-                print(cityname)
-                WaCity = washingtoncitiescontroller.getCity(cityname)
-                if WaCity:
-                    zone.city_id = WaCity.city_id
-                    zone.City =WaCity.City
-                    db.session.merge(zone)
-                    db.session.commit()
                 else:
-                    zone.neighbourhood = cityname
-                    db.session.merge(zone)
-                    db.session.commit()
-                    print("General")
-                citycount['General'] +=1
+                    cityname = WA_geojson_features[citycount['General']]['properties']['CityName']
+                    print(cityname)
+                    WaCity = washingtoncitiescontroller.getCity(cityname)
+                    if WaCity:
+                        zone.city_id = WaCity.city_id
+                        zone.City =WaCity.City
+                        zone.neighbourhood = None
+                        db.session.merge(zone)
+                        db.session.commit()
+                    else:
+                        zone.neighbourhood = cityname
+                        zone.city_id = None
+                        zone.City = None
+                        db.session.merge(zone)
+                        db.session.commit()
+                        # print("General")
+                    citycount['General'] +=1
+            except SQLAlchemyError as e:
+                print("Rolling back due to: ", str(e))
+                db.session.rollback()  # Explicitly rollback if an error occurs
+
 
 
 

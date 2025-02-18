@@ -1,0 +1,107 @@
+    <div id="map"></div>
+
+    <!-- Include Leaflet and jQuery -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        // Initialize Leaflet Map
+        var map = L.map('map');
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Function to handle region click
+        function handleClick(region) {
+            document.getElementById('label').innerHTML = region;
+
+            $.ajax({
+                url: '/clickablemap/process',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({region: region}),
+                success: function (response) {
+                    document.getElementById('result').innerHTML = response.message;
+                },
+                error: function (error) {
+                    console.error('Error:', error);
+                }
+            });
+        }
+
+        // Convert GeoJSON data
+        var geojson_features = {{ geojson_features | tojson }};
+        {#var neighbourhoodsSubs = {{ neighbourhoods_subs | tojson }};#}
+        {#var cities = {{ cities | tojson }};#}
+        var locationzonenames = {{ locationzonenames | tojson }}
+
+        console.log("Processing GeoJSON Data...");
+
+        // Create a bounding box for fitting the map
+        var bounds = L.latLngBounds();
+
+        // Iterate over each GeoJSON feature
+        geojson_features.forEach(feature => {
+            let { geometry, properties } = feature;
+
+            // Ensure correct coordinate order (Leaflet requires [lat, lon])
+            if (geometry.type === "Polygon") {
+                geometry.coordinates = geometry.coordinates.map(ring =>
+                    ring.map(coord => [coord[1], coord[0]])
+                );
+            } else if (geometry.type === "MultiPolygon") {
+                geometry.coordinates = geometry.coordinates.map(polygon =>
+                    polygon.map(ring =>
+                        ring.map(coord => [coord[1], coord[0]])
+                    )
+                );
+            }
+
+            let zoneName = properties.S_HOOD || properties.CityName || "Unknown";
+            let color = "gray";
+            let shouldExtendBounds = false;
+
+            // Determine color based on CityName or Neighborhood
+            if (locationzonenames.includes(zoneName)) {
+                color = "orange";
+                shouldExtendBounds = true;
+            }  else {
+                color = "purple";
+            }
+
+            // Create the polygon layer
+            let poly;
+            if (geometry.type === "Polygon") {
+                poly = L.polygon(geometry.coordinates, { color }).addTo(map);
+            } else if (geometry.type === "MultiPolygon") {
+                geometry.coordinates.forEach(polygon => {
+                    poly = L.polygon(polygon, { color }).addTo(map);
+                });
+            }
+
+            // Extend bounds only if it's an orange area
+            if (shouldExtendBounds && poly) {
+                bounds.extend(poly.getBounds());
+            }
+
+            // Bind tooltip (Always visible)
+            if (poly) {
+                poly.bindTooltip(zoneName, {
+                    permanent: true,
+                    direction: "center",
+                    className: "zone-label"
+                }).openTooltip();
+
+                poly.on('click', () => handleClick(properties.L_HOOD + ',' + properties.S_HOOD));
+            }
+        });
+
+        // Adjust map view based on bounds (only for orange areas)
+        if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [20, 20] });
+        } else {
+            map.setView([47.6062, -122.3321], 10); // Default to Seattle if no orange areas
+        }
+    </script>

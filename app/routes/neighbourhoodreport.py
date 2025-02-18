@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, redirect, url_for, request,jsonify
 # from app.RouteModel.EmailModel import sendEmailwithNewListing
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.RouteModel.NeighbourhoodReport import NeighbourhoodReportDetails
-from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun
+# from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun
 
 neighbourhoodreport_bp = Blueprint('neighbourhoodreport', __name__, url_prefix='/neighbourhoodreport')
 

@@ -5,7 +5,6 @@ from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from flask import Blueprint, render_template, redirect, url_for, request,jsonify
 # from app.RouteModel.EmailModel import sendEmailwithNewListing
 from app.DBFunc.BriefListingController import brieflistingcontroller
-from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,ListAllNeighhourhoodsByCities
 from app.config import Config,SW
 zonestats_bp = Blueprint('zonestats_interesting', __name__, url_prefix='/zonestats')
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
