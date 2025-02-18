@@ -15,7 +15,7 @@ from .email_monitor import emailmonitorbp
 from .rentalhomes import rental_bp
 from .fsbo import fsbo_bp
 from .statsByZone import zonestats_bp
-from .customerInterestNeighbourhood import customer_interest_bp
+from .customerzoneroute import customer_interest_bp
 
 def register_blueprints(app: Flask):
     app.register_blueprint(alert_bp)

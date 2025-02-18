@@ -3,8 +3,8 @@ from openai import OpenAI
 from flask import Blueprint, request, jsonify
 from dotenv import load_dotenv
 import json
-# import customerneighbourhoodinterestcontroller
-from app.DBFunc.CustomerNeighbourhoodInterestController import customerneighbourhoodinterestcontroller
+# import customerzonecontroller
+from app.DBFunc.CustomerZoneController import customerzonecontroller
 from app.DBFunc.BriefListingController import brieflistingcontroller
 
 from app.DBFunc.BriefListingController import brieflistingcontroller

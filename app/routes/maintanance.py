@@ -7,7 +7,7 @@ from app.config import Config,SW
 #from flask import Flask, render_template, make_response
 # from weasyprint import HTML
 from app.MapTools.MappingTools import WA_geojson_features
-from app.DBFunc.CustomerNeighbourhoodInterestController import customerneighbourhoodinterestcontroller
+from app.DBFunc.CustomerZoneController import customerzonecontroller
 from app.RouteModel.AIModel import AIModel
 from app.DBFunc.AIListingController import ailistingcontroller
 
@@ -288,8 +288,8 @@ def updatefsbo():
 @maintanance_bp.route('/clients_listing_Recommendation', methods=['patch'])
 def clients_listing_Recommendation():
     customer_id = 3
-    customer, locations = customerneighbourhoodinterestcontroller.get_customer_neighbourhood_interest(customer_id)
-    customer = customerneighbourhoodinterestcontroller.get_customer(customer_id)
+    customer, locations = customerzonecontroller.get_customer_zone(customer_id)
+    customer = customerzonecontroller.get_customer(customer_id)
 
     forsalehomes=[]
     margin=100
@@ -367,6 +367,16 @@ def updateathing3():
 
     return {"Seattle Neighbourhood_subs updated":'listings.__len__()'}, 200
 
+from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
+from app.MapTools.MappingTools import citygeojson_features,WA_geojson_features
+@maintanance_bp.route('/updateathing4', methods=['post'])
+def updateathing4():
+    # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
+    # iter_value = request.args.get('iter')
+    washingtonzonescontroller.repair_from_geojson(citygeojson_features,WA_geojson_features, washingtoncitiescontroller)
+
+
+    return {"Seattle Neighbourhood_subs updated":'listings.__len__()'}, 200
 
 # @maintanance_bp.route('/export-pdf',methods=['get'])
 # def export_pdf():

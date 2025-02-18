@@ -22,7 +22,7 @@ class Customer(db.Model):
     maxsqft = db.Column(db.Integer, nullable=True)
 
 
-    interests = db.relationship('CustomerNeighbourhoodInterest', back_populates='customer')
+    interests = db.relationship('CustomerZone', back_populates='customer')
 
 
     def __str__(self):

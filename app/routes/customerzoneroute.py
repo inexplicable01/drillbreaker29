@@ -8,7 +8,7 @@ from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,ListAllNeighhourhoodsByCities
 from app.config import Config,SW
 customer_interest_bp = Blueprint('customer_interest_bp', __name__, url_prefix='/customer_interest')
-from app.DBFunc.CustomerNeighbourhoodInterestController import customerneighbourhoodinterestcontroller
+from app.DBFunc.CustomerZoneController import customerzonecontroller
 from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from app.DBFunc.AIListingController import ailistingcontroller
 from app.DBFunc.CustomerController import customercontroller
@@ -112,21 +112,23 @@ def retire_zpid():
 
 
 def gatherCustomerData(customer_id):
-    customer_data, locations = customerneighbourhoodinterestcontroller.get_customer_neighbourhood_interest(customer_id)
-    customer = customerneighbourhoodinterestcontroller.get_customer(customer_id)
+    customer = customerzonecontroller.get_customer_zone(customer_id)
+    # customer = customerzonecontroller.get_customer(customer_id)
 
     if not customer:
         return None, None, None, None, None
     homeType=None
     forsalehomes=[]#SW.SINGLE_FAMILY
     # Loop through neighborhoods to extract data when city is 'Seattle'
-    for area in locations:
-        city_name = area["city"]  # Assuming `city` is in the returned dictionary
-
+    for customerzone in customer.zones:
+        city_name = customerzone.zone.City
+        # city_name = area["city"]  # Assuming `city` is in the returned dictionary
+        print(customerzone.zone.__str__())
+        city_row = zonestatscachecontroller.get_zone_stats_by_name(city_name, area["neighbourhood_sub"])
         if city_name == "Seattle":
             # Query the database to fetch the full row for this neighborhood
-            print(f"{city_name}, {area['neighbourhood_sub']}")
-            city_row = zonestatscachecontroller.get_zone_stats_by_name(city_name,area["neighbourhood_sub"])
+
+
             forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType,
                                                                              neighbourhood_sub=area["neighbourhood_sub"]).all()
             if city_row:
@@ -158,7 +160,8 @@ def gatherCustomerData(customer_id):
         neighbourhoods_subs.append(n["neighbourhood_sub"])
         cities.append(n["city"])
 
-    return customer, locations, cities, neighbourhoods_subs, forsalehomes
+    return None, None, None, None, None
+    # return customer, locations, cities, neighbourhoods_subs, forsalehomes
 
 
 
@@ -302,8 +305,8 @@ def evaluate_listing():
     customer_id=3
     data = request.json
     zpid = data.get("zpid")
-    customer_data, locations = customerneighbourhoodinterestcontroller.get_customer_neighbourhood_interest(3)
-    customer = customerneighbourhoodinterestcontroller.get_customer(customer_id)
+    customer_data, locations = customerzonecontroller.get_customer_zone(3)
+    customer = customerzonecontroller.get_customer(customer_id)
 
     existing_comment = ailistingcontroller.check_existing_evaluation(customer_id, zpid)
 

@@ -408,15 +408,12 @@ class BriefListingController():
 
         return cities
 
-    def latestListingTime(self,city=None, neighbourhood_sub=None):
+    def latestListingTime(self,zone=None):
         query = BriefListing.query
 
         # Apply city filter if provided
-        if city:
-            query = query.filter(BriefListing.city == city)
-
-        if neighbourhood_sub:
-            query = query.filter(BriefListing.neighbourhood_sub == neighbourhood_sub)
+        if zone:
+            query = query.filter(BriefListing.zone_id == zone.id)
 
         # Get the latest listtime from the filtered results
         latest_time = query.with_entities(
@@ -536,6 +533,30 @@ class BriefListingController():
         # Execute the query with all filters applied at once
         return BriefListing.query.filter(*filters)
 
+    # +++++++++++++++++ZoneStarts
+    def listingsByZoneandStatus(self, zone, homeStatus, fromdays, homeType=None, maxprice=None,
+                              minprice=None ):
+        fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
+        # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
+
+        filters = [
+            BriefListing.homeStatus == homeStatus,
+            BriefListing.zone_id == zone.id,
+            BriefListing.listtime >= fromdays_ago
+        ]
+        # Add optional parameters dynamically
+        if homeType:
+            filters.append(
+                BriefListing.homeType.in_(homeType) if isinstance(homeType,
+                                                                  list) else BriefListing.homeType == homeType)
+        if maxprice:
+            filters.append(BriefListing.price <= maxprice)
+        if minprice:
+            filters.append(BriefListing.price >= minprice)
+        # Execute the query with all filters applied at once
+        return BriefListing.query.filter(*filters)
+
+# +++++++++++++++++ZoneEnds
     def getALLlistings(self):
         """
         Retrieve all listings from the BriefListing table.

@@ -2,6 +2,9 @@ from app.DBModels.Customer import Customer
 from app.DBModels.BriefListing import BriefListing
 from app.DBModels.CustomerZpid import CustomerZpid
 from app.DBFunc.WashingtonZonesController import WashingtonZones
+from app.DBFunc.CustomerZoneController import CustomerZone
+from app.DBFunc.ZoneStatsCacheController import ZoneStatsCache
+from app.DBFunc.WashingtonCitiesController import WashingtonCities
 from app import db
 
 # Define relationships explicitly
@@ -10,6 +13,8 @@ Customer.customerzpid_array = db.relationship(
     back_populates="customer",
     cascade="all, delete-orphan"
 )
+
+Customer.zones = db.relationship('CustomerZone', back_populates='customer')
 
 BriefListing.customers = db.relationship(
     'CustomerZpid',
@@ -38,3 +43,17 @@ WashingtonZones.brief_listings = db.relationship(
     back_populates="zone",
     lazy=True
 )
+
+WashingtonZones.city = db.relationship('WashingtonCities', back_populates='interests')
+#
+WashingtonZones.interests = db.relationship('CustomerZone', back_populates='zone')
+
+WashingtonZones.zone_stats_cache = db.relationship('ZoneStatsCache', back_populates='zone')
+#
+CustomerZone.zone = db.relationship("WashingtonZones",   back_populates="interests")
+
+CustomerZone.customer = db.relationship('Customer', back_populates='interests')
+
+ZoneStatsCache.zone = db.relationship('WashingtonZones', back_populates='zone_stats_cache')
+
+WashingtonCities.interests = db.relationship('WashingtonZones', back_populates='city')

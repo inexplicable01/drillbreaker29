@@ -1,6 +1,8 @@
 
 
 from sqlalchemy.sql import func
+
+from app.DBFunc.WashingtonCitiesController import WashingtonCities
 from app.extensions import db
 from datetime import datetime, timedelta
 from app.config import Config
@@ -13,6 +15,7 @@ from geoalchemy2 import Geometry
 from app.extensions import db
 from geoalchemy2.shape import from_shape
 from shapely.geometry import shape
+from sqlalchemy import or_
 
 class WashingtonZones(db.Model):
     __tablename__ = 'WashingtonZones'
@@ -24,8 +27,6 @@ class WashingtonZones(db.Model):
     neighbourhood_sub = db.Column(db.String(255), nullable=True)
     City = db.Column(db.String(255), nullable=False)
     # geometry = db.Column(Geometry('POLYGON'), nullable=True)
-    # brief_listings = db.relationship('BriefListing', back_populates='zone', lazy=True)
-    interests = db.relationship('CustomerNeighbourhoodInterest', back_populates='neighbourhood')
 
     def __repr__(self):
         return (f"<WashingtonZones(id={self.id},neighbourhood={self.neighbourhood}, neighbourhood_sub={self.neighbourhood_sub}, City={self.City})>")
@@ -35,6 +36,7 @@ class WashingtonZonesController:
     def __init__(self):
         self.db = db
         self.WashingtonZones = WashingtonZones
+        self.WashingtonCities = WashingtonCities
 
     def getlist(self):
 
@@ -64,9 +66,24 @@ class WashingtonZonesController:
                 return zone
 
         # If no neighbourhood match, try to retrieve by city name
-        return (self.WashingtonZones.query
-                .filter(self.WashingtonZones.City.ilike(f"%{cityname.strip()}%"))  # Fuzzy match on city
-                .first())
+        city_result = (self.WashingtonCities.query
+                       .filter(self.WashingtonCities.City.ilike(f"%{cityname.strip()}%"))
+                       .first())
+        zone_result = (self.WashingtonZones.query
+                       .filter_by(city_id=city_result.city_id)
+                       .first())
+        if zone_result:
+            return zone_result
+
+        # If no city match, search WashingtonZones for a match on neighbourhood
+        zone_result = (self.WashingtonZones.query
+                       .filter(self.WashingtonZones.neighbourhood.ilike(f"%{cityname.strip()}%"))
+                       .first())
+        if zone_result:
+            return zone_result
+
+        # If neither are found, return None
+        return None
 
     def update_geometry_from_geojson(self, geojson_features):
         """
@@ -120,6 +137,39 @@ class WashingtonZonesController:
         except SQLAlchemyError as commit_error:
             db.session.rollback()
             print(f"Error committing changes to the database: {str(commit_error)}")
+
+    def repair_from_geojson(self, citygeojson_features, WA_geojson_features, washingtoncitiescontroller):
+        WashingtonZones = self.WashingtonZones.query.all()
+        citycount={}
+        for key,value in citygeojson_features.items():
+            citycount[key]=0
+        citycount['General']=0
+        for zone in WashingtonZones:
+            # print(zone)
+            if zone.city:
+                print(zone.city.City)
+                if zone.city.City in citygeojson_features:
+                    S_HOOD = citygeojson_features[zone.city.City][citycount[zone.city.City]]['properties']['S_HOOD']
+                    print(S_HOOD)
+                    citycount[zone.city.City] +=1
+                    zone.neighbourhood_sub = S_HOOD
+                    db.session.merge(zone)
+                    db.session.commit()
+
+            else:
+                cityname = WA_geojson_features[citycount['General']]['properties']['CityName']
+                print(cityname)
+                WaCity = washingtoncitiescontroller.getCity(cityname)
+                if WaCity:
+                    zone.city_id = WaCity.city_id
+                    db.session.merge(zone)
+                    db.session.commit()
+                else:
+                    zone.neighbourhood = cityname
+                    db.session.merge(zone)
+                    db.session.commit()
+                    print("General")
+                citycount['General'] +=1
 
 
 

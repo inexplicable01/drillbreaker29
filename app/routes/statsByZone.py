@@ -42,7 +42,7 @@ def zonestats():
 @zonestats_bp.route('/update', methods=['POST'])
 def update_zone_stats():
     try:
-        cities = washingtoncitiescontroller.getallcities()
+        # cities = washingtoncitiescontroller.getallcities()
         zones =washingtonzonescontroller.getlist()
         zonestatscachecontroller.refresh_zone_stats(zones)
         return jsonify({"status": "success", "message": "City stats updated successfully."})

@@ -1,4 +1,4 @@
-from app.DBModels.WashingtonCities import WashingtonCities
+# from app.DBModels.WashingtonCities import WashingtonCities
 from sqlalchemy.sql import func, or_, distinct
 from app.extensions import db
 from app.useful_func import safe_float_conversion,safe_int_conversion,print_and_log
@@ -9,6 +9,27 @@ import decimal
 from sqlalchemy import distinct
 from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
 
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, Double,Float, String, Text, BigInteger, DateTime, Numeric
+
+# Base = declarative_base()
+from app.extensions import db
+
+class WashingtonCities(db.Model):
+    __tablename__ = 'WashingtonCities'
+
+    City = Column(Text)
+    city_id= Column(Integer, primary_key=True)
+    county = Column(Text)
+
+    # interests = db.relationship('CustomerZone', back_populates='WashingtonCities')
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+    def __repr__(self):
+        return (f"<WashingtonCities(city={self.City}, city_id={self.city_id}, county={self.county}")
+
 
 class WashingtonCitiesController():
 
@@ -17,9 +38,9 @@ class WashingtonCitiesController():
         self.WashingtonCities = WashingtonCities
 
     def getallcities(self):
-        return [c.city for c in WashingtonCities.query.all()]
+        return [c.City for c in WashingtonCities.query.all()]
 
-    def getCity(self, city):
-        return self.WashingtonCities.query.filter_by(City=city).first()
+    def getCity(self, City):
+        return self.WashingtonCities.query.filter_by(City=City).first()
 
 washingtoncitiescontroller = WashingtonCitiesController()
