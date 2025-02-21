@@ -13,9 +13,12 @@ from sqlalchemy.exc import SQLAlchemyError
 # Base = declarative_base()
 from geoalchemy2 import Geometry
 from app.extensions import db
-from geoalchemy2.shape import from_shape
-from shapely.geometry import shape
-from sqlalchemy import or_
+from geoalchemy2.shape import from_shape, to_shape
+
+from shapely.geometry import shape, mapping
+from shapely.wkt import loads
+import json
+
 
 class WashingtonZones(db.Model):
     __tablename__ = 'WashingtonZones'
@@ -26,6 +29,8 @@ class WashingtonZones(db.Model):
     neighbourhood = db.Column(db.String(255), nullable=False)
     neighbourhood_sub = db.Column(db.String(255), nullable=True)
     City = db.Column(db.String(255), nullable=False)
+
+    geometry = db.Column(Geometry("MULTIPOLYGON", srid=4326), nullable=True)
     # geometry = db.Column(Geometry('POLYGON'), nullable=True)
     def zonename(self):
         if self.neighbourhood_sub is not None:
@@ -34,6 +39,27 @@ class WashingtonZones(db.Model):
             return f"{self.neighbourhood}"
         else:
             return f"{self.City}"
+
+    def get_polygon_string(self):
+        """ Returns the geometry as a formatted polygon string """
+        if not self.geometry:
+            return None  # No geometry exists
+
+        # Convert WKBElement to Shapely geometry
+        shapely_geom = to_shape(self.geometry)
+
+        # Extract coordinates
+        if shapely_geom.geom_type == "Polygon":
+            polygon_coords = shapely_geom.exterior.coords  # Get outer boundary
+        elif shapely_geom.geom_type == "MultiPolygon":
+            polygon_coords = shapely_geom.geoms[0].exterior.coords  # Get first polygon in MultiPolygon
+        else:
+            return None  # Not a valid polygon
+
+        # Convert to formatted string: "lat lon, lat lon, lat lon"
+        polygon_string = ", ".join(f"{lat} {lon}" for lon, lat in polygon_coords)
+
+        return polygon_string
 
     def __repr__(self):
         return (f"<WashingtonZones(id={self.id},neighbourhood={self.neighbourhood}, neighbourhood_sub={self.neighbourhood_sub}, City={self.City})>")
@@ -83,23 +109,27 @@ class WashingtonZonesController:
                     .first())
             if zone:
                 return zone
-
-        # If no neighbourhood match, try to retrieve by city name
-        city_result = (self.WashingtonCities.query
-                       .filter(self.WashingtonCities.City.ilike(f"%{cityname.strip()}%"))
-                       .first())
-        zone_result = (self.WashingtonZones.query
-                       .filter_by(city_id=city_result.city_id)
-                       .first())
-        if zone_result:
-            return zone_result
-
         # If no city match, search WashingtonZones for a match on neighbourhood
         zone_result = (self.WashingtonZones.query
                        .filter(self.WashingtonZones.neighbourhood.ilike(f"%{cityname.strip()}%"))
                        .first())
         if zone_result:
             return zone_result
+
+        # If no neighbourhood match, try to retrieve by city name
+        city_result = (self.WashingtonCities.query
+                       .filter(self.WashingtonCities.City.ilike(f"%{cityname.strip()}%"))
+                       .first())
+        if city_result:
+            zone_result = (self.WashingtonZones.query
+                           .filter_by(city_id=city_result.city_id)
+                           .first())
+            if zone_result:
+                return zone_result
+
+        return None
+
+
 
         # If neither are found, return None
         return None
@@ -123,28 +153,36 @@ class WashingtonZonesController:
                 geoalchemy_geom = from_shape(shapely_geom, srid=4326)  # WGS84 SRID
 
                 # Get neighborhood name and sub-neighborhood
-                neighborhood_name = properties.get("Name") or properties.get("neighborhood") or "Unknown Neighborhood"
-                sub_neighborhood_name = properties.get("SubName") or properties.get("sub_neighborhood", None)
-
-                # Check if the neighborhood already exists
-                existing_zone = self.WashingtonZones.query.filter_by(
-                    neighbourhood=neighborhood_name,
-                    neighbourhood_sub=sub_neighborhood_name,
-                ).first()
-
-                if existing_zone:
-                    # Update the existing record's geometry
-                    existing_zone.geometry = geoalchemy_geom
-                    print(f"Updated geometry for neighborhood: {neighborhood_name}")
+                # neighborhood_name = properties.get("Name") or properties.get("neighborhood") or "Unknown Neighborhood"
+                # sub_neighborhood_name = properties.get("SubName") or properties.get("sub_neighborhood", None)
+                if 'S_HOOD' in properties:
+                    # Check if the neighborhood already exists
+                    existing_zone = self.WashingtonZones.query.filter_by(
+                        neighbourhood_sub=properties['S_HOOD']
+                    ).first()
                 else:
-                    # Create a new record with geometry
-                    new_zone = WashingtonZones(
-                        neighbourhood=neighborhood_name,
-                        neighbourhood_sub=sub_neighborhood_name,
-                        geometry=geoalchemy_geom,
-                    )
-                    db.session.add(new_zone)
-                    print(f"Added new neighborhood with geometry: {neighborhood_name}")
+                    existing_zone = self.WashingtonZones.query.filter_by(
+                        City=properties['CityName']
+                    ).first()
+                    if existing_zone is None:
+                        existing_zone = self.WashingtonZones.query.filter_by(
+                            neighbourhood=properties['CityName']
+                        ).first()
+
+                print(existing_zone)
+
+                existing_zone.geometry = geoalchemy_geom
+                db.session.merge(existing_zone)
+                #     print(f"Updated geometry for neighborhood: {neighborhood_name}")
+                # else:
+                #     # Create a new record with geometry
+                #     new_zone = WashingtonZones(
+                #         neighbourhood=neighborhood_name,
+                #         neighbourhood_sub=sub_neighborhood_name,
+                #         geometry=geoalchemy_geom,
+                #     )
+                #     db.session.add(new_zone)
+                #     print(f"Added new neighborhood with geometry: {neighborhood_name}")
 
             except SQLAlchemyError as e:
                 print(f"Error updating geometry for feature: {feature}. Error: {str(e)}")
@@ -200,7 +238,35 @@ class WashingtonZonesController:
                 db.session.rollback()  # Explicitly rollback if an error occurs
 
 
+    def getGeometryofZone(self,zoneid):
+        zone = self.WashingtonZones.query.filter_by(id=zoneid).first()
+        if zone:
+            shape_geom = loads(zone.geometry)  # Convert WKT to Shapely geometry
+            print(shape_geom)
 
+    def getallGeoJson(self):
+        geojson_features = []
+        zones = self.WashingtonZones.query.all()
+        for zone in zones:
+            if zone.geometry:  # Ensure geometry is not NULL
+                geojson_geom = json.loads(json.dumps(mapping(to_shape(zone.geometry))))
+                if zone.neighbourhood_sub:
+                    geojson_features.append({
+                        "type": "Feature",
+                        "properties": {
+                            "S_HOOD": zone.neighbourhood_sub,
+                        },
+                        "geometry": geojson_geom  # Convert string to JSON
+                    })
+                else:
+                    geojson_features.append({
+                        "type": "Feature",
+                        "properties": {
+                            "CityName": zone.City if zone.City else zone.neighbourhood
+                        },
+                        "geometry": geojson_geom # Convert string to JSON
+                    })
+        return geojson_features
 
 
 washingtonzonescontroller = WashingtonZonesController()

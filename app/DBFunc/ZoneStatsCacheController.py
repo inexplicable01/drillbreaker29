@@ -47,25 +47,8 @@ class ZoneStatsCacheController:
         """Retrieve all city statistics from the cache."""
         return self.db.session.query(self.ZoneStatsCache).all()
 
-    def get_zone_stats_by_name(self, zone):
+    def get_zone_stats_by_zone(self, zone):
         return self.db.session.query(self.ZoneStatsCache).filter_by(zone_id=zone.id).first()
-        """Retrieve city stats for a given CustomerZone object."""
-        # if city == "Seattle":  # Assuming city_name is always Seattle
-        #     if neighbourhood_sub is None:
-        #         return self.db.session.query(self.ZoneStatsCache).filter_by(
-        #             neighbourhood_sub=neighbourhood_sub
-        #         ).first()
-        #     else:
-        #         return self.db.session.query(self.ZoneStatsCache).filter_by(
-        #             city_name=f"{city}_{neighbourhood_sub}"
-        #         ).first()
-        # else:
-        #     return self.db.session.query(self.ZoneStatsCache).filter_by(
-        #         city_name=f"{city}"
-        #     ).first()
-
-
-
 
     def update_zone_stats(self, zone_id, sold, pending,pending1,pending7_SFH,pending7_TCA,
                           forsale,forsaleadded7_SFH,forsaleadded7_TCA,
@@ -103,6 +86,7 @@ class ZoneStatsCacheController:
 
         for zone in zones:
             # city = zone#####continue here
+
             try:
                 updated_time = datetime.fromtimestamp(
                     brieflistingcontroller.latestListingTime(zone)

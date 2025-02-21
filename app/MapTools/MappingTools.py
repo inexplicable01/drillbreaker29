@@ -85,14 +85,61 @@ def get_zone(lat, lon, CityName):
             polygon = shape(feature['geometry'])
             if polygon.contains(point):
                 return feature['properties']['CityName'], feature['properties']['S_HOOD']
+        for bigcity in citywithneighbourhoods:
+            if bigcity ==CityName:
+                continue
+            for feature in citygeojson_features[bigcity]:
+                polygon = shape(feature['geometry'])
+                if polygon.contains(point):
+                    return feature['properties']['CityName'], feature['properties']['S_HOOD']
+        for feature in WA_geojson_data['features']:
+            polygon = shape(feature['geometry'])
+            if polygon.contains(point):
+                return feature['properties']['CityName'], None
     else:
         for feature in WA_geojson_data['features']:
             polygon = shape(feature['geometry'])
             if polygon.contains(point):
                 return feature['properties']['CityName'], None
+        for bigcity in citywithneighbourhoods:
+            for feature in citygeojson_features[bigcity]:
+                polygon = shape(feature['geometry'])
+                if polygon.contains(point):
+                    return feature['properties']['CityName'], feature['properties']['S_HOOD']
     return None, None
 
+def get_zone_as_array(brieflistinglist, washingtonzonescontroller):
+    for brieflisting in brieflistinglist:
+        brieflisting.outsideZones=True
+    for bigcity in citywithneighbourhoods:
+        for feature in citygeojson_features[bigcity]:
+            polygon = shape(feature['geometry'])
+            zone = washingtonzonescontroller.get_zone_id_by_name(feature['properties']['CityName'], feature['properties']['S_HOOD'])
+            for brieflisting in brieflistinglist:
+                point = Point(brieflisting.longitude, brieflisting.latitude)
+                if polygon.contains(point):
+                    brieflisting.zone_id = zone.id
+                    brieflisting.outsideZones=False
+                    print(zone)
+                    print(brieflisting)
+    for feature in WA_geojson_data['features']:
+        polygon = shape(feature['geometry'])
+        zone = washingtonzonescontroller.get_zone_id_by_name(feature['properties']['CityName'],
+                                                             None)
+        for brieflisting in brieflistinglist:
+            point = Point(brieflisting.longitude, brieflisting.latitude)
+            if polygon.contains(point):
+                brieflisting.zone_id = zone.id
+                brieflisting.outsideZones = False
+                print(zone)
+                print(brieflisting)
 
+
+
+
+
+
+    return None, None
 
 def get_neighborhood_in_Seattle(lat, lon):
     point = Point(lon, lat)

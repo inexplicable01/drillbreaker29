@@ -8,7 +8,7 @@ from app.config import Config , RECENTLYSOLD,FOR_SALE, PENDING
 import decimal
 from sqlalchemy import distinct
 from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
-from app.MapTools.MappingTools import findNeighbourhoodfromCoord
+from app.MapTools.MappingTools import findNeighbourhoodfromCoord, get_zone_as_array
 from app.DBModels.FSBOStatus import FSBOStatus
 from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID
 import traceback
@@ -98,6 +98,7 @@ class BriefListingController():
                 # print(brieflisting.ref_address())
                 existing_listing = self.db.session.query(BriefListing).filter_by(zpid=brieflisting.zpid).first()
                 if existing_listing:
+
                     needs_update = False
                     updatereason=''
                     gapis_neighbourhood = get_neighborhood(brieflisting.latitude, brieflisting.longitude)
@@ -157,6 +158,7 @@ class BriefListingController():
                         # Since merge is used, it will update if the primary key exists, otherwise insert.
                         self.db.session.merge(brieflisting)
                         changebrieflistingarr.append(brieflisting)
+
                     else:
                         oldbrieflistingarr.append(brieflisting)
                         print('No updates necessary for ' + brieflisting.streetAddress)
@@ -177,6 +179,11 @@ class BriefListingController():
                 print_and_log(traceback.format_exc())  # Outputs the full stack trace as a string
                 self.db.session.rollback()
         return changebrieflistingarr,oldbrieflistingarr
+
+    def simplebrieflistinglistupdate(self,brieflistinglist):
+        for brieflisting in brieflistinglist:
+            self.db.session.merge(brieflisting)
+        self.db.session.commit()
 
     def UpdateBriefListing(self,brieflisting):
         try:
@@ -440,6 +447,14 @@ class BriefListingController():
             print(brieflisting.latitude, brieflisting.longitude)
             print(brieflisting.__str__())
 
+    def setZoneForBriefListingList(self,brieflistinglist):
+        try:
+            get_zone_as_array(brieflistinglist, washingtonzonescontroller)
+            self.simplebrieflistinglistupdate(brieflistinglist)
+
+        except Exception as e:
+            print(e)
+
     def getListingsWithStatus(self, fromdays, homeStatus):  #pendingListings(self, fromdays):
         days_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
@@ -617,9 +632,11 @@ class BriefListingController():
         try:
             # Query for listings where zone_id is NULL and dateSold is greater than 1730400000000
             first_ten_listings = (self.BriefListing.query
-                                  # .filter(self.BriefListing.zone_id == None)
-                                  # .filter(self.BriefListing.outsideZones == False)
-                                  .filter(self.BriefListing.listtime > 1730400000000)
+                                  # .filter(self.BriefListing.city == 'Seattle')
+                                  # .filter(self.BriefListing.homeStatus == FOR_SALE)
+                                  .filter(self.BriefListing.zone_id.is_(None))
+                                  .filter(self.BriefListing.outsideZones== 0)
+                                  # .filter(self.BriefListing.listtime > 1730400000000)
                                   .limit(X)  # Limit to 10 instead of 100
                                   .all())
             return first_ten_listings

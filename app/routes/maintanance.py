@@ -10,6 +10,7 @@ from app.MapTools.MappingTools import WA_geojson_features
 from app.DBFunc.CustomerZoneController import customerzonecontroller
 from app.RouteModel.AIModel import AIModel
 from app.DBFunc.AIListingController import ailistingcontroller
+from app.ZillowAPI.ZillowAPICall import SearchZillowHomesByZone
 
 
 maintanance_bp = Blueprint('maintanance_bp', __name__, url_prefix='/maintanance')
@@ -180,6 +181,16 @@ def maintainListings():
             # If the function fails, return a failure message with details
             return jsonify({'status': 'failure', 'message': 'Data gathering failed.', 'details': str(e)}), 500
 
+@maintanance_bp.route('/maintainListingsByZone', methods=['GET'])
+def maintainListingsByZone():
+    zone_id = request.form.get('zone_id')
+    print(washingtonzonescontroller.getZonebyID(zone_id))
+    zone = washingtonzonescontroller.getZonebyID(zone_id)
+    print(zone.brief_listings.__len__())
+    print(SearchZillowHomesByZone(zone))
+    # soldrawdata = SearchZillowHomesByLocation(city, status="recentlySold", doz=doz)
+    return 'Great',200
+
 @maintanance_bp.route('/listingscheck', methods=['PATCH'])
 def listingscheck():
     # This is looking for missing listings.  This feels more like its catching things that fell through the hole
@@ -200,8 +211,7 @@ def listingscheck():
     # for_sale_api = SearchZillowHomesByCity(city, lastpage, maxpage,  'forSale')
     ids_in_db_not_in_api = set(forsaledb_ids) - set(forsaleapi_ids)
 
-    ids_in_db_not_in_api_list = list(ids_in_db_not_in_api)
-    for id in ids_in_db_not_in_api_list:  #This takes care of the listings
+    for id in list(ids_in_db_not_in_api):  #This takes care of the listings
         try:
             brieflist = brieflistingcontroller.get_listing_by_zpid(id)
             propertydetail =  SearchZillowByZPID(id)
@@ -230,15 +240,17 @@ def listingscheck():
                 # print(brieflist)
                 if propertydetail['homeStatus']=='FOR_SALE':
                     print(propertydetail['zpid'])#not sure how the ID checks allow us to get here.
+                    #this means that the Broad Zillow Search did not yield this guy
+                    # but zpid did.  Could be a problem with the board search.
                     # brieflistingcontroller.addBriefListing(brieflist)
                 brieflist.homeStatus = propertydetail['homeStatus']
-                brieflistingcontroller.UpdateBriefListing(brieflist)
+                brieflistingcontroller.UpdateBriefListing(brieflist)###This ONLY updates home status, does not update price
                 print(brieflist)
             # print(propertydetail)
         except Exception as e:
             print(e, brieflist)
 
-    return {"IDs in DB but not in API:": ids_in_db_not_in_api_list}, 200
+    return {"IDs in DB but not in API:": list(ids_in_db_not_in_api)}, 200
 
 @maintanance_bp.route('/fsbo', methods=['PATCH'])
 def updatefsbo():
@@ -361,9 +373,13 @@ def updateathing3():
     # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
     iter_value = request.args.get('iter')
     listings = brieflistingcontroller.getFirstXListingsWhereZoneisNull(int(iter_value))
-    for brieflisting in listings:
-        brieflistingcontroller.setZoneForBriefListing(brieflisting)
-        brieflistingcontroller.updateBriefListing(brieflisting)
+    # for brieflisting in listings:
+    #
+    #     brieflistingcontroller.setZoneForBriefListing(brieflisting)
+    #     print(brieflisting.zone_id)
+    #     print(brieflisting)
+    #     brieflistingcontroller.updateBriefListing(brieflisting)
+    brieflistingcontroller.setZoneForBriefListingList(listings)
 
     return {"Seattle Neighbourhood_subs updated":'listings.__len__()'}, 200
 
@@ -373,8 +389,9 @@ from app.MapTools.MappingTools import citygeojson_features,WA_geojson_features
 def updateathing4():
     # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
     # iter_value = request.args.get('iter')
-    washingtonzonescontroller.repair_from_geojson(citygeojson_features,WA_geojson_features, washingtoncitiescontroller)
-
+    # washingtonzonescontroller.repair_from_geojson(citygeojson_features,WA_geojson_features, washingtoncitiescontroller)
+    washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
+    # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
 
     return {"Seattle Neighbourhood_subs updated":'listings.__len__()'}, 200
 

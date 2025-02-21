@@ -21,8 +21,7 @@ class Customer(db.Model):
     minsqft = db.Column(db.Integer, nullable=True)
     maxsqft = db.Column(db.Integer, nullable=True)
 
-
-    interests = db.relationship('CustomerZone', back_populates='customer')
+    # interests = db.relationship('CustomerZone', back_populates='customer')
 
 
     def __str__(self):

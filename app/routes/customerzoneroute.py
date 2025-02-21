@@ -7,7 +7,7 @@ from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from flask import flash,Blueprint, render_template, redirect, url_for, request,jsonify
 # from app.RouteModel.EmailModel import sendEmailwithNewListing
 from app.DBFunc.BriefListingController import brieflistingcontroller
-from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,ListAllNeighhourhoodsByCities
+from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,AreaReportModelRunForSale
 from app.config import Config, SW, RECENTLYSOLD, FOR_SALE, PENDING
 
 customer_interest_bp = Blueprint('customer_interest_bp', __name__, url_prefix='/customer_interest')
@@ -130,7 +130,7 @@ def gatherCustomerData(customer_id):
         # city_name = area["city"]  # Assuming `city` is in the returned dictionary
         print(customerzone.zone.__str__())
         area={}
-        zonestats = zonestatscachecontroller.get_zone_stats_by_name(customerzone)
+        zonestats = zonestatscachecontroller.get_zone_stats_by_zone(customerzone.zone)
         locationzonenames.append(customerzone.zone.zonename())
         area["zone"]=customerzone.zone.zonename()
         area["zone_id"] = customerzone.zone.id
@@ -151,7 +151,7 @@ def gatherCustomerData(customer_id):
             area["sold"] = zonestats.sold
             locations.append(area)
         # else:
-        #     city_row = zonestatscachecontroller.get_zone_stats_by_name(city_name)
+        #     city_row = zonestatscachecontroller.get_zone_stats_by_zone(city_name)
         #     forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType
         #                                                                       ).all()
         #     print(f"{city_name}")
@@ -181,10 +181,11 @@ def send_email(customer_id):
     # customer = Customer.query.get(customer_id)
 
     customer, locations, locationzonenames = gatherCustomerData(customer_id)
-
+    housesoldpriceaverage, plot_url, plot_url2, soldhomes = AreaReportModelRun(locationzonenames,
+                                                                               [SW.TOWNHOUSE, SW.SINGLE_FAMILY], 7)
     if not customer:
         return "No customers found", 404
-    sendCustomerEmail(customer,locations)
+    sendCustomerEmail(customer,locations, plot_url, soldhomes)
 
     # Redirect back to the same interests page after sending email
     return redirect(url_for('customer_interest_bp.displayCustomerInterest', customer_id=customer_id))
@@ -233,6 +234,12 @@ def displayCustomerInterest():
 
     housesoldpriceaverage, plot_url, plot_url2, soldhomes = AreaReportModelRun(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],7)
 
+    asdf, forsalebrieflistings = AreaReportModelRunForSale(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
+                                                                            365)
+    forsalehomes_dict=[]
+    for brieflisting in forsalebrieflistings:
+        forsalehomes_dict.append(brieflisting.to_dict())
+
     return render_template('InterestReport/NeighbourhoodInterest.html',
                            customer=customer,
                            Webpage=True,
@@ -243,6 +250,7 @@ def displayCustomerInterest():
                            url_image_path=url_image_path,
                            plot_url=plot_url,
                            soldhouses=soldhomes,
+                           forsalehomes_dict=forsalehomes_dict,
                            selected_doz=7
                            )
 
@@ -265,7 +273,7 @@ def get_zone_details():
 
     zone = washingtonzonescontroller.getZonebyID(zone_id)
 
-    zone_stats = zonestatscachecontroller.get_zone_stats_by_name(zone)
+    zone_stats = zonestatscachecontroller.get_zone_stats_by_zone(zone)
 
     sold7_SFH = brieflistingcontroller.listingsByZoneandStatus(zone, RECENTLYSOLD, 7, homeType=SW.SINGLE_FAMILY).all()
     sold7_TCA = brieflistingcontroller.listingsByZoneandStatus(zone, RECENTLYSOLD, 7,

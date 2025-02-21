@@ -1,6 +1,7 @@
 from app.DBModels.Customer import Customer
 from app.DBModels.BriefListing import BriefListing
 from app.DBModels.CustomerZpid import CustomerZpid
+from app.DBModels.property_types import PropertyType
 from app.DBFunc.WashingtonZonesController import WashingtonZones
 from app.DBFunc.CustomerZoneController import CustomerZone
 from app.DBFunc.ZoneStatsCacheController import ZoneStatsCache
@@ -52,8 +53,16 @@ WashingtonZones.zone_stats_cache = db.relationship('ZoneStatsCache', back_popula
 #
 CustomerZone.zone = db.relationship("WashingtonZones",   back_populates="interests")
 
-CustomerZone.customer = db.relationship('Customer', back_populates='interests')
+CustomerZone.customer = db.relationship('Customer', back_populates='zones')
 
 ZoneStatsCache.zone = db.relationship('WashingtonZones', back_populates='zone_stats_cache')
 
 WashingtonCities.interests = db.relationship('WashingtonZones', back_populates='city')
+
+Customer_property_types = db.Table('Customer_property_types',
+    db.Column('user_id', db.Integer, db.ForeignKey('Customer.id'), primary_key=True),
+    db.Column('property_type_id', db.Integer, db.ForeignKey('property_types.id'), primary_key=True)
+)
+
+Customer.property_types = db.relationship('PropertyType', secondary=Customer_property_types,
+                                 backref=db.backref('users', lazy='dynamic'))

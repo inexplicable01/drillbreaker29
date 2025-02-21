@@ -112,6 +112,7 @@ class BriefListing(db.Model):
             'state': self.state,
             'latitude': self.latitude,
             'longitude': self.longitude,
+            'livingArea': self.livingArea,
             'price': self.price,
             'soldBy': self.soldBy,
             'homeStatus': self.homeStatus,
@@ -123,7 +124,9 @@ class BriefListing(db.Model):
             'bedrooms': self.bedrooms,
             'hdpUrl': self.hdpUrl,
             'imgSrc': self.imgSrc,
-            'list2penddays':self.list2penddays
+            'doz': self.daysOnZillow,
+            'list2penddays':self.list2penddays,
+            'zone_id': self.zone_id
         }
 
     def getPropertyData(self):

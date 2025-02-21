@@ -246,7 +246,7 @@ def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, timeOnZ
                 "page": str(lastpage),
                 "status": status,
                 "output": "json",
-                "sortSelection": "priorityscore",
+                # "sortSelection": "priorityscore",
                 "listing_type": "by_agent",
                 "sqft_min": str(minhomesize),
                 "sqft_max": str(maxhomesize),
@@ -308,6 +308,88 @@ def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, timeOnZ
 
 
 
+
+
+def SearchZillowHomesByZone(zone, status="recentlySold", doz=14, timeOnZillow=14):
+    houseresult = []
+    print(f'Searching {status} homes in zone: {zone.zonename()}')
+    polygonurl = "https://zillow56.p.rapidapi.com/search_polygon"
+    interval = 10000
+    minhomesize = 0
+    maxhomesize = interval + minhomesize
+
+    while True:
+        lastpage = 1
+        maxpage = 2
+        results_in_this_interval = []
+
+        while maxpage >= lastpage:
+            querystring = {
+                "polygon": zone.get_polygon_string(),
+                     "page": str(lastpage),
+                "status": status,
+                "output": "json",
+                # "sortSelection": "priorityscore",
+                "listing_type": "by_agent",
+                "sqft_min": str(minhomesize),
+                "sqft_max": str(maxhomesize),
+                "doz": doz if status == "recentlySold" else doz,
+                "timeOnZillow": timeOnZillow if status == "forSale" else None,
+                "isMultiFamily": "false",
+            }
+
+
+            querystring = {k: v for k, v in querystring.items() if v is not None}
+
+            print(f"Search {minhomesize} to {maxhomesize} with status{status}.")
+            response = requests.get(polygonurl, headers=headers, params=querystring)
+            time.sleep(0.5)
+
+            if response.status_code == 502:
+                warn(f'502 error on {zone.zonename()}')
+                break
+
+            try:
+                result = response.json()
+
+
+                if result.get('totalPages') >= 20:
+                    print("Search too large, reducing interval.")
+                    interval //= 2
+                    maxhomesize = minhomesize + interval  # Adjust the range
+                    continue  # Restart the outer loop with updated interval
+                maxpage = result.get('totalPages')
+                results_in_this_interval.extend(result.get('results', []))
+                print(f'Page {lastpage} of {maxpage} processed.')
+                lastpage += 1
+
+            except Exception as e:
+                print("Search Zillow failed due to an exception:", e)
+                break
+
+        houseresult.extend(results_in_this_interval)
+
+        # Check if interval is small enough or search is complete
+        if maxpage < 20:
+            if interval == 1:
+                print("Search complete with current interval.")
+                break
+
+        if maxpage < 3:
+            interval = 2*interval
+
+
+
+        # Move to the next range
+        if maxpage <= 20 and minhomesize + interval >= 10000:  # Arbitrary max size for demonstration
+            print("All intervals processed.")
+            break
+
+        minhomesize = maxhomesize
+        maxhomesize = minhomesize + interval
+
+    print(f'Found {len(houseresult)} results.')
+    return houseresult
 
 def SearchZillowHomesFSBO(city, lastpage, maxpage, status="forSale", duration=14):
 

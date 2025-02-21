@@ -74,10 +74,10 @@ def sendEmailListingChange(message=None, title=None, hdpUrl=None):
 from pathlib import Path
 
 def sendCustomerEmail(customer:Customer,locations,
-                      cities, neighbourhoods_subs, forsalehomes):
+                      plot_url, soldhomes):
 
     # Fetch customer’s neighborhood interests
-    interests = customer.interests  # Assuming a relationship is defined
+    # interests = customer.interests  # Assuming a relationship is defined
     # output_dir = Path("app/static/maps")
     # output_dir.mkdir(parents=True, exist_ok=True)  # Ensure the folder exists
     # map_html_path = output_dir / f"map_{customer.name}.html"
@@ -89,12 +89,12 @@ def sendCustomerEmail(customer:Customer,locations,
         'InterestReport/NeighbourhoodInterest.html',
         customer=customer,
         locations=locations,
-        cities=cities,
-        neighbourhoods_subs=neighbourhoods_subs,
         geojson_features=WA_geojson_features,
         Webpage=False,
         # homes_with_comments=homes_with_comments,
-        url_image_path=url_image_path
+        url_image_path=url_image_path,
+        plot_url=f"https://www.drillbreaker29.com/static/maps/015402.png",
+        soldhouses=soldhomes
     )
 
     try:

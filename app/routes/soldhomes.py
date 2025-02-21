@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
-from app.RouteModel.AreaReportModel import AreaReportModelRun,AreaReportGatherData
+from app.RouteModel.AreaReportModel import AreaReportModelRun,AreaReportModelRunForSale
 from app.config import Config,SW
 from app.MapTools.MappingTools import WA_geojson_features, featureAreas
 soldhomes_bp = Blueprint('soldhomes_bp', __name__,url_prefix='/soldhomes')
@@ -94,6 +94,53 @@ def AreaReport():
                            soldhouses=soldhomes,
                         brieflistings_SoldHomes_dict=brieflistings_SoldHomes_dict
                            )
+
+@soldhomes_bp.route('/areareportforsale', methods=['GET', 'POST', 'PATCH'])
+def AreaReportFor_sale():
+
+    doz_options = Config.doz_options
+    # AllNeighbourhoods = featureAreas.keys()
+    if request.method == 'POST':
+        selectedhometypes = request.form.getlist('home_type')
+        selectedlocations = request.form.getlist('location')
+        selected_doz = int(request.form.get('selected_doz'))
+
+        selected_zones = request.form.getlist('selected_zones')
+        if ',' in selected_zones[0]:
+            selected_zones = selected_zones[0].split(',')
+
+        # Process the selections as needed
+    elif request.method == 'GET':
+        selectedlocations = []
+        selectedhometypes = Config.HOMETYPES
+        selected_doz = 30
+        selected_zones = []
+
+    housesoldpriceaverage,  forsalebrieflistings = AreaReportModelRunForSale(selected_zones, selectedhometypes,
+                                                                               selected_doz)
+    brieflistings_forsale_dict = []
+    for brieflisting in forsalebrieflistings:
+        if brieflisting.fsbo_status is None:  # don't want to include fsbos cause it causes an error
+            # hard code out for now.
+            brieflistings_forsale_dict.append(
+                brieflisting.to_dict()
+            )
+    return render_template(
+        'ClickAbleMap/ClickAbleMapMain.html',
+        HOMETYPES=Config.HOMETYPES,
+        geojson_features=WA_geojson_features,
+        housesoldpriceaverage=housesoldpriceaverage,
+        doz_options=doz_options,
+        selected_doz=selected_doz,
+        selected_zones=selected_zones,
+        selectedhometypes=selectedhometypes,
+        LOCATIONS=[],
+        selected_locations=selectedlocations,
+        # plot_url=plot_url,
+        # plot_url2=plot_url2,
+        soldhouses=forsalebrieflistings,
+        brieflistings_SoldHomes_dict=brieflistings_forsale_dict
+    )
 
                            # soldhouses = soldhouses,
                            # housesoldpriceaverage=housesoldpriceaverage,

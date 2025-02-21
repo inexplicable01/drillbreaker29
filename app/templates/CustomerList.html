@@ -59,6 +59,7 @@
                 <tr>
                     <th>Customer ID</th>
                     <th>Customer Name</th>
+                    <th>HomeTypes</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -67,6 +68,11 @@
                 <tr>
                     <td>{{ customer.id }}</td>
                     <td>{{ customer.name }}</td>
+                    <td>
+                        {% for property_type in customer.property_types %}
+                        {{ property_type.name }},
+                        {% endfor %}
+                        </td>
                     <td>
                         <a href="{{ url_for('customer_interest_bp.displayCustomerInterest', customer_id=customer.id) }}">
                             View Interests
