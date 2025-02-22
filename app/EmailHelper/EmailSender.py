@@ -3,7 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 # from run import app
 import os
-from app.NewListing import NewListing,NewListingForEmail
+# from app.NewListing import NewListing,NewListingForEmail
 fromemail = os.getenv('FROMEMAIL')
 defaultrecipient='waichak.luk@gmail.com'
 def send_email( subject, recipient,html_content=None,):

@@ -9,8 +9,13 @@ from app.extensions import db
 from datetime import datetime, timedelta
 from app.useful_func import safe_float_conversion,safe_int_conversion
 import decimal
+from app.UsefulAPI.UseFulAPICalls import get_neighborhood
 # from app.DBModels.CustomerZpid import CustomerZpid
 # from app.models.brief_listing import BriefListing
+
+
+def is_equal_with_tolerance(val1, val2, tolerance=1e-4):
+    return abs(val1 - val2) <= tolerance
 
 
 class BriefListing(db.Model):
@@ -25,6 +30,7 @@ class BriefListing(db.Model):
     country = db.Column(db.String(255), nullable=True)
     # currency = db.Column(db.String(10), nullable=True)
     dateSold = db.Column(BigInteger, nullable=True)
+    soldtime = db.Column(BigInteger, nullable=True)
     daysOnZillow = db.Column(db.Integer, nullable=True)
     homeStatus = db.Column(db.String(100), nullable=True)
     homeStatusForHDP = db.Column(db.String(100), nullable=True)
@@ -41,6 +47,7 @@ class BriefListing(db.Model):
     livingArea = db.Column(db.Float, nullable=True)
     longitude = db.Column(Numeric(precision=10,scale=7), nullable=True)
     price = db.Column(db.BigInteger, nullable=True)
+    soldprice = db.Column(db.Integer, nullable=True)
     priceForHDP = db.Column(db.Float, nullable=True)
     shouldHighlight = db.Column(db.Boolean, nullable=True)
     state = db.Column(db.String(100), nullable=True)
@@ -70,6 +77,7 @@ class BriefListing(db.Model):
     listday = db.Column(BigInteger, nullable=True)
     pendday = db.Column(BigInteger, nullable=True)
     listtime = db.Column(BigInteger, nullable=True)
+    lpctime = db.Column(BigInteger, nullable=True)# latest price change time
     soldBy = db.Column(db.String(100), nullable=True)
     waybercomments = db.Column(db.String(255), nullable=True)
     openhouseneed = db.Column(db.Boolean,nullable=True)
@@ -95,8 +103,9 @@ class BriefListing(db.Model):
         self.list2penddays=listinglength['list2penddays']
         self.list2solddays = listinglength['list2solddays']
         self.listprice = listinglength['listprice']
-        if self.listprice is not None:
-            self.pricedelta=self.price-self.listprice
+        self.soldprice = listinglength['soldprice']
+        # if self.listprice is not None:
+        #     self.pricedelta=self.price-self.listprice
 
     def __str__(self):
         return self.ref_address()
@@ -117,7 +126,7 @@ class BriefListing(db.Model):
             'soldBy': self.soldBy,
             'homeStatus': self.homeStatus,
             'neighbourhood': self.neighbourhood,
-            'dateSold': self.dateSold,
+            'soldtime': self.soldtime,
             'waybercomments':self.waybercomments,
             'fsbostatus': self.fsbo_status,
             'bathrooms': self.bathrooms,
@@ -134,10 +143,11 @@ class BriefListing(db.Model):
         listresults = ListingLengthbyBriefListing(propertydata)
         self.updateListingLength(listresults)
         self.hdpUrl = propertydata['hdpUrl']
+        self.soldprice = propertydata['lastSoldPrice']
         try:
             self.NWMLS_id = propertydata['attributionInfo']['mlsId']
         except Exception as e:
-            print(e, self)
+            print(e, self, 'Failed getting NWMLS ID')
 
 
     def isBriefListingInZone(self,WA_geojson_features):
@@ -147,6 +157,50 @@ class BriefListing(db.Model):
                     return True
         return False
 
+
+    def needsUpdate(self, newBrieflisting):
+        needs_update = False
+        updatereason = ''
+        gapis_neighbourhood = get_neighborhood(newBrieflisting.latitude, newBrieflisting.longitude)
+        newBrieflisting.gapis_neighbourhood = gapis_neighbourhood
+
+        for attr in vars(newBrieflisting):
+            if attr == '_sa_instance_state':
+                continue
+            if attr == 'daysOnZillow':
+                continue
+            if attr == 'listtime':
+                if not is_equal_with_tolerance(existing_value, new_value, 100):
+                    needs_update = True
+                    updatereason = updatereason + ',' + attr + ' value update'
+                    break
+                continue
+            if hasattr(self, attr):
+                existing_value = getattr(self, attr)
+                new_value = getattr(self, attr)
+                if isinstance(existing_value, decimal.Decimal) and isinstance(new_value, decimal.Decimal):
+                    # For float values, use the tolerance-based comparison
+                    if not is_equal_with_tolerance(existing_value, new_value):
+                        needs_update = True
+                        updatereason = updatereason + ',' + attr + ' value update'
+                        break
+                elif isinstance(existing_value, float) and isinstance(new_value, float):
+                    # For float values, use the tolerance-based comparison
+                    if not is_equal_with_tolerance(existing_value, new_value, 0.1):
+                        needs_update = True
+                        updatereason = updatereason + ',' + attr + ' value update'
+                        break
+
+                elif attr == 'homeStatus':
+                    if not existing_value == new_value:
+                        needs_update = True
+                        updatereason = updatereason + ',' + attr + 'from ' + self.__str__() + ' to ' + new_value
+                elif existing_value != new_value:
+                    # For all other data types, use standard comparison
+                    needs_update = True
+                    updatereason = updatereason + ',' + attr + ' value update'
+                    break
+        return needs_update, updatereason
 
     @classmethod
     def CreateBriefListing(cls, briefhomedata, neighbourhood, zillowapi_neighbourhood, search_neigh):
@@ -164,6 +218,8 @@ class BriefListing(db.Model):
             new_listing.livingArea=safe_float_conversion(briefhomedata.get('livingArea', 1.0))
             new_listing.dateSold = safe_int_conversion(
                 briefhomedata.get('dateSold', 0))  # Consider datetime conversion if necessary
+            new_listing.soldtime = safe_int_conversion(
+                briefhomedata.get('dateSold', 0))/1000
             new_listing.daysOnZillow = safe_int_conversion(briefhomedata.get('daysOnZillow', 0))
             new_listing.homeStatus = briefhomedata.get('homeStatus', 'Missing')
             new_listing.homeStatusForHDP = briefhomedata.get('homeStatusForHDP', 'Missing')
@@ -226,6 +282,8 @@ class BriefListing(db.Model):
             new_listing.livingArea=safe_float_conversion(propertydata.get('livingArea', 1.0))
             new_listing.dateSold = safe_int_conversion(
                 propertydata.get('dateSold', 0))  # Consider datetime conversion if necessary
+            new_listing.soldtime = safe_int_conversion(
+                propertydata.get('dateSold', 0))/1000
             new_listing.daysOnZillow = safe_int_conversion(propertydata.get('daysOnZillow', 0))
             new_listing.homeStatus = propertydata.get('homeStatus', 'Missing')
             new_listing.homeStatusForHDP = propertydata.get('homeStatusForHDP', 'Missing')
@@ -279,7 +337,7 @@ response = {
     'city': 'Seattle',
     'country': 'USA',
     'currency': 'USD',
-    'dateSold': 1708934400000,
+    'soldtime': 1708934400,
     'daysOnZillow': 1,
     'homeStatus': 'RECENTLY_SOLD',
     'homeStatusForHDP': 'RECENTLY_SOLD',

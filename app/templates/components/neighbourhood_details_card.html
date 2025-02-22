@@ -2,57 +2,59 @@
     <h2>Details for {{ zonename }}</h2>
     <p><strong>Recent Sales:</strong> {{ recent_sales }}</p>
     <p><strong>Average Price:</strong> ${{ avg_price }}</p>
-{#    <p><strong>Market Trends:</strong> {{ trends }}</p>#}
+    {#    <p><strong>Market Trends:</strong> {{ trends }}</p>#}
 
     <h3>Market Overview</h3>
     <table>
         <thead>
-            <tr>
-                <th>Category</th>
-                <th>Single Family Homes (SFH)</th>
-                <th>Townhouse/Condo/Apartment (TCA)</th>
-            </tr>
+        <tr>
+            <th>Category</th>
+            <th>Single Family Homes (SFH)</th>
+            <th>Townhouse/Condo/Apartment (TCA)</th>
+        </tr>
         </thead>
         <tbody>
-            <tr>
-                <td><strong>Sold (Last 7 Days)</strong></td>
-                <td>
-                    {% for home in sold7_SFH %}
-                        {% include "components/neighbourhood_details_card_mini.html" %}
-                    {% endfor %}
-                </td>
-                <td>
-                    {% for home in sold7_TCA %}
-                        {% include "components/neighbourhood_details_card_mini.html" %}
-                    {% endfor %}
-                </td>
-            </tr>
-            <tr>
-                <td><strong>Pending (Last 7 Days)</strong></td>
-                <td>
-                    {% for home in pending7_SFH %}
-                        {% include "components/neighbourhood_details_card_mini.html" %}
-                    {% endfor %}
-                </td>
-                <td>
-                    {% for home in pending7_TCA %}
-                        {% include "components/neighbourhood_details_card_mini.html" %}
-                    {% endfor %}
-                </td>
-            </tr>
-            <tr>
-                <td><strong>New Listings (Last 7 Days)</strong></td>
-                <td>
-                    {% for home in forsaleadded7_SFH %}
-                        {% include "components/neighbourhood_details_card_mini.html" %}
-                    {% endfor %}
-                </td>
-                <td>
-                    {% for home in forsaleadded7_TCA %}
-                        {% include "components/neighbourhood_details_card_mini.html" %}
-                    {% endfor %}
-                </td>
-            </tr>
+        <tr>
+            <td><strong>New Listings (Last 7 Days)</strong></td>
+            <td>
+                {% for home in forsaleadded7_SFH %}
+                    {% include "components/neighbourhood_details_card_mini.html" %}
+                {% endfor %}
+            </td>
+            <td>
+                {% for home in forsaleadded7_TCA %}
+                    {% include "components/neighbourhood_details_card_mini.html" %}
+                {% endfor %}
+            </td>
+        </tr>
+
+        <tr>
+            <td><strong>Pending (Last 7 Days)</strong></td>
+            <td>
+                {% for home in pending7_SFH %}
+                    {% include "components/neighbourhood_details_card_mini.html" %}
+                {% endfor %}
+            </td>
+            <td>
+                {% for home in pending7_TCA %}
+                    {% include "components/neighbourhood_details_card_mini.html" %}
+                {% endfor %}
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Sold (Last 7 Days)</strong></td>
+            <td>
+                {% for home in sold7_SFH %}
+                    {% include "components/neighbourhood_details_card_mini.html" %}
+                {% endfor %}
+            </td>
+            <td>
+                {% for home in sold7_TCA %}
+                    {% include "components/neighbourhood_details_card_mini.html" %}
+                {% endfor %}
+            </td>
+        </tr>
+
         </tbody>
     </table>
 </div>

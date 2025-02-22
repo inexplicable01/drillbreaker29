@@ -31,6 +31,13 @@ class CustomerZpidController():
             print_and_log(f"Error retrieving CustomerZpid by ID: {str(e)}")
             return None
 
+    def getCustomerZpidByZpid(self, zpid):
+        try:
+            return self.CustomerZpid.query.filter_by(zpid=zpid).first()
+        except Exception as e:
+            print_and_log(f"Error retrieving CustomerZpid by ID: {str(e)}")
+            return None
+
     def retire_customer_zpid(self,customerzpid_id):
         customer_zpid = CustomerZpid.query.filter_by(id=customerzpid_id).first()
         if customer_zpid:

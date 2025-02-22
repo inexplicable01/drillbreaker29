@@ -1,6 +1,6 @@
 PRICEHISTORY = 'priceHistory'
 
-from app.DataBaseFunc import dbmethods
+# from app.DataBaseFunc import dbmethods
 from app.config import Config
 # from app.ZillowAPI.ZillowAPICall import *
 
@@ -34,9 +34,9 @@ def date_difference(date1: str, date2: str) -> int:
     return abs(difference.days)
 
 
-def SearchAllNewListing(location, daysonzillow):
-    houseresult = SearchZillowNewListingByLocation(location, daysonzillow)
-    dbmethods.loadHouseSearchDataintoDB(houseresult, 'forSale')
+# def SearchAllNewListing(location, daysonzillow):
+#     houseresult = SearchZillowNewListingByLocation(location, daysonzillow)
+#     dbmethods.loadHouseSearchDataintoDB(houseresult, 'forSale')
 
 
 
@@ -149,6 +149,7 @@ def ListingLengthbyBriefListing(propertydata):
                         if e['event'] == 'Sold':
                             list2solddays = date_difference(e['date'], event['date'])
                             solddate = datetime.strptime(e['date'], date_format)
+                            soldprice = e['price']
                             # print(e['date'] + '  Sold  ' + propertydata['address']['streetAddress'])
                             # print(propertydata['address']['streetAddress'] + ' Took ' + str(
                             #     date_difference(e['date'], event['date'])) + ' to sell')
@@ -160,7 +161,8 @@ def ListingLengthbyBriefListing(propertydata):
                     'listprice':listprice,
                     'listdate': listdate,
                     'penddate': penddate,
-                    'solddate': solddate
+                    'solddate': solddate,
+                    'soldprice': soldprice
                     }
         else:
             return {'list2penddays': None,
@@ -168,7 +170,8 @@ def ListingLengthbyBriefListing(propertydata):
                     'listprice':listprice,
                     'listdate':None,
                     'penddate':None,
-                    'solddate':None
+                    'solddate':None,
+                    'soldprice':None
                     }
 
     except Exception as e:

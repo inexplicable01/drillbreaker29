@@ -1,4 +1,4 @@
-<div id="map"></div>
+
 
 <!-- Include Leaflet and jQuery -->
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -6,12 +6,12 @@
 
 <script>
     // Initialize Leaflet Map
-    var map = L.map('map');
+    var map_forsale = L.map('map_forsale', { scrollWheelZoom: false });
 
     // Add OpenStreetMap tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    }).addTo(map_forsale);
 
     // Function to handle region click
     function handleClick(region) {
@@ -76,10 +76,10 @@
         // Create the polygon layer
         let poly;
         if (geometry.type === "Polygon") {
-            poly = L.polygon(geometry.coordinates, {color}).addTo(map);
+            poly = L.polygon(geometry.coordinates, {color}).addTo(map_forsale);
         } else if (geometry.type === "MultiPolygon") {
             geometry.coordinates.forEach(polygon => {
-                poly = L.polygon(polygon, {color}).addTo(map);
+                poly = L.polygon(polygon, {color}).addTo(map_forsale);
             });
         }
 
@@ -102,9 +102,9 @@
 
     // Adjust map view based on bounds (only for orange areas)
     if (bounds.isValid()) {
-        map.fitBounds(bounds, {padding: [20, 20]});
+        map_forsale.fitBounds(bounds, {padding: [20, 20]});
     } else {
-        map.setView([47.6062, -122.3321], 10); // Default to Seattle if no orange areas
+        map_forsale.setView([47.6062, -122.3321], 10); // Default to Seattle if no orange areas
     }
 
     forsalehomes_dict.forEach(function (listing) {
@@ -118,14 +118,14 @@
 
         // Add the marker to the map
         {#var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map);#}
-        var marker = L.marker([listing.latitude, listing.longitude]).addTo(map);
+        var marker = L.marker([listing.latitude, listing.longitude]).addTo(map_forsale);
         // Bind a popup with details about the listing
-marker.bindPopup(
-    `<b>${listing.streetAddress}</b><br>
-    <b>Price:</b> ${listing.price}<br>
-    <a href='https://www.zillow.com${listing.hdpUrl}' target='_blank'>House Link</a><br>
-    ${listing.bedrooms} bed, ${listing.bathrooms} bath, ${listing.livingArea} sqft, ${listing.zone_id}`
-);
+        marker.bindPopup(
+            `<b>${listing.streetAddress}</b><br>
+            <b>Price:</b> ${listing.price}<br>
+            <a href='https://www.zillow.com${listing.hdpUrl}' target='_blank'>House Link</a><br>
+            ${listing.bedrooms} bed, ${listing.bathrooms} bath, ${listing.livingArea} sqft, ${listing.zone_id}`
+        );
 
         // Optional: Add click event for interaction
         marker.on('click', function () {

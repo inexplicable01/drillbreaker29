@@ -7,6 +7,11 @@ def createPriceChangevsDays2PendingPlot(soldhomes):
     colors = ['grey', 'olive',  'magenta']  # Example colors for 1-5 bedrooms
     for brieflisting in soldhomes:
         # print('home_type',brieflisting.homeType)
+        try:
+            brieflisting.pricedelta = brieflisting.price-brieflisting.listprice
+        except:
+            continue
+        # brieflisting.updateListingLength(listresults)
         if brieflisting.pricedelta is not None and brieflisting.list2penddays is not None:
             if brieflisting.list2penddays > 300:
                 continue
@@ -26,7 +31,7 @@ def createPriceChangevsDays2PendingPlot(soldhomes):
             size = (brieflisting.price / 3000000.0) * 30 +24
             if size > 174:
                 size = 174
-            plt.scatter(brieflisting.list2penddays, brieflisting.price-brieflisting.listprice, c=color, s=size)
+            plt.scatter(brieflisting.list2penddays, brieflisting.pricedelta, c=color, s=size)
     # Creating the plot
 
     plt.title('Price Change vs. Days to Pending')

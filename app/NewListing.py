@@ -4,7 +4,7 @@ main = Blueprint('main', __name__)
 
 from app.ZillowAPI.ZillowAddress import ZillowAddress
 from app.ZillowAPI.ZillowAPICall import *
-from app.DataBaseFunc import dbmethods
+# from app.DataBaseFunc import dbmethods
 from joblib import load
 import json
 import pandas as pd

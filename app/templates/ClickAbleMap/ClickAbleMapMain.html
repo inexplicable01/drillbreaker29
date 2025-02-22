@@ -5,7 +5,7 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
-     {% include 'ClickAbleMap/clickablecss.html' %} <!-- Reference external CSS -->
+    {% include 'ClickAbleMap/clickablecss.html' %} <!-- Reference external CSS -->
 </head>
 <body>
 <div id="main-content">
@@ -13,10 +13,16 @@
         <div id="topSection">
             {% include 'ClickAbleMap/filter_form.html' %} <!-- Include filter form -->
         </div>
-        <div id="map"></div>
+        <div id="map_Sold"></div>
     </div>
     <div id="side-section">
         <div id="data-section">
+            <div style="text-align: center;">
+                <h2>Sold Houses in the last {{ selected_doz }} days</h2>
+                <img id="graphImage" src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
+
+                <img id="graphImage" src="{{ plot_url }}" alt="House Price vs. Days to Pending">
+            </div>
             {% include 'ClickAbleMap/data_table.html' %} <!-- Include data table -->
         </div>
         <div id="comments-section">
@@ -25,6 +31,6 @@
     </div>
 </div>
 
-{% include 'ClickAbleMap/MapScript.html' %}
+{% include 'ClickAbleMap/SoldMapScript.html' %}
 </body>
 </html>

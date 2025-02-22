@@ -232,13 +232,23 @@ def displayCustomerInterest():
     # Step 3: Serve the map image in the template
     map_image_url = f"/static/maps/{map_image_path.name}"
 
-    housesoldpriceaverage, plot_url, plot_url2, soldhomes = AreaReportModelRun(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],7)
+    customerlistings = brieflistingcontroller.getListingByCustomerPreference(customer,FOR_SALE, 90)
+
+    housesoldpriceaverage, plot_url, plot_url2, soldhomes = AreaReportModelRun(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],30)
 
     asdf, forsalebrieflistings = AreaReportModelRunForSale(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
                                                                             365)
     forsalehomes_dict=[]
     for brieflisting in forsalebrieflistings:
         forsalehomes_dict.append(brieflisting.to_dict())
+
+    brieflistings_SoldHomes_dict=[]
+    for brieflisting in soldhomes:
+        if brieflisting.fsbo_status is None: # don't want to include fsbos cause it causes an error
+            # hard code out for now.
+            brieflistings_SoldHomes_dict.append(
+               brieflisting.to_dict()
+            )
 
     return render_template('InterestReport/NeighbourhoodInterest.html',
                            customer=customer,
@@ -251,7 +261,10 @@ def displayCustomerInterest():
                            plot_url=plot_url,
                            soldhouses=soldhomes,
                            forsalehomes_dict=forsalehomes_dict,
-                           selected_doz=7
+                           selected_doz=7,
+                           customerlistings=customerlistings,
+                           selected_zones = locationzonenames,
+                           brieflistings_SoldHomes_dict = brieflistings_SoldHomes_dict
                            )
 
 

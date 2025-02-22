@@ -1,11 +1,11 @@
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    var map = L.map('map').setView([47.6062, -122.3321], 10); // Centered on Seattle
+    var map_Sold = L.map('map_Sold'); // Centered on Seattle
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    }).addTo(map_Sold);
 
     function handleClick(region) {
         document.getElementById('label').innerHTML = region;
@@ -42,7 +42,7 @@
     {#// Function to handle toggle behavior#}
     {#// Array to keep track of all polygons#}
     var polygons = [];
-
+    var bounds = L.latLngBounds();
     {#console.log('GeoJSON Features:', geojson_features);#}
     geojson_features.forEach(function (value) {
         if (value.geometry.type === "Polygon") {
@@ -65,61 +65,67 @@
             ? value.properties.S_HOOD
             : value.properties.CityName;
 
-        // Determine the color based on whether zoneName is in selectedZones
-        var color = selectedZones.includes(zoneName) ? 'green' : 'red';
+        var isSelected = selectedZones.includes(zoneName);
+        var color = isSelected ? "green" : "red";
 
-        // Add the polygon to the map with the determined color
-        var poly = L.polygon(value.geometry.coordinates, {color: color}).addTo(map);
-        polygons.push(poly); // Add polygon to the array
-        // Bind a tooltip (always visible)
-        poly.bindTooltip(zoneName, {permanent: true, direction: "center", className: "zone-label"}).openTooltip();
+        var poly = L.polygon(value.geometry.coordinates, { color: color }).addTo(map_Sold);
+        polygons.push(poly);
+        poly.bindTooltip(zoneName, { permanent: true, direction: "center", className: "zone-label" }).openTooltip();
 
-        {#console.log(`Value from coordinates: ${value.geometry.coordinates}`);#}
-        {#var poly = L.polygon(value.geometry.coordinates, {color: 'red'}).addTo(map);#}
+        // ✅ Extend bounds only if the zone is selected
+        if (isSelected) {
+            poly.getLatLngs().forEach(latlngGroup => {
+                latlngGroup.forEach(latlng => bounds.extend(latlng)); // Extend bounds with polygon points
+            });
+        }
 
         // Add click event to polygon
         poly.on('click', function () {
-                if (selectedZones.includes(zoneName)) {
-                    // Deselect if already selected
-                    selectedZones = selectedZones.filter(zone => zone !== zoneName);
-                    poly.setStyle({color: 'red'}); // Reset color
-                } else {
-                    // Add to selected zones
-                    selectedZones.push(zoneName);
-                    poly.setStyle({color: 'green'}); // Highlight selected
-                }
+            if (selectedZones.includes(zoneName)) {
+                // Deselect if already selected
+                selectedZones = selectedZones.filter(zone => zone !== zoneName);
+                poly.setStyle({color: 'red'}); // Reset color
+            } else {
+                // Add to selected zones
+                selectedZones.push(zoneName);
+                poly.setStyle({color: 'green'}); // Highlight selected
+            }
 
-                // Update the selected zones in the HTML
-                document.getElementById('selectedZones').innerText = selectedZones.join(', ');
+            // Update the selected zones in the HTML
+            document.getElementById('selectedZones').innerText = selectedZones.join(', ');
 
-                // Update the hidden input field
-                document.getElementById('selectedZonesInput').value = selectedZones.join(',');
+            // Update the hidden input field
+            document.getElementById('selectedZonesInput').value = selectedZones.join(',');
 
         });
     });
 
+    if (bounds.isValid()) {
+        map_Sold.fitBounds(bounds, {padding: [20, 20]});
+    } else {
+        map_Sold.setView([47.6062, -122.3321], 10); // Default to Seattle if no orange areas
+    }
+
     var brieflistings_SoldHomes_dict = {{ brieflistings_SoldHomes_dict | tojson }};
 
 
-
-            function getMarkerColor(list2penddays) {
-if (
-    list2penddays === null ||          // Null Check
-    list2penddays === undefined ||     // Undefined Check
-    isNaN(Number(list2penddays))       // Not a number or doesn't represent a number
-) {
-    return "black"; // Default to black for invalid or missing values
-} else if (+list2penddays < 7) { // Convert to a number before comparison
-    return "red";
-} else if (+list2penddays < 14) {
-    return "orange";
-} else if (+list2penddays < 21) {
-    return "green";
-} else {
-    return "blue";
-}
+    function getMarkerColor(list2penddays) {
+        if (
+            list2penddays === null ||          // Null Check
+            list2penddays === undefined ||     // Undefined Check
+            isNaN(Number(list2penddays))       // Not a number or doesn't represent a number
+        ) {
+            return "black"; // Default to black for invalid or missing values
+        } else if (+list2penddays < 7) { // Convert to a number before comparison
+            return "red";
+        } else if (+list2penddays < 14) {
+            return "orange";
+        } else if (+list2penddays < 21) {
+            return "green";
+        } else {
+            return "blue";
+        }
     }
-
 
 
     brieflistings_SoldHomes_dict.forEach(function (listing) {
@@ -129,16 +135,16 @@ if (
         console.log("listing:", listing);
         // Create a marker using a custom icon with the selected color
 
-var customIcon = L.divIcon({
-    html: `<div style="background-color: ${markerColor}; width: 20px; height: 20px;"></div>`,
-    {#iconSize: [25, 29],      // Default size of the marker#}
-    {#iconAnchor: [12, 41],    // Point where the icon is anchored#}
-    {#popupAnchor: [1, -34],   // Popup anchor relative to the marker icon#}
-    {#shadowSize: [41, 41]     // Size of the shadow#}
-});
+        var customIcon = L.divIcon({
+            html: `<div style="background-color: ${markerColor}; width: 20px; height: 20px;"></div>`,
+            {#iconSize: [25, 29],      // Default size of the marker#}
+            {#iconAnchor: [12, 41],    // Point where the icon is anchored#}
+            {#popupAnchor: [1, -34],   // Popup anchor relative to the marker icon#}
+            {#shadowSize: [41, 41]     // Size of the shadow#}
+        });
 
         // Add the marker to the map
-        var marker = L.marker([listing.latitude, listing.longitude], { icon: customIcon }).addTo(map);
+        var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map_Sold);
         {#var marker = L.marker([listing.latitude, listing.longitude],markerColor).addTo(map);#}
         // Bind a popup with details about the listing
         marker.bindPopup(

@@ -16,8 +16,8 @@ from app.MapTools.MappingTools import get_zone
 from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
 
 import os
-def is_equal_with_tolerance(val1, val2, tolerance=1e-4):
-    return abs(val1 - val2) <= tolerance
+
+
 class BriefListingController():
 
     def __init__(self):
@@ -99,63 +99,12 @@ class BriefListingController():
                 existing_listing = self.db.session.query(BriefListing).filter_by(zpid=brieflisting.zpid).first()
                 if existing_listing:
 
-                    needs_update = False
-                    updatereason=''
-                    gapis_neighbourhood = get_neighborhood(brieflisting.latitude, brieflisting.longitude)
-                    brieflisting.gapis_neighbourhood=gapis_neighbourhood
-                    brieflisting.neighbourhood=findNeighbourhoodfromCoord(brieflisting.city,brieflisting.longitude,brieflisting.latitude)
-                    # print_and_log('Updating existing listing for ' + brieflisting.streetAddress)
-                    if brieflisting.neighbourhood != existing_listing.neighbourhood:
-                        print('===============================Rewriting neighbourhood==============================')
-                        print(existing_listing)
-                        print(brieflisting)
-                        needs_update = True
-                        print('=============================================================')
+                    needs_update, updatereason = existing_listing.needsUpdate(newBrieflisting=brieflisting)
 
-                    for attr in vars(brieflisting):
-                        if attr == '_sa_instance_state':
-                            continue
-                        if attr == 'daysOnZillow':
-                            continue
-                        if attr == 'listtime':
-                            if not is_equal_with_tolerance(existing_value, new_value, 100):
-                                needs_update = True
-                                updatereason= updatereason+ ',' +  attr + ' value update'
-                                break
-                            continue
-                        if hasattr(existing_listing, attr):
-                            existing_value = getattr(existing_listing, attr)
-                            new_value = getattr(brieflisting, attr)
-                            if isinstance(existing_value, decimal.Decimal) and isinstance(new_value, decimal.Decimal):
-                                # For float values, use the tolerance-based comparison
-                                if not is_equal_with_tolerance(existing_value, new_value):
-                                    needs_update = True
-                                    updatereason= updatereason+ ',' + attr + ' value update'
-                                    break
-                            elif isinstance(existing_value, float) and isinstance(new_value, float):
-                                # For float values, use the tolerance-based comparison
-                                if not is_equal_with_tolerance(existing_value, new_value, 0.1):
-                                    needs_update = True
-                                    updatereason= updatereason+ ',' +  attr + ' value update'
-                                    break
-
-                            elif attr=='homeStatus':
-                                if not existing_value==new_value:
-                                    needs_update = True
-                                    updatereason = updatereason+ ',' +  attr + 'from ' + existing_listing.__str__() + ' to ' + new_value
-                            elif existing_value != new_value:
-                                # For all other data types, use standard comparison
-                                needs_update = True
-                                updatereason =  updatereason+ ',' + attr + ' value update'
-                                break
                     if needs_update:
                         print_and_log('Updating existing listing for ' + brieflisting.streetAddress)
                         print_and_log(updatereason)
-                        # Update all relevant fields you want to update
-                        # for attr, value in vars(brieflisting).items():
-                        #     if hasattr(existing_listing, attr):  # Optional: Check if the attribute should be updated
-                        #         setattr(existing_listing, attr, value)
-                        # Since merge is used, it will update if the primary key exists, otherwise insert.
+
                         self.db.session.merge(brieflisting)
                         changebrieflistingarr.append(brieflisting)
 
@@ -166,7 +115,7 @@ class BriefListingController():
                 else:
                     gapis_neighbourhood = get_neighborhood(brieflisting.latitude, brieflisting.longitude)
                     brieflisting.gapis_neighbourhood=gapis_neighbourhood
-                    brieflisting.neighbourhood=findNeighbourhoodfromCoord(brieflisting.city,brieflisting.longitude,brieflisting.latitude)
+                    # brieflisting.neighbourhood=findNeighbourhoodfromCoord(brieflisting.city,brieflisting.longitude,brieflisting.latitude)
                     brieflisting.listday= datetime.now()
                     print_and_log('Adding new listing for ' + brieflisting.ref_address())
                     self.db.session.add(brieflisting)
@@ -210,44 +159,11 @@ class BriefListingController():
         # Return the count of listings needing cleanup
         return f'cleanup FIXME count {FIXMEListingsCount}'
 
-    def ListingsByNeighbourhood(self, neighbourhood, days_ago):
-        # Calculate the date for the given days ago from today
-        date_threshold = datetime.now() - timedelta(days=days_ago)
-
-        # Convert `date_threshold` to Unix timestamp in milliseconds since
-        # `dateSold` is stored as Unix timestamp in milliseconds
-        date_threshold_ms = date_threshold.timestamp() * 1000
-
-        # Query the database for listings in the specified neighbourhood
-        # and sold within the last `days_ago` days.
-        unfiltered_soldhomes = BriefListing.query.filter(
-            BriefListing.neighbourhood == neighbourhood,
-            BriefListing.dateSold >= date_threshold_ms
-        ).all()
-
-        return unfiltered_soldhomes
-
-    def zpidsForSaleInNeighbourhood(self, neighbourhood, days_ago):
-        # Calculate the date for the given days ago from today
-        date_threshold = datetime.now() - timedelta(days=days_ago)
-
-        # Convert `date_threshold` to Unix timestamp in milliseconds since
-        # `dateSold` is stored as Unix timestamp in milliseconds
-        date_threshold_ms = date_threshold.timestamp() * 1000
-
-        # Query the database for listings in the specified neighbourhood
-        # and sold within the last `days_ago` days.
-        unfiltered_soldhomes = BriefListing.query.filter(
-            BriefListing.neighbourhood == neighbourhood,
-            BriefListing.dateSold >= date_threshold_ms,
-            BriefListing.homeStatus =="FOR_SALE"
-        ).all()
-        return [brieflisting.zpid for brieflisting in unfiltered_soldhomes]
-
     def get_listing_by_zpid(self, zpid):
         # Query the database for the listing with the given zpid
         listing = BriefListing.query.filter_by(zpid=zpid).first()
         return listing
+
     def get_listings_by_ids(self, ids):
         # Query the database for listings with the given ids
         listings = BriefListing.query.filter(BriefListing.zpid.in_(ids)).all()
@@ -258,63 +174,17 @@ class BriefListingController():
         listing = BriefListing.query.filter_by(NWMLS_id=NWMLS_id).first()
         return listing
 
-    def forSaleInNeighbourhood(self, neighbourhood, days_ago):
-        # Calculate the date for the given days ago from today
-        date_threshold = datetime.now() - timedelta(days=days_ago)
 
-        date_threshold_ms = date_threshold.timestamp()
+    def forSaleInSearchNeigh(self, search_neigh):
 
-        # Query the database for listings in the specified neighbourhood
-        # and sold within the last `days_ago` days.
-        unfiltered_soldhomes = BriefListing.query.filter(
-            BriefListing.neighbourhood == neighbourhood,
-            BriefListing.homeStatus == "FOR_SALE"
-        ).all()
-
-        # Extract the IDs from the brief listings
-        # forsaleinarea_ids = [listing.zpid for listing in unfiltered_soldhomes]
-        #
-        # # Assuming forsalebriefarr is a list of brief listings currently on sale as extracted by the API
-        # # Extract the IDs from the brief listings
-        # forsalebrief_ids = [listing.zpid for listing in forsalebriefarr]
-        #
-        # # Finding IDs in forsaleinarea that are not in forsalebrief_ids
-        # no_longer_selling_ids = [zpid for zpid in forsaleinarea_ids if zpid not in forsalebrief_ids]
-        #
-        # # Get the listings from the database with those IDs
-        # no_longer_selling_listings = self.get_listings_by_ids(no_longer_selling_ids)
-
-        return unfiltered_soldhomes
-
-    def forSaleInCity(self, city):
-        # Calculate the date for the given days ago from today
-        # date_threshold = datetime.now() - timedelta(days=days_ago)
-        #
-        # date_threshold_ms = date_threshold.timestamp()
-
-        # Query the database for listings in the specified neighbourhood
-        # and sold within the last `days_ago` days.
-        unfiltered_soldhomes = BriefListing.query.filter(
-            BriefListing.city == city,
+        unfiltered = BriefListing.query.filter(
+            BriefListing.search_neigh == search_neigh,
             BriefListing.homeStatus == "FOR_SALE",
             BriefListing.homeType.in_(Config.HOMETYPES)
 
         ).all()
 
-        # Extract the IDs from the brief listings
-        # forsaleinarea_ids = [listing.zpid for listing in unfiltered_soldhomes]
-        #
-        # # Assuming forsalebriefarr is a list of brief listings currently on sale as extracted by the API
-        # # Extract the IDs from the brief listings
-        # forsalebrief_ids = [listing.zpid for listing in forsalebriefarr]
-        #
-        # # Finding IDs in forsaleinarea that are not in forsalebrief_ids
-        # no_longer_selling_ids = [zpid for zpid in forsaleinarea_ids if zpid not in forsalebrief_ids]
-        #
-        # # Get the listings from the database with those IDs
-        # no_longer_selling_listings = self.get_listings_by_ids(no_longer_selling_ids)
-
-        return unfiltered_soldhomes
+        return unfiltered
 
     def OpenHousePotential(self):
         openhouse_brieflistings = BriefListing.query.filter(
@@ -335,32 +205,42 @@ class BriefListingController():
         return unique_neighbourhoods
 
     def SoldHomesinNeighbourhood(self, neighbourhood, days_ago):
-        date_threshold = datetime.now() - timedelta(days=days_ago)
-        date_threshold_ms = int(date_threshold.timestamp() * 1000)
+        date_threshold = int((datetime.now() - timedelta(days=days_ago)).timestamp())
 
         unfiltered_soldhomes = BriefListing.query.filter(
             BriefListing.neighbourhood==neighbourhood,
             BriefListing.homeStatus == 'RECENTLY_SOLD',
-            BriefListing.dateSold >= date_threshold_ms
+            BriefListing.soldtime >= date_threshold
+        ).all()
+
+        return unfiltered_soldhomes
+
+    def SoldHomesinSearch_Neigh(self, search_neigh, days_ago):
+        date_threshold = int((datetime.now() - timedelta(days=days_ago)).timestamp())
+
+        unfiltered_soldhomes = BriefListing.query.filter(
+            BriefListing.search_neigh==search_neigh,
+            BriefListing.homeStatus == 'RECENTLY_SOLD',
+            BriefListing.soldtime >= date_threshold
         ).all()
 
         return unfiltered_soldhomes
 
     def ListingsByNeighbourhoodsAndHomeTypes(self, neighbourhoods, homeTypes, days_ago,homeStatus):
-        date_threshold = datetime.now() - timedelta(days=days_ago)
-        date_threshold_ms = int(date_threshold.timestamp() * 1000)
+        date_threshold = int((datetime.now() - timedelta(days=days_ago)).timestamp())
+        # date_threshold_ms = int(date_threshold.timestamp() * 1000)
 
         unfiltered_soldhomes = BriefListing.query.filter(
             BriefListing.neighbourhood.in_(neighbourhoods),
             # BriefListing.homeType.in_(homeTypes),
             BriefListing.homeStatus == homeStatus,
-            BriefListing.dateSold >= date_threshold_ms
+            BriefListing.soldtime >= date_threshold
         ).all()
 
         return unfiltered_soldhomes
     def ForSaleListingsByNeighbourhoodsAndHomeTypes(self, neighbourhoods, homeTypes, days_ago,homeStatus):
-        date_threshold = datetime.now() - timedelta(days=days_ago)
-        date_threshold_ms = int(date_threshold.timestamp() * 1000)
+        date_threshold = int((datetime.now() - timedelta(days=days_ago)).timestamp())
+        # date_threshold_ms = int(date_threshold.timestamp() * 1000)
 
         unfiltered_soldhomes = BriefListing.query.filter(
             BriefListing.neighbourhood.in_(neighbourhoods),
@@ -466,7 +346,7 @@ class BriefListingController():
         elif homeStatus == 'RECENTLY_SOLD':
             results = BriefListing.query.filter(
                 BriefListing.homeStatus == homeStatus,
-                BriefListing.dateSold >= days_ago
+                BriefListing.soldtime >= days_ago
             )
         elif homeStatus == 'FOR_SALE':
             results = BriefListing.query.filter(
@@ -481,7 +361,7 @@ class BriefListingController():
         else:
             results = BriefListing.query.filter(
                 BriefListing.homeStatus == homeStatus,
-                BriefListing.dateSold >= days_ago
+                BriefListing.soldtime >= days_ago
             )
 
         return results
@@ -511,7 +391,7 @@ class BriefListingController():
         recent_sold = BriefListing.query.filter(
             BriefListing.homeStatus == 'RECENTLY_SOLD',
             BriefListing.city == city,
-            BriefListing.dateSold >= fromdays_ago*1000
+            BriefListing.soldtime >= fromdays_ago
         )
 
         if neighbourhood_sub:
@@ -561,7 +441,7 @@ class BriefListingController():
             BriefListing.zone_id == zone.id,
         ]
         if homeStatus== RECENTLYSOLD:
-            filters.append(BriefListing.dateSold >= fromdays_ago*1000)
+            filters.append(BriefListing.soldtime >= fromdays_ago)
         elif homeStatus== FOR_SALE:
             filters.append(BriefListing.listtime >= fromdays_ago)
         elif homeStatus==PENDING:
@@ -606,6 +486,40 @@ class BriefListingController():
             message+=f'Home Status Went {brieflisting.homeStatus} to {propertyData["homeStatus"]}\n'
         return pricechanged,homestatuschanged, message, title
 
+    def getListingByCustomerPreference(self, customer, homeStatus, fromdays):
+
+        fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
+        # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
+        filters = [
+            BriefListing.homeStatus == homeStatus]
+
+        customer_zone_ids = [zone.zone.id for zone in customer.zones]  # Extract zone IDs
+        if customer_zone_ids:
+            filters.append(BriefListing.zone_id.in_(customer_zone_ids))
+
+        if homeStatus== RECENTLYSOLD:
+            filters.append(BriefListing.soldtime >= fromdays_ago)
+        elif homeStatus== FOR_SALE:
+            filters.append(BriefListing.listtime >= fromdays_ago)
+        elif homeStatus==PENDING:
+            filters.append(BriefListing.pendday >= fromdays_ago)
+        # Add optional parameters dynamically
+
+        property_types= [ptype.name for ptype in customer.property_types]
+
+        # Apply filters correctly
+        if property_types:  # Only add filter if there's at least one property type
+            filters.append(BriefListing.homeType.in_(property_types))
+
+        if customer.maxprice:
+            filters.append(BriefListing.price <= customer.maxprice)
+        if customer.minprice:
+            filters.append(BriefListing.price >= customer.minprice)
+        # Execute the query with all filters applied at once
+        return BriefListing.query.filter(*filters)
+
+
+
 
     def getFirstTenListingsWhereMLSisNull(self):
         """
@@ -615,7 +529,7 @@ class BriefListingController():
         """
         try:
             first_ten_listings = (self.BriefListing.query.filter(self.BriefListing.NWMLS_id == None)
-                                  .filter(self.BriefListing.dateSold > 1730400000000)
+                                  .filter(self.BriefListing.soldtime > 1730400000)
                                   .all())
             return first_ten_listings
         except Exception as e:
@@ -625,7 +539,7 @@ class BriefListingController():
     def getFirstXListingsWhereZoneisNull(self,X):
         """
         Retrieve the first ten listings from the BriefListing table where zone_id is NULL
-        and where dateSold is greater than 1730400000000.
+        and where soldtime is greater than 1730400000.
 
         :return: List of the first ten BriefListing objects with zone_id = NULL
         """
@@ -634,8 +548,8 @@ class BriefListingController():
             first_ten_listings = (self.BriefListing.query
                                   # .filter(self.BriefListing.city == 'Seattle')
                                   # .filter(self.BriefListing.homeStatus == FOR_SALE)
-                                  .filter(self.BriefListing.zone_id.is_(None))
-                                  .filter(self.BriefListing.outsideZones== 0)
+                                  .filter(self.BriefListing.zone_id==1)
+                                  # .filter(self.BriefListing.outsideZones== 0)
                                   # .filter(self.BriefListing.listtime > 1730400000000)
                                   .limit(X)  # Limit to 10 instead of 100
                                   .all())

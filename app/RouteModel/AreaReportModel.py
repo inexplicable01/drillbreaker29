@@ -1,3 +1,5 @@
+# from numpy import int256
+
 from app.MapTools.MappingTools import generateMap
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
     loadPropertyDataFromBrief, ListingStatus
@@ -32,26 +34,32 @@ def ListAllNeighhourhoodsByCities(neighbourhoods, doz):
 
 from datetime import datetime, timedelta
 def AreaReportModelRun(selected_zones, selectedhometypes,soldlastdays):
-    unfiltered_soldhomes = []
+    unfiltered_homes = []
     for zone in selected_zones:
         wzone = washingtonzonescontroller.getzonebyName(zone)
         if wzone:
-            unfiltered_soldhomes=unfiltered_soldhomes+wzone.brief_listings
-            for brieflisting in wzone.brief_listings:
-                print(brieflisting.__str__())
+            unfiltered_homes=unfiltered_homes+wzone.brief_listings
+            # for brieflisting in wzone.brief_listings:
+            #     print(brieflisting.__str__())
 
-    current_time_ms = int(datetime.now().timestamp() * 1000)  # Current time in milliseconds
-    time_threshold_ms = current_time_ms - (soldlastdays * 24 * 60 * 60 * 1000)
-
+    current_time = int(datetime.now().timestamp())  # Current time in milliseconds
+    time_threshold = current_time - (soldlastdays * 24 * 60 * 60 )
+    i1=0
+    i2=0
+    i3=0
     soldhomes=[]
-    for brieflisting in unfiltered_soldhomes:
+    for brieflisting in unfiltered_homes:
         if brieflisting.homeType not in selectedhometypes:
+            i1+=1
             continue
         if brieflisting.homeStatus!=RECENTLYSOLD:
+            i2+=1
             continue
-        if brieflisting.dateSold < time_threshold_ms:  # Check if the listing is older than the threshold
+        if brieflisting.soldtime < time_threshold:
+            i3+=1# Check if the listing is older than the threshold
             continue
         soldhomes.append(brieflisting)
+    print(i1,i2,i3)
     housesoldpriceaverage={}
     for brieflisting in soldhomes:
         try:
@@ -98,8 +106,6 @@ def AreaReportModelRunForSale(selected_zones, selectedhometypes,onsaledays):
         wzone = washingtonzonescontroller.getzonebyName(zone)
         if wzone:
             unfiltered_brieflistings=unfiltered_brieflistings+wzone.brief_listings
-            for brieflisting in wzone.brief_listings:
-                print(brieflisting.__str__())
 
     current_time_ms = int(datetime.now().timestamp())  # Current time in milliseconds
     time_threshold_ms = current_time_ms - (onsaledays * 24 * 60 * 60 )

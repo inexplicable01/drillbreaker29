@@ -5,7 +5,7 @@ from flask import Blueprint, redirect, url_for
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.ZillowAPI.ZillowAPICall import *
-from app.HeatMapProcessing import *
+# from app.HeatMapProcessing import *
 from app.UsefulAPI.UseFulAPICalls import get_neighborhood
 # from app.ZillowAPI.ZillowAPICall import SearchZillowByAddress
 from app.config import Config

@@ -7,7 +7,7 @@ from folium.map import Marker
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
 
-from app.DataBaseFunc import dbmethods
+# from app.DataBaseFunc import dbmethods
 from joblib import load
 import datetime
 SOLDHOTTNESS = 'SOLDHOTTNESS'
@@ -53,11 +53,11 @@ def HeatMapGen(days, displayfun):
             try:
                 if listing is None:
                     continue
-                if listing.dateSold is None:
+                if listing.soldtime is None:
                     continue
             except Exception:
                 print('sdf')
-            if days_ago <= listing.dateSold <= current_date:
+            if days_ago <= listing.soldtime <= current_date:
                 coords.append([listing.latitude, listing.longitude, HouseSoldSpeed(listing.list2pend)])
                 lat = lat + listing.latitude
                 long = long + listing.longitude

@@ -55,7 +55,7 @@ def create_ssh_tunnel():
 
 
 from app.extensions import db
-from app.DataBaseFunc import dbmethods
+# from app.DataBaseFunc import dbmethods
 
 def create_app(debug=False,config_object="config.module.path"):
     app = Flask(__name__, instance_relative_config=True)
@@ -112,7 +112,7 @@ def create_app(debug=False,config_object="config.module.path"):
             db.session.rollback()
         db.session.remove()
 
-    dbmethods.db = db
+    # dbmethods.db = db
     return app, tunnel
 
 
