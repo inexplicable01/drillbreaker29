@@ -1,5 +1,5 @@
 # email_bp.py
-from flask import Blueprint, redirect, url_for, jsonify, render_template, request
+from flask import Blueprint, redirect, url_for, jsonify, render_template, request, send_from_directory
 # from app.DBFunc.BriefListingController import brieflistingcontroller
 # from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 # from app.DBModels.BriefListing import BriefListing
@@ -20,6 +20,12 @@ import base64
 
 save_image_bp = Blueprint('save_image_bp', __name__, url_prefix='/picture')
 from datetime import datetime
+
+
+@save_image_bp.route('/favicon.ico')
+def favicon():
+    return send_from_directory('static', 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 
 @save_image_bp.route('/save_map_image', methods=['POST'])
 def save_map_image():

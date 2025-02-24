@@ -37,7 +37,7 @@ class BriefListing(db.Model):
     homeType = db.Column(db.String(100), nullable=True)
     imgSrc = db.Column(db.String(255), nullable=True)
     isFeatured = db.Column(db.Boolean, nullable=True)
-    isNonOwnerOccupied = db.Column(db.Boolean, nullable=True)
+    # isNonOwnerOccupied = db.Column(db.Boolean, nullable=True)
     isPreforeclosureAuction = db.Column(db.Boolean, nullable=True)
     isPremierBuilder = db.Column(db.Boolean, nullable=True)
     isShowcaseListing = db.Column(db.Boolean, nullable=True)
@@ -104,8 +104,9 @@ class BriefListing(db.Model):
         self.list2solddays = listinglength['list2solddays']
         self.listprice = listinglength['listprice']
         self.soldprice = listinglength['soldprice']
-        # if self.listprice is not None:
-        #     self.pricedelta=self.price-self.listprice
+
+        if self.soldprice is not None and self.listprice is not None:
+            self.pricedelta=self.soldprice-self.listprice
 
     def __str__(self):
         return self.ref_address()
@@ -143,7 +144,8 @@ class BriefListing(db.Model):
         listresults = ListingLengthbyBriefListing(propertydata)
         self.updateListingLength(listresults)
         self.hdpUrl = propertydata['hdpUrl']
-        self.soldprice = propertydata['lastSoldPrice']
+        if self.soldprice is not None:
+            self.soldprice = propertydata['lastSoldPrice']
         try:
             self.NWMLS_id = propertydata['attributionInfo']['mlsId']
             if self.NWMLS_id is None:
@@ -230,7 +232,7 @@ class BriefListing(db.Model):
             new_listing.homeType = briefhomedata.get('homeType', 'Missing')
             new_listing.imgSrc = briefhomedata.get('imgSrc', 'Missing')
             new_listing.isFeatured = briefhomedata.get('isFeatured', False)
-            new_listing.isNonOwnerOccupied = briefhomedata.get('isNonOwnerOccupied', False)
+            # new_listing.isNonOwnerOccupied = briefhomedata.get('isNonOwnerOccupied', False)
             new_listing.isPreforeclosureAuction = briefhomedata.get('isPreforeclosureAuction', False)
             new_listing.isPremierBuilder = briefhomedata.get('isPremierBuilder', False)
             new_listing.isShowcaseListing = briefhomedata.get('isShowcaseListing', False)
@@ -294,7 +296,7 @@ class BriefListing(db.Model):
             new_listing.homeType = propertydata.get('homeType', 'Missing')
             new_listing.imgSrc = propertydata.get('imgSrc', 'Missing')
             new_listing.isFeatured = propertydata.get('isFeatured', False)
-            new_listing.isNonOwnerOccupied = propertydata.get('isNonOwnerOccupied', False)
+            # new_listing.isNonOwnerOccupied = propertydata.get('isNonOwnerOccupied', False)
             new_listing.isPreforeclosureAuction = propertydata.get('isPreforeclosureAuction', False)
             new_listing.isPremierBuilder = propertydata.get('isPremierBuilder', False)
             new_listing.isShowcaseListing = propertydata.get('isShowcaseListing', False)
@@ -348,7 +350,7 @@ response = {
     'homeType': 'SINGLE_FAMILY',
     'imgSrc': 'https://photos.zillowstatic.com/fp/a6ad1b1713ff7fb31f4bdf9b9a96d879-p_e.jpg',
     'isFeatured': False,
-    'isNonOwnerOccupied': True,
+    # 'isNonOwnerOccupied': True,
     'isPreforeclosureAuction': False,
     'isPremierBuilder': False,
     'isShowcaseListing': False,

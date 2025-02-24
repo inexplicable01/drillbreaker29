@@ -537,21 +537,22 @@ class BriefListingController():
             print(f"Error retrieving the first ten listings where NWMLS_id is null: {str(e)}")
             return []
 
-    def getFirstXListingsWhereZoneisNull(self,X):
+    def getFirstXListingsWhereZoneisNull(self,X, citylist):
         """
         Retrieve the first ten listings from the BriefListing table where zone_id is NULL
         and where soldtime is greater than 1730400000.
 
         :return: List of the first ten BriefListing objects with zone_id = NULL
         """
+        fromdays_ago = int((datetime.now() - timedelta(days=60)).timestamp())
         try:
             # Query for listings where zone_id is NULL and dateSold is greater than 1730400000000,'Bellevue','Shoreline','Bothell','Redmond','Kenmore'
             first_ten_listings = (self.BriefListing.query
-                                  .filter(self.BriefListing.search_neigh.in_(['Kirkland', 'Seattle'])  )
+                                  .filter(self.BriefListing.search_neigh.in_(citylist ) )
                                   .filter(self.BriefListing.homeStatus == RECENTLYSOLD)
                                   # .filter(self.BriefListing.city==1)
-                                  .filter(self.BriefListing.pricedelta== 0)
-                                  # .filter(self.BriefListing.listtime > 1730400000000)
+                                  # .filter(self.BriefListing.pricedelta== 0)
+                                  .filter(self.BriefListing.soldtime > fromdays_ago)
                                   .limit(X)  # Limit to 10 instead of 100
                                   .all())
             return first_ten_listings

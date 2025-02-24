@@ -401,14 +401,20 @@ def updateathing2():
 def updateathing3():
     # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
     iter_value = request.args.get('iter')
-    listings = brieflistingcontroller.getFirstXListingsWhereZoneisNull(int(iter_value))
-    #
+    citylist = request.args.get('city')
+    citylist = citylist.split(',') if citylist else []
+    listings = brieflistingcontroller.getFirstXListingsWhereZoneisNull(int(iter_value), citylist)
+    # tempdict ={}
+    # for brieflisting in listings:
+    #     tempdict[brieflisting.zpid] = brieflisting
+
+
     for brieflisting in listings:
-    # brieflisting=brieflistingcontroller.get_listing_by_zpid(442837816)
+    # brieflisting=brieflistingcontroller.get_listing_by_zpid(48906318)
         brieflisting.getPropertyData()
-        # brieflistingcontroller.setZoneForBriefListing(brieflisting)
-        # print(brieflisting.zone_id)
-        # print(brieflisting)
+            # brieflistingcontroller.setZoneForBriefListing(brieflisting)
+            # print(brieflisting.zone_id)
+            # print(brieflisting)
         brieflistingcontroller.updateBriefListing(brieflisting)
     # brieflistingcontroller.setZoneForBriefListingList(listings)
 

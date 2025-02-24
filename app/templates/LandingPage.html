@@ -72,9 +72,9 @@
     {#  </tr>#}
 
     {#          <tr>#}
-    <td>Openhouse</td>
-    <td><a href="{{ url_for('openhouse.SearchForOpenHouseRoute') }}">Open House</a></td>
-    </tr>
+{#    <td>Openhouse</td>#}
+{#    <td><a href="{{ url_for('openhouse.SearchForOpenHouseRoute') }}">Open House</a></td>#}
+{#    </tr>#}
 {#    <td>Homes for Sale</td>#}
 {#    <td><a href="{{ url_for('hothomes_bp.forsalehomes') }}">Homes for Sale</a></td>#}
 {#    </tr>#}
@@ -94,32 +94,32 @@
 {#    <td><a href="{{ url_for('neighbourhoodreport.neigh_report') }}">Neighbourhood Report</a></td>#}
 {#    </tr>#}
 
-    <td>Clickable Map</td>
-    <td><a href="{{ url_for('clickablemap_bp.clickablemap') }}">Clickable Map</a></td>
-    </tr>
-    <td>Clickable Map2</td>
-    <td><a href="{{ url_for('clickablemap_bp.clickablemap2') }}">Clickable Map2</a></td>
-
-    </tr>
-    <td>Investment Analysis</td>
-    <td><a href="{{ url_for('rental_bp.good_investment') }}">Investment</a></td>
-    </tr>
-    <td>FSBO</td>
-    <td><a href="{{ url_for('fsbo_bp.getfsbo') }}">FSBO</a></td>
-    </tr>
-    </tr>
-    <td>Transaction High Level Summary</td>
-    <td><a href="{{ url_for('zonestats_interesting.zonestats') }}">Transactions by City</a></td>
-    </tr>
-    </tr>
+{#    <td>Clickable Map</td>#}
+{#    <td><a href="{{ url_for('clickablemap_bp.clickablemap') }}">Clickable Map</a></td>#}
+{#    </tr>#}
+{#    <td>Clickable Map2</td>#}
+{#    <td><a href="{{ url_for('clickablemap_bp.clickablemap2') }}">Clickable Map2</a></td>#}
+{##}
+{#    </tr>#}
+{#    <td>Investment Analysis</td>#}
+{#    <td><a href="{{ url_for('rental_bp.good_investment') }}">Investment</a></td>#}
+{#    </tr>#}
+{#    <td>FSBO</td>#}
+{#    <td><a href="{{ url_for('fsbo_bp.getfsbo') }}">FSBO</a></td>#}
+{#    </tr>#}
+{#    </tr>#}
+{#    <td>Transaction High Level Summary</td>#}
+{#    <td><a href="{{ url_for('zonestats_interesting.zonestats') }}">Transactions by City</a></td>#}
+{#    </tr>#}
+{#    </tr>#}
     <td>Customer Interest</td>
     <td><a href="{{ url_for('customer_interest_bp.listCustomers') }}">Customer Interested Areas</a></td>
     </tr>
 
         </tr>
-    <td>Set Alerts</td>
-    <td><a href="{{ url_for('customer_interest_bp.listCustomersforAlerts') }}">Customer Interest Homes</a></td>
-    </tr>
+{#    <td>Set Alerts</td>#}
+{#    <td><a href="{{ url_for('customer_interest_bp.listCustomersforAlerts') }}">Customer Interest Homes</a></td>#}
+{#    </tr>#}
 
 </table>
 
@@ -128,9 +128,9 @@
 {#        <form action="{{ url_for('main.send_test_email') }}" method="post">#}
 {#            <button type="submit">Send Us a Question!</button>#}
 {#        </form>#}
-<form action="{{ url_for('email.sendEmailUpdates') }}" method="post">
-    <button type="submit">Send Email!</button>
-</form>
+{#<form action="{{ url_for('email.sendEmailUpdates') }}" method="post">#}
+{#    <button type="submit">Send Email!</button>#}
+{#</form>#}
 
 <p>This is last update on {{ lastupdate }}</p>
 <p>{{ recent_pending_count }} went pending in the last 7 days.</p>
