@@ -487,7 +487,7 @@ class BriefListingController():
             message+=f'Home Status Went {brieflisting.homeStatus} to {propertyData["homeStatus"]}\n'
         return pricechanged,homestatuschanged, message, title
 
-    def getListingByCustomerPreference(self, customer, homeStatus, fromdays):
+    def getListingByCustomerPreference(self, customer, homeStatus, fromdays, priceleeway=50000):
 
         fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
         # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
@@ -513,9 +513,9 @@ class BriefListingController():
             filters.append(BriefListing.homeType.in_(property_types))
 
         if customer.maxprice:
-            filters.append(BriefListing.price <= customer.maxprice)
+            filters.append(BriefListing.price <= (customer.maxprice+priceleeway))
         if customer.minprice:
-            filters.append(BriefListing.price >= customer.minprice)
+            filters.append(BriefListing.price >= (customer.minprice-priceleeway))
         # Execute the query with all filters applied at once
         return BriefListing.query.filter(*filters)
 

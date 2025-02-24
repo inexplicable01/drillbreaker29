@@ -3,11 +3,11 @@ from openai import OpenAI
 from flask import Blueprint, request, jsonify
 from dotenv import load_dotenv
 import json
-# import customerzonecontroller
-from app.DBFunc.CustomerZoneController import customerzonecontroller
-from app.DBFunc.BriefListingController import brieflistingcontroller
 
-from app.DBFunc.BriefListingController import brieflistingcontroller
+#from app.DBFunc.CustomerZoneController import customerzonecontroller
+from app.DBFunc.CustomerDescriptionController import customer_description_controller
+
+#from app.DBFunc.BriefListingController import brieflistingcontroller
 
 # Load API key
 load_dotenv()
@@ -15,43 +15,51 @@ OPENAI_API_KEY = os.getenv("OPENAI_apiKey")
 client = OpenAI(api_key=OPENAI_API_KEY)
 # client = OpenAI()
 
-def AIModel(zpid,  customer):
+def AIModel(brieflisting,  customer, propertydata):
     """
     API endpoint to evaluate a listing's match likelihood for a customer.
     """
-    if not zpid:
-        return jsonify({"error": "Missing ZPID"}), 400
 
-    # Fetch listing details (this should be replaced with your actual database/API call)
-    listing_details = brieflistingcontroller.get_listing_by_zpid(zpid)  # Implement this function
+    customer_descriptions = customer_description_controller.retrieve_all_descriptions(customer.id)
 
-    if not listing_details:
+    # Format descriptions: Join them into a single string (fallback to default if empty)
+    if customer_descriptions:
+        customer_description_text = " | ".join(desc.description for desc in customer_descriptions)
+    else:
+        customer_description_text = "No additional details provided."
+    if not brieflisting:
         return jsonify({"error": "Listing not found"}), 404
 
     # Prepare prompt for AI     # - Interested Neighborhoods: {', '.join(locations)}
     prompt = f"""
     Given the following customer preferences and real estate listing, rate how likely the customer is to like this listing on a scale from 0 to 100.
-    Provide a short concise explanation, no more than 75 characters.  Use Broken language if you need to get the point across.
+    Provide a short concise explanation, no more than 150 characters.  Use Broken language if you need to get the point across.
 
     Customer Details:
     - Name: {customer.name}
     - Budget: {customer.minprice} to {customer.maxprice} (Ideal: {customer.idealprice})
     - Preferred square footage: {customer.minsqft} to {customer.maxsqft} (Ideal: {customer.idealsqft})
+    - Parking Space needed : {customer.parkingspaceneeded} 
+
     - Home Owner much much prefer Single Family Homes
+    - Additional Customer Preferences: {customer_description_text}
 
     Listing Details:
-    - Price: {listing_details.price}
-    - Square Footage: {listing_details.livingArea}
-    - Location: {listing_details.city}, {listing_details.state}, {listing_details.zipcode}
-    - Bedrooms: {listing_details.bedrooms}
-    - Bathrooms: {listing_details.bathrooms}
-    - Home Type: {listing_details.homeType}
-    - Lot Size: {listing_details.lotAreaValue} {listing_details.lotAreaUnit}
-    - Zestimate: {listing_details.zestimate}
-    - Status: {listing_details.homeStatus}
-    - Days on Market: {listing_details.daysOnZillow}
-    - Listed on: {listing_details.listtime}
-    - Wayber Comments: {listing_details.waybercomments}
+    - Price: {brieflisting.price}
+    - Square Footage: {brieflisting.livingArea}
+    - Location: {brieflisting.city}, {brieflisting.state}, {brieflisting.zipcode}
+    - Bedrooms: {brieflisting.bedrooms}
+    - Bathrooms: {brieflisting.bathrooms}
+    - Home Type: {brieflisting.homeType}
+    - Lot Size: {brieflisting.lotAreaValue} {brieflisting.lotAreaUnit}
+    - Zestimate: {brieflisting.zestimate}
+    - Status: {brieflisting.homeStatus}
+    - Days on Market: {brieflisting.daysOnZillow}
+    - Listed on: {brieflisting.listtime}
+    - Year Built : {brieflisting.yearBuilt}
+    - Parking Spaces : {brieflisting.parkingSpaces}
+    - Wayber Comments: {brieflisting.waybercomments}
+
 
 
     Response format:

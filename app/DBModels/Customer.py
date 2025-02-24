@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime , Numeric
+from datetime import datetime
 Base = declarative_base()
 from app.extensions import db
 
@@ -20,6 +21,10 @@ class Customer(db.Model):
     idealsqft = db.Column(db.Integer, nullable=True)
     minsqft = db.Column(db.Integer, nullable=True)
     maxsqft = db.Column(db.Integer, nullable=True)
+    active = db.Column(db.Boolean, nullable=True)
+    last_contacted =  db.Column(db.DateTime, default=datetime.utcnow)
+    lot_size = db.Column(db.Integer, nullable=True)
+    parkingspaceneeded = db.Column(db.Integer, nullable=True)
 
     # interests = db.relationship('CustomerZone', back_populates='customer')
 

@@ -255,7 +255,7 @@ def maintainListingsByZone():
 
 @maintanance_bp.route('/listingscheck', methods=['PATCH'])
 def listingscheck():
-    # This is looking for missing listings.  This feels more like its catching things that fell through the hole
+    # This is looking for missing listings.  This feels more like its catching things that fe90 through the hole
     city = request.form.get('city')
 
     for_sale_DB = brieflistingcontroller.forSaleInCity(city)
@@ -330,27 +330,11 @@ def clients_listing_Recommendation():
     customer = customerzonecontroller.get_customer(customer_id)
 
     # Loop through neighborhoods to extract data when city is 'Seattle'
-    forsalehomes = brieflistingcontroller.getListingByCustomerPreference(customer, FOR_SALE, 30).all()
-
-        # city_name = area["city"]  # Assuming `city` is in the returned dictionary
-
-        # city_name = area["city"]  # Assuming `city` is in the returned dictionary
-        #
-        # if city_name == "Seattle":
-        #     # Query the database to fetch the full row for this neighborhood
-        #     forsalehomes = forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365,
-        #                                                                                maxprice=customer.maxprice + 100000,
-        #                                                                                minprice=customer.minprice - 100000,
-        #                                                                                neighbourhood_sub=area[
-        #                                                                                    "neighbourhood_sub"]).all()
-        # else:
-        #     forsalehomes = forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name,
-        #                                                                                365,
-        #                                                                                maxprice=customer.maxprice + 100000,
-        #                                                                                minprice=customer.minprice - 100000).all()
-
+    forsalehomes = brieflistingcontroller.getListingByCustomerPreference(customer, FOR_SALE, 90).all()
     for forsale_bl in forsalehomes:
-        ai_response = AIModel(forsale_bl.zpid, customer)
+        propertydata = forsale_bl.getPropertyData()
+        brieflistingcontroller.updateBriefListing(forsale_bl)
+        ai_response = AIModel(forsale_bl, customer, propertydata)
         likelihood_score = ai_response.get("likelihood_score", 0)
         ai_comment = ai_response.get("reason", "")
 

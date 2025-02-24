@@ -1,3 +1,4 @@
+from app.DBFunc.CustomerDescriptionController import CustomerDescription
 from app.DBModels.Customer import Customer
 from app.DBModels.BriefListing import BriefListing
 from app.DBModels.CustomerZpid import CustomerZpid
@@ -66,3 +67,8 @@ Customer_property_types = db.Table('Customer_property_types',
 
 Customer.property_types = db.relationship('PropertyType', secondary=Customer_property_types,
                                  backref=db.backref('users', lazy='dynamic'))
+
+# Customer to Descriptions
+Customer.descriptions = db.relationship('CustomerDescription', back_populates='customer', cascade="all, delete")
+
+CustomerDescription.customer = db.relationship('Customer', back_populates='descriptions')
