@@ -26,7 +26,9 @@ def createPriceChangevsDays2PendingPlot(soldhomes):
             if (brieflisting.price-brieflisting.listprice)>600000.0:
                 print(brieflisting)
                 continue
-
+            # if (brieflisting.price-brieflisting.listprice)==0:
+            #     print(brieflisting)
+            #     continue
             # Use price to determine the size of the marker
             size = (brieflisting.price / 3000000.0) * 30 +24
             if size > 174:

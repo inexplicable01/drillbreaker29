@@ -146,6 +146,10 @@ class BriefListing(db.Model):
         self.soldprice = propertydata['lastSoldPrice']
         try:
             self.NWMLS_id = propertydata['attributionInfo']['mlsId']
+            if self.NWMLS_id is None:
+                # if propertydata['attributionInfo']:
+                #     self.homeStatus == 'ForRent'
+                print(propertydata['attributionInfo'])
         except Exception as e:
             print(e, self, 'Failed getting NWMLS ID')
 

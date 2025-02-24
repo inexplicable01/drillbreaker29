@@ -3,7 +3,7 @@ from flask import Blueprint, redirect, url_for, jsonify, render_template, reques
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.DBModels.BriefListing import BriefListing
-from app.config import Config, SW
+from app.config import Config, SW, RECENTLYSOLD
 # from flask import Flask, render_template, make_response
 # from weasyprint import HTML
 from app.MapTools.MappingTools import WA_geojson_features
@@ -148,6 +148,35 @@ def maintainSoldListings():
         except Exception as e:
             # If the function fails, return a failure message with details
             return jsonify({'status': 'failure', 'message': 'Data gathering failed.', 'details': str(e)}), 500
+
+@maintanance_bp.route('/maintainPendingListings', methods=['PATCH'])
+def maintainPendingListings():
+    if request.method == 'PATCH':
+
+        city = request.form.get('city')
+        brieflistingpending = brieflistingcontroller.getallPendings()
+        for brieflisting in brieflistingpending:
+            try:
+                propertydata = loadPropertyDataFromBrief(brieflisting)
+                status = propertydata['homeStatus']
+                if status == 'PENDING':
+                    continue
+                    print(brieflisting.__str__() + ' has changed from Pending to SOLD!!!')
+                elif status == 'FOR_SALE':
+                    print(brieflisting.__str__() + ' has changed from For sale to Sold!!!')
+                    brieflisting.homeStatus = status
+                    brieflistingcontroller.updateBriefListing(brieflisting)
+                    continue
+                elif status == RECENTLYSOLD:
+                    brieflisting.homeStatus = status
+                    # print(brieflistinginDB.soldtime)
+                    brieflisting.soldprice = propertydata['lastSoldPrice']
+                    brieflisting.soldtime = int(propertydata['dateSold'])/1000
+                    brieflistingcontroller.updateBriefListing(brieflisting)
+            except Exception as e:
+                print(e, brieflisting)
+    return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200
+
 
 @maintanance_bp.route('/maintainFORSALEListings', methods=['PATCH'])
 def maintainForSaleListings():
@@ -373,13 +402,15 @@ def updateathing3():
     # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
     iter_value = request.args.get('iter')
     listings = brieflistingcontroller.getFirstXListingsWhereZoneisNull(int(iter_value))
-    # for brieflisting in listings:
     #
-    #     brieflistingcontroller.setZoneForBriefListing(brieflisting)
-    #     print(brieflisting.zone_id)
-    #     print(brieflisting)
-    #     brieflistingcontroller.updateBriefListing(brieflisting)
-    brieflistingcontroller.setZoneForBriefListingList(listings)
+    for brieflisting in listings:
+    # brieflisting=brieflistingcontroller.get_listing_by_zpid(442837816)
+        brieflisting.getPropertyData()
+        # brieflistingcontroller.setZoneForBriefListing(brieflisting)
+        # print(brieflisting.zone_id)
+        # print(brieflisting)
+        brieflistingcontroller.updateBriefListing(brieflisting)
+    # brieflistingcontroller.setZoneForBriefListingList(listings)
 
     return {"Seattle Neighbourhood_subs updated": 'listings.__len__()'}, 200
 

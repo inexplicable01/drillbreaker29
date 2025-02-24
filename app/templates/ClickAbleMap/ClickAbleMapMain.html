@@ -21,7 +21,7 @@
                 <h2>Sold Houses in the last {{ selected_doz }} days</h2>
                 <img id="graphImage" src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
 
-                <img id="graphImage" src="{{ plot_url }}" alt="House Price vs. Days to Pending">
+{#                <img id="graphImage" src="{{ plot_url }}" alt="House Price vs. Days to Pending">#}
             </div>
             {% include 'ClickAbleMap/data_table.html' %} <!-- Include data table -->
         </div>

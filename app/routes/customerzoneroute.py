@@ -114,7 +114,7 @@ def retire_zpid():
 
 
 
-def gatherCustomerData(customer_id):
+def gatherCustomerData(customer_id, selected_doz):
     customer = customerzonecontroller.get_customer_zone(customer_id)
     # customer = customerzonecontroller.get_customer(customer_id)
 
@@ -169,8 +169,27 @@ def gatherCustomerData(customer_id):
     # for n in locations:
     #     neighbourhoods_subs.append(n["neighbourhood_sub"])
     #     cities.append(n["city"])
+    customerlistings = brieflistingcontroller.getListingByCustomerPreference(customer, FOR_SALE, 90)
+    housesoldpriceaverage, plot_url, plot_url2, soldhomes = AreaReportModelRun(locationzonenames,
+                                                                               [SW.TOWNHOUSE, SW.SINGLE_FAMILY], selected_doz)
 
-    return customer, locations , locationzonenames
+    asdf, forsalebrieflistings = AreaReportModelRunForSale(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
+                                                                            365)
+    forsalehomes_dict=[]
+    for brieflisting in forsalebrieflistings:
+        if brieflisting.fsbo_status is None:
+            forsalehomes_dict.append(brieflisting.to_dict())
+
+    brieflistings_SoldHomes_dict=[]
+    for brieflisting in soldhomes:
+        if brieflisting.fsbo_status is None: # don't want to include fsbos cause it causes an error
+            # hard code out for now.
+            brieflistings_SoldHomes_dict.append(
+               brieflisting.to_dict()
+            )
+
+
+    return customer, locations , locationzonenames , customerlistings , housesoldpriceaverage, plot_url, plot_url2, soldhomes , forsalehomes_dict, brieflistings_SoldHomes_dict
     # return customer, locations, cities, neighbourhoods_subs, forsalehomes
 
 
@@ -180,9 +199,8 @@ def send_email(customer_id):
     # Query the customer and their interests
     # customer = Customer.query.get(customer_id)
 
-    customer, locations, locationzonenames = gatherCustomerData(customer_id)
-    housesoldpriceaverage, plot_url, plot_url2, soldhomes = AreaReportModelRun(locationzonenames,
-                                                                               [SW.TOWNHOUSE, SW.SINGLE_FAMILY], 7)
+    customer, locations, locationzonenames, customerlistings,housesoldpriceaverage, plot_url, plot_url2, soldhomes, forsalehomes_dict, brieflistings_SoldHomes_dict  = gatherCustomerData(customer_id, selected_doz)
+
     if not customer:
         return "No customers found", 404
     sendCustomerEmail(customer,locations, plot_url, soldhomes)
@@ -197,8 +215,9 @@ def displayCustomerInterest():
     # Fetch precomputed city stats from the cache
     # Mock data for the example
     customer_id = request.args.get("customer_id", type=int, default=None)
-
-    customer, locations, locationzonenames = gatherCustomerData(customer_id)
+    selected_doz=30
+    customer, locations, locationzonenames, customerlistings,housesoldpriceaverage, plot_url, plot_url2, soldhomes, forsalehomes_dict, brieflistings_SoldHomes_dict\
+        = gatherCustomerData(customer_id, selected_doz)
 
     aicomments=[]
     selectedhomes=[]
@@ -222,6 +241,8 @@ def displayCustomerInterest():
     if not os.path.exists(map_html_path):
         map_html = create_map(
             geojson_features=geojson_features,
+            neighbourhoods_subs=locationzonenames,
+            cities=locationzonenames,
             map_html_path=str(map_html_path),
             map_image_path = str(map_image_path)
         )
@@ -232,23 +253,8 @@ def displayCustomerInterest():
     # Step 3: Serve the map image in the template
     map_image_url = f"/static/maps/{map_image_path.name}"
 
-    customerlistings = brieflistingcontroller.getListingByCustomerPreference(customer,FOR_SALE, 90)
 
-    housesoldpriceaverage, plot_url, plot_url2, soldhomes = AreaReportModelRun(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],30)
 
-    asdf, forsalebrieflistings = AreaReportModelRunForSale(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
-                                                                            365)
-    forsalehomes_dict=[]
-    for brieflisting in forsalebrieflistings:
-        forsalehomes_dict.append(brieflisting.to_dict())
-
-    brieflistings_SoldHomes_dict=[]
-    for brieflisting in soldhomes:
-        if brieflisting.fsbo_status is None: # don't want to include fsbos cause it causes an error
-            # hard code out for now.
-            brieflistings_SoldHomes_dict.append(
-               brieflisting.to_dict()
-            )
 
     return render_template('InterestReport/NeighbourhoodInterest.html',
                            customer=customer,
@@ -261,7 +267,7 @@ def displayCustomerInterest():
                            plot_url=plot_url,
                            soldhouses=soldhomes,
                            forsalehomes_dict=forsalehomes_dict,
-                           selected_doz=7,
+                           selected_doz=selected_doz,
                            customerlistings=customerlistings,
                            selected_zones = locationzonenames,
                            brieflistings_SoldHomes_dict = brieflistings_SoldHomes_dict

@@ -6,7 +6,7 @@
     <title>Customer Neighborhood Interests</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
     {% include "InterestReport/ReportCSS.html" with context %}
-
+    <script src="https://unpkg.com/leaflet-image/leaflet-image.js"></script>
     <script>
         function fetchZoneDetails(zone_id) {
             fetch(`/customer_interest/get_zone_details`, {
@@ -65,6 +65,7 @@
                       style="margin-top: 20px;">
                     <button type="submit">Send Neighborhood Interests to Email</button>
                 </form>
+                <button id="capture-map">Capture Map</button>
             </div>
 
 
@@ -85,7 +86,7 @@
 
     {% endif %}
 
-
+    <h1>How Are Houses in this region selling?</h1>
     {% if Webpage %}
         <div class="content-wrapper">
             <div class="map-box">
@@ -110,36 +111,43 @@
         </div>
     {% endif %}
 
-{##}
-{#    <div>#}
-{#        {% for home, aicomments in homes_with_comments %}#}
-{#            {% include "components/neighbourhood_details_card_mini.html" with context %}#}
-{#        {% endfor %}#}
-{#    </div>#}
-{##}
-    {% include "InterestReport/InterestTable.html" with context %}
-{##}
-{#    <div id="details-container"></div>#}
-    <div class="content-wrapper">
-        <div class="map-box">
-            Sold Map
-            <div id="map_Sold"></div>
-            {% include "ClickAbleMap/SoldMapScript.html" with context %}
-        </div>
-        <div class="forsale-box ">
-            <div style="text-align: center;">
-                <h2>Sold Houses in the last {{ selected_doz }} days</h2>
-                <img id="graphImage" src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
+    {##}
+    {#    <div>#}
+    {#        {% for home, aicomments in homes_with_comments %}#}
+    {#            {% include "components/neighbourhood_details_card_mini.html" with context %}#}
+    {#        {% endfor %}#}
+    {#    </div>#}
+    {##}
 
-{#                <img id="graphImage" src="{{ plot_url }}" alt="House Price vs. Days to Pending">#}
+    {% if Webpage %}
+        {% include "InterestReport/InterestTable.html" with context %}
+        {##}
+        <div id="details-container"></div>
+
+        <h1>Market Analysis of Sold Properties</h1>
+        <div class="content-wrapper">
+            <div class="map-box">
+
+
+                <div id="map_Sold"></div>
+                {% include "ClickAbleMap/SoldMapScript.html" with context %}
+                {% include "InterestReport/SoldMapLegend.html" with context %}
+
+            </div>
+            <div class="forsale-box ">
+                <div style="text-align: center;">
+                    <h2>Sold Houses in the last {{ selected_doz }} days</h2>
+                    <img id="graphImage" src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
+
+                    {#                <img id="graphImage" src="{{ plot_url }}" alt="House Price vs. Days to Pending">#}
+                </div>
             </div>
         </div>
+        {% include 'ClickAbleMap/data_table.html' %}
+    {% else %}
+        <p>Check Out the full area report for your interested Areas!</p>
+     {% endif %}
 
-
-    </div>
-{##}
-{##}
-    {% include 'ClickAbleMap/data_table.html' %}
 
 
 </div>

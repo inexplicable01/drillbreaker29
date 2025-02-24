@@ -16,6 +16,7 @@ from .rentalhomes import rental_bp
 from .fsbo import fsbo_bp
 from .statsByZone import zonestats_bp
 from .customerzoneroute import customer_interest_bp
+from .picturedealingbp import save_image_bp
 
 def register_blueprints(app: Flask):
     app.register_blueprint(alert_bp)
@@ -34,3 +35,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(fsbo_bp)
     app.register_blueprint(zonestats_bp)
     app.register_blueprint(customer_interest_bp)
+    app.register_blueprint(save_image_bp)

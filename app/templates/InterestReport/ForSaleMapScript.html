@@ -3,7 +3,7 @@
 <!-- Include Leaflet and jQuery -->
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+<script src="https://unpkg.com/leaflet-image/leaflet-image.js"></script>
 <script>
     // Initialize Leaflet Map
     var map_forsale = L.map('map_forsale', { scrollWheelZoom: false });
@@ -121,9 +121,8 @@
         var marker = L.marker([listing.latitude, listing.longitude]).addTo(map_forsale);
         // Bind a popup with details about the listing
         marker.bindPopup(
-            `<b>${listing.streetAddress}</b><br>
+            `<a href='https://www.zillow.com${listing.hdpUrl}' target='_blank'>${listing.streetAddress}</a><br>
             <b>Price:</b> ${listing.price}<br>
-            <a href='https://www.zillow.com${listing.hdpUrl}' target='_blank'>House Link</a><br>
             ${listing.bedrooms} bed, ${listing.bathrooms} bath, ${listing.livingArea} sqft, ${listing.zone_id}`
         );
 
@@ -132,6 +131,66 @@
             console.log(`Marker clicked: ${listing.streetAddress}, Price: ${listing.price}`);
         });
     });
+
+// Ensure the DOM is fully loaded before adding event listeners
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById('capture-map').addEventListener('click', function () {
+        console.log("📸 Capture button clicked!");
+
+        // Ensure map is correctly sized
+        map_forsale.invalidateSize();
+
+        // Ensure all tile layers are fully loaded
+        let tilesLoaded = true;
+        map_forsale.eachLayer(layer => {
+            if (layer instanceof L.TileLayer) {
+                if (!layer._tiles) tilesLoaded = false;
+            }
+        });
+
+        if (!tilesLoaded) {
+            console.error("❌ Error: Not all tiles are fully loaded!");
+            return;
+        }
+
+        console.log("🖼️ Attempting to capture map...");
+
+        leafletImage(map_forsale, function (err, canvas) {
+            if (err) {
+                console.error("❌ Error capturing map:", err);
+                return;
+            }
+
+            if (!canvas) {
+                console.error("❌ Error: Canvas is null!");
+                return;
+            }
+
+            console.log("✅ Canvas captured successfully");
+
+            // Convert canvas to Base64 image
+            let imgData = canvas.toDataURL('image/png');
+
+            if (!imgData || imgData.length < 50) {
+                console.error("❌ Error: Base64 image data is empty or too short!");
+                return;
+            }
+
+            console.log("🖼️ Base64 Image Data Preview:", imgData.substring(0, 100));
+
+            // Send image data to the server
+            fetch('/picture/save_map_image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imgData })
+            })
+                .then(response => response.json())
+                .then(data => console.log("✅ Image saved:", data))
+                .catch(error => console.error("❌ Error saving image:", error));
+        });
+
+    });
+});
 
 
 </script>

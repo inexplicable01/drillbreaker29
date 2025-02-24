@@ -320,6 +320,7 @@ class BriefListingController():
             print(zone)
             if zone:
                 brieflisting.zone_id = zone.id
+                brieflisting.outsideZones = False
             else:
                 print(zone)
         except Exception as e:
@@ -544,14 +545,28 @@ class BriefListingController():
         :return: List of the first ten BriefListing objects with zone_id = NULL
         """
         try:
-            # Query for listings where zone_id is NULL and dateSold is greater than 1730400000000
+            # Query for listings where zone_id is NULL and dateSold is greater than 1730400000000,'Bellevue','Shoreline','Bothell','Redmond','Kenmore'
             first_ten_listings = (self.BriefListing.query
-                                  # .filter(self.BriefListing.city == 'Seattle')
-                                  # .filter(self.BriefListing.homeStatus == FOR_SALE)
-                                  .filter(self.BriefListing.zone_id==1)
-                                  # .filter(self.BriefListing.outsideZones== 0)
+                                  .filter(self.BriefListing.search_neigh.in_(['Kirkland', 'Seattle'])  )
+                                  .filter(self.BriefListing.homeStatus == RECENTLYSOLD)
+                                  # .filter(self.BriefListing.city==1)
+                                  .filter(self.BriefListing.pricedelta== 0)
                                   # .filter(self.BriefListing.listtime > 1730400000000)
                                   .limit(X)  # Limit to 10 instead of 100
+                                  .all())
+            return first_ten_listings
+        except Exception as e:
+            # Exception handling with proper error formatting
+            print(f"Error retrieving the first ten listings where zone_id is NULL: {str(e)}")
+            return []
+
+    def getallPendings(self):
+
+        try:
+            # Query for listings where zone_id is NULL and dateSold is greater than 1730400000000
+            first_ten_listings = (self.BriefListing.query
+                                  .filter(self.BriefListing.homeStatus == PENDING)
+                                  # .limit(X)  # Limit to 10 instead of 100
                                   .all())
             return first_ten_listings
         except Exception as e:

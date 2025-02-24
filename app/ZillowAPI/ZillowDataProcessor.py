@@ -131,6 +131,7 @@ def ListingLengthbyBriefListing(propertydata):
     listdate = None
     penddate=None
     solddate=None
+    soldprice=None
     try:
         if PRICEHISTORY in propertydata.keys():
             soldposs = []
@@ -165,20 +166,25 @@ def ListingLengthbyBriefListing(propertydata):
                     'soldprice': soldprice
                     }
         else:
-            return {'list2penddays': None,
-                'list2solddays': None,
+            return {'list2penddays': list2penddays,
+                'list2solddays': list2solddays,
                     'listprice':listprice,
-                    'listdate':None,
-                    'penddate':None,
-                    'solddate':None,
-                    'soldprice':None
+                    'listdate':listdate,
+                    'penddate':penddate,
+                    'solddate':solddate,
+                    'soldprice':soldprice
                     }
 
     except Exception as e:
         print('Lack of History Data for ' + e.__str__())
-        return {'list2penddays': None,
-                'list2solddays': None,
-                'listprice': listprice}
+        return {'list2penddays': list2penddays,
+                'list2solddays': list2solddays,
+                    'listprice':listprice,
+                    'listdate':listdate,
+                    'penddate':penddate,
+                    'solddate':solddate,
+                    'soldprice':soldprice
+                    }
 
 
 def date_difference(date1: str, date2: str) -> int:

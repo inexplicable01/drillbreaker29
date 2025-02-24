@@ -35,8 +35,8 @@ def ListAllNeighhourhoodsByCities(neighbourhoods, doz):
 from datetime import datetime, timedelta
 def AreaReportModelRun(selected_zones, selectedhometypes,soldlastdays):
     unfiltered_homes = []
-    for zone in selected_zones:
-        wzone = washingtonzonescontroller.getzonebyName(zone)
+    for zonename in selected_zones:
+        wzone = washingtonzonescontroller.getzonebyName(zonename)
         if wzone:
             unfiltered_homes=unfiltered_homes+wzone.brief_listings
             # for brieflisting in wzone.brief_listings:

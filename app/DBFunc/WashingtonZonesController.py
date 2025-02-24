@@ -82,25 +82,27 @@ class WashingtonZonesController:
     def getneighbourhood(self,neighbourhood):
         return self.WashingtonZones.query.filter_by(neighbourhood_sub=neighbourhood).first()
 
-    def getzonebyName(self,zone):
+    def getzonebyName(self,zonename):
         wzone = (self.WashingtonZones.query
-                .filter_by(neighbourhood_sub=zone)
+                .filter_by(neighbourhood_sub=zonename)
                 .first())
         if wzone:
             return wzone
         wzone = (self.WashingtonZones.query
-                 .filter_by(City=zone)
+                 .filter_by(City=zonename)
                  .first())
         if wzone:
             return wzone
         city_result = (self.WashingtonCities.query
-                       .filter_by(City=zone)
+                       .filter_by(City=zonename)
                        .first())
-        wzone = (self.WashingtonZones.query
-                       .filter_by(city_id=city_result.city_id)
-                       .first())
-        if wzone:
-            return wzone
+        if city_result:
+            wzone = (self.WashingtonZones.query
+                           .filter_by(city_id=city_result.city_id)
+                           .first())
+            if wzone:
+                return wzone
+        return None
 
     def get_zone_id_by_name(self,cityname,neighbourhood ):
         if neighbourhood is not None:

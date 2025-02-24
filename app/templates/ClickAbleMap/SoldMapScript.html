@@ -147,10 +147,14 @@
         var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map_Sold);
         {#var marker = L.marker([listing.latitude, listing.longitude],markerColor).addTo(map);#}
         // Bind a popup with details about the listing
-        marker.bindPopup(
-            `<b>${listing.streetAddress}</b></br><b>Days on Market:</b> ${listing.list2penddays}`
-        );
 
+                marker.bindPopup(
+            `<a href='https://www.zillow.com${listing.hdpUrl}' target='_blank'>${listing.streetAddress}</a><br>
+            <b>Price:</b> ${listing.price}<br>
+            <br>
+<b>Days on Market:</b> ${listing.list2penddays}<br>
+            ${listing.bedrooms} bed, ${listing.bathrooms} bath, ${listing.livingArea} sqft, ${listing.zone_id}`
+        );
         // Optional: Add click event for interaction
         marker.on('click', function () {
             console.log(`Marker clicked: ${listing.streetAddress}, Days on Market: ${listing.list2penddays}`);
