@@ -238,22 +238,14 @@ def displayCustomerInterest():
     url_image_path= f"maps/map_{customer.name}_screenshot.png"
     # # Step 1: Generate map HTML
 
-    if not os.path.exists(map_html_path):
-        map_html = create_map(
-            geojson_features=geojson_features,
-            neighbourhoods_subs=locationzonenames,
-            cities=locationzonenames,
-            map_html_path=str(map_html_path),
-            map_image_path = str(map_image_path)
-        )
-
-    # Step 2: Capture map as an image
-    # save_map_as_image(map_html_path=str(map_html_path), output_image_path=str(map_image_path))
-
-    # Step 3: Serve the map image in the template
-    map_image_url = f"/static/maps/{map_image_path.name}"
-
-
+    # if not os.path.exists(map_html_path):
+    #     map_html = create_map(
+    #         geojson_features=geojson_features,
+    #         neighbourhoods_subs=locationzonenames,
+    #         cities=locationzonenames,
+    #         map_html_path=str(map_html_path),
+    #         map_image_path = str(map_image_path)
+    #     )
 
 
     return render_template('InterestReport/NeighbourhoodInterest.html',
