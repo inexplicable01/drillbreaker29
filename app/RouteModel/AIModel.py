@@ -15,7 +15,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_apiKey")
 client = OpenAI(api_key=OPENAI_API_KEY)
 # client = OpenAI()
 
-def AIModel(zpid,  customer, locations):
+def AIModel(zpid,  customer):
     """
     API endpoint to evaluate a listing's match likelihood for a customer.
     """
@@ -31,13 +31,13 @@ def AIModel(zpid,  customer, locations):
     # Prepare prompt for AI     # - Interested Neighborhoods: {', '.join(locations)}
     prompt = f"""
     Given the following customer preferences and real estate listing, rate how likely the customer is to like this listing on a scale from 0 to 100.
-    Provide a short explanation.
+    Provide a short concise explanation, no more than 75 characters.  Use Broken language if you need to get the point across.
 
     Customer Details:
     - Name: {customer.name}
     - Budget: {customer.minprice} to {customer.maxprice} (Ideal: {customer.idealprice})
     - Preferred square footage: {customer.minsqft} to {customer.maxsqft} (Ideal: {customer.idealsqft})
-
+    - Home Owner much much prefer Single Family Homes
 
     Listing Details:
     - Price: {listing_details.price}
@@ -50,7 +50,7 @@ def AIModel(zpid,  customer, locations):
     - Zestimate: {listing_details.zestimate}
     - Status: {listing_details.homeStatus}
     - Days on Market: {listing_details.daysOnZillow}
-    - Sold By: {listing_details.soldBy}
+    - Listed on: {listing_details.listtime}
     - Wayber Comments: {listing_details.waybercomments}
 
 

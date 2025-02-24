@@ -37,6 +37,7 @@
     {#var cities = {{ cities | tojson }};#}
     var locationzonenames = {{ locationzonenames | tojson }}
     var forsalehomes_dict = {{ forsalehomes_dict | tojson }}
+    var ai_comment_zpid = {{ ai_comment_zpid | tojson }}
 
 
     console.log("Processing GeoJSON Data...");
@@ -107,18 +108,30 @@
         map_forsale.setView([47.6062, -122.3321], 10); // Default to Seattle if no orange areas
     }
 
+    function getCustomIcon(color) {
+    return L.icon({
+        iconUrl: `https://maps.google.com/mapfiles/ms/icons/${color}-dot.png`, // Google Maps-style marker icons
+        iconSize: [32, 32],  // Adjust the size
+        iconAnchor: [16, 32], // Center the marker at the bottom
+        popupAnchor: [0, -30]  // Adjust popup position
+    });
+}
+
     forsalehomes_dict.forEach(function (listing) {
         // Calculate the marker’s color
         {#var markerColor = getMarkerColor(listing.list2penddays);#}
-
+        let markerColor = "purple"; // Default color
+        if (ai_comment_zpid.includes(listing.zpid)){
+            markerColor = "red";
+        }
         console.log("listing:", listing);
         // Create a marker using a custom icon with the selected color
-
-
-
+    var customIcon = getCustomIcon(markerColor);
+    // Create the marker with the custom icon
+    var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map_forsale);
         // Add the marker to the map
         {#var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map);#}
-        var marker = L.marker([listing.latitude, listing.longitude]).addTo(map_forsale);
+        {#var marker = L.marker([listing.latitude, listing.longitude]).addTo(map_forsale);#}
         // Bind a popup with details about the listing
         marker.bindPopup(
             `<a href='https://www.zillow.com${listing.hdpUrl}' target='_blank'>${listing.streetAddress}</a><br>
@@ -131,66 +144,5 @@
             console.log(`Marker clicked: ${listing.streetAddress}, Price: ${listing.price}`);
         });
     });
-
-// Ensure the DOM is fully loaded before adding event listeners
-document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById('capture-map').addEventListener('click', function () {
-        console.log("📸 Capture button clicked!");
-
-        // Ensure map is correctly sized
-        map_forsale.invalidateSize();
-
-        // Ensure all tile layers are fully loaded
-        let tilesLoaded = true;
-        map_forsale.eachLayer(layer => {
-            if (layer instanceof L.TileLayer) {
-                if (!layer._tiles) tilesLoaded = false;
-            }
-        });
-
-        if (!tilesLoaded) {
-            console.error("❌ Error: Not all tiles are fully loaded!");
-            return;
-        }
-
-        console.log("🖼️ Attempting to capture map...");
-
-        leafletImage(map_forsale, function (err, canvas) {
-            if (err) {
-                console.error("❌ Error capturing map:", err);
-                return;
-            }
-
-            if (!canvas) {
-                console.error("❌ Error: Canvas is null!");
-                return;
-            }
-
-            console.log("✅ Canvas captured successfully");
-
-            // Convert canvas to Base64 image
-            let imgData = canvas.toDataURL('image/png');
-
-            if (!imgData || imgData.length < 50) {
-                console.error("❌ Error: Base64 image data is empty or too short!");
-                return;
-            }
-
-            console.log("🖼️ Base64 Image Data Preview:", imgData.substring(0, 100));
-
-            // Send image data to the server
-            fetch('/picture/save_map_image', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: imgData })
-            })
-                .then(response => response.json())
-                .then(data => console.log("✅ Image saved:", data))
-                .catch(error => console.error("❌ Error saving image:", error));
-        });
-
-    });
-});
-
 
 </script>

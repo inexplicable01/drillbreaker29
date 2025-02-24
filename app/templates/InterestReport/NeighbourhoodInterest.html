@@ -67,7 +67,7 @@
                       style="margin-top: 20px;">
                     <button type="submit">Send Neighborhood Interests to Email</button>
                 </form>
-                <button id="capture-map">Capture Map</button>
+{#                <button id="capture-map">Capture Map</button>#}
             </div>
 
 
@@ -97,7 +97,7 @@
                 {% include "InterestReport/ForSaleMapScript.html" with context %}
             </div>
             <div class="forsale-box ">
-                {% for home in customerlistings %}
+                {% for (aicomment,home) in selectedaicomments %}
                     {% include "components/neighbourhood_details_card_mini.html" %}
                 {% endfor %}
             </div>

@@ -3,7 +3,7 @@ from flask import Blueprint, redirect, url_for, jsonify, render_template, reques
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.DBModels.BriefListing import BriefListing
-from app.config import Config, SW, RECENTLYSOLD
+from app.config import Config, SW, RECENTLYSOLD, FOR_SALE
 # from flask import Flask, render_template, make_response
 # from weasyprint import HTML
 from app.MapTools.MappingTools import WA_geojson_features
@@ -325,31 +325,32 @@ def updatefsbo():
 
 @maintanance_bp.route('/clients_listing_Recommendation', methods=['patch'])
 def clients_listing_Recommendation():
-    customer_id = 3
-    customer, locations = customerzonecontroller.get_customer_zone(customer_id)
+    customer_id = request.args.get("customer_id", type=int, default=None)
+    # customer, locations = customerzonecontroller.get_customer_zone(customer_id)
     customer = customerzonecontroller.get_customer(customer_id)
 
-    forsalehomes = []
-    margin = 100
     # Loop through neighborhoods to extract data when city is 'Seattle'
-    for area in locations:
-        city_name = area["city"]  # Assuming `city` is in the returned dictionary
+    forsalehomes = brieflistingcontroller.getListingByCustomerPreference(customer, FOR_SALE, 30).all()
 
-        if city_name == "Seattle":
-            # Query the database to fetch the full row for this neighborhood
-            forsalehomes = forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365,
-                                                                                       maxprice=customer.maxprice + 100000,
-                                                                                       minprice=customer.minprice - 100000,
-                                                                                       neighbourhood_sub=area[
-                                                                                           "neighbourhood_sub"]).all()
-        else:
-            forsalehomes = forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name,
-                                                                                       365,
-                                                                                       maxprice=customer.maxprice + 100000,
-                                                                                       minprice=customer.minprice - 100000).all()
+        # city_name = area["city"]  # Assuming `city` is in the returned dictionary
+
+        # city_name = area["city"]  # Assuming `city` is in the returned dictionary
+        #
+        # if city_name == "Seattle":
+        #     # Query the database to fetch the full row for this neighborhood
+        #     forsalehomes = forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365,
+        #                                                                                maxprice=customer.maxprice + 100000,
+        #                                                                                minprice=customer.minprice - 100000,
+        #                                                                                neighbourhood_sub=area[
+        #                                                                                    "neighbourhood_sub"]).all()
+        # else:
+        #     forsalehomes = forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name,
+        #                                                                                365,
+        #                                                                                maxprice=customer.maxprice + 100000,
+        #                                                                                minprice=customer.minprice - 100000).all()
 
     for forsale_bl in forsalehomes:
-        ai_response = AIModel(forsale_bl.zpid, customer, locations)
+        ai_response = AIModel(forsale_bl.zpid, customer)
         likelihood_score = ai_response.get("likelihood_score", 0)
         ai_comment = ai_response.get("reason", "")
 

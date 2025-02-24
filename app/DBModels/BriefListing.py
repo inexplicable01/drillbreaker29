@@ -37,6 +37,7 @@ class BriefListing(db.Model):
     homeType = db.Column(db.String(100), nullable=True)
     imgSrc = db.Column(db.String(255), nullable=True)
     isFeatured = db.Column(db.Boolean, nullable=True)
+    description = db.Column(Text, nullable=True)
     # isNonOwnerOccupied = db.Column(db.Boolean, nullable=True)
     isPreforeclosureAuction = db.Column(db.Boolean, nullable=True)
     isPremierBuilder = db.Column(db.Boolean, nullable=True)
@@ -82,6 +83,9 @@ class BriefListing(db.Model):
     waybercomments = db.Column(db.String(255), nullable=True)
     openhouseneed = db.Column(db.Boolean,nullable=True)
     outsideZones = db.Column(db.Boolean, nullable=True, default=False)
+    parkingSpaces = db.Column(db.Integer, nullable=True)
+    yearBuilt = db.Column(db.Integer, nullable=True)
+    yearBuiltEffective = db.Column(db.Integer, nullable=True)
     # Define the one-to-one relationship to FSBOStatus
     # zone = db.relationship('WashingtonZones', backref='brief_listings', lazy=True)
     fsbo_status = db.relationship('FSBOStatus', backref='brief_listing', uselist=False, lazy=True)
@@ -144,6 +148,10 @@ class BriefListing(db.Model):
         listresults = ListingLengthbyBriefListing(propertydata)
         self.updateListingLength(listresults)
         self.hdpUrl = propertydata['hdpUrl']
+        self.description = propertydata['description']
+        self.parkingSpaces = propertydata.get('parking', 'Missing')
+        self.yearBuilt = propertydata.get('yearBuilt', 'Missing')
+        self.yearBuiltEffective = propertydata.get('yearBuiltEffective', 'Missing')
         if self.soldprice is not None:
             self.soldprice = propertydata['lastSoldPrice']
         try:
@@ -154,6 +162,7 @@ class BriefListing(db.Model):
                 print(propertydata['attributionInfo'])
         except Exception as e:
             print(e, self, 'Failed getting NWMLS ID')
+
 
 
     def isBriefListingInZone(self,WA_geojson_features):
@@ -207,6 +216,9 @@ class BriefListing(db.Model):
                     updatereason = updatereason + ',' + attr + ' value update'
                     break
         return needs_update, updatereason
+
+
+
 
     @classmethod
     def CreateBriefListing(cls, briefhomedata, neighbourhood, zillowapi_neighbourhood, search_neigh):
@@ -295,6 +307,7 @@ class BriefListing(db.Model):
             new_listing.homeStatusForHDP = propertydata.get('homeStatusForHDP', 'Missing')
             new_listing.homeType = propertydata.get('homeType', 'Missing')
             new_listing.imgSrc = propertydata.get('imgSrc', 'Missing')
+            new_listing.description = propertydata.get('description', 'Missing')
             new_listing.isFeatured = propertydata.get('isFeatured', False)
             # new_listing.isNonOwnerOccupied = propertydata.get('isNonOwnerOccupied', False)
             new_listing.isPreforeclosureAuction = propertydata.get('isPreforeclosureAuction', False)
@@ -325,7 +338,8 @@ class BriefListing(db.Model):
             new_listing.newConstructionType = propertydata.get('newConstructionType', 'Missing')
             new_listing.hdpUrl = propertydata.get('hdpUrl', 'Missing')
             new_listing.pricedelta = safe_int_conversion(propertydata.get('pricedelta', 0))
-
+            new_listing.yearBuilt = propertydata.get('yearBuilt', 'Missing')
+            new_listing.yearBuiltEffective = propertydata.get('yearBuiltEffective', 'Missing')
             listing_time = datetime.utcnow() - timedelta(seconds=safe_int_conversion(propertydata.get('timeOnZillow', 0))/1000)
             new_listing.listtime = int(listing_time.timestamp())
             new_listing.soldBy = "AGENT"

@@ -1,6 +1,7 @@
 from app.DBModels.AIListingComments import AIListingComments
-from sqlalchemy.sql import func
 
+from sqlalchemy.sql import func
+from sqlalchemy.orm import aliased
 from app.extensions import db
 # # from app.DB
 # from datetime import datetime, timedelta
@@ -41,6 +42,38 @@ class AIListingController:
 
         # Update BriefListing to store likelihood score
         db.session.commit()
+
+    def retrieve_ai_evaluation(self, customer_id):
+        """
+        Retrieves the latest AI evaluation (based on created_at) for each listing_id
+        of a given customer, ordered by highest likelihood_score.
+        """
+
+        # Subquery: Get the latest created_at timestamp per listing_id
+        latest_subquery = (
+            self.db.session.query(
+                self.AIListingComments.listing_id,
+                func.max(self.AIListingComments.created_at).label("latest_created_at")
+            )
+            .filter(self.AIListingComments.customer_id == customer_id)
+            .group_by(self.AIListingComments.listing_id)
+            .subquery()
+        )
+
+        # Main query: Join back to AIListingComments to get full records
+        latest_evaluations = (
+            self.db.session.query(self.AIListingComments)
+            .join(
+                latest_subquery,
+                (self.AIListingComments.listing_id == latest_subquery.c.listing_id) &
+                (self.AIListingComments.created_at == latest_subquery.c.latest_created_at)
+            )
+            .filter(self.AIListingComments.customer_id == customer_id)
+            .order_by(self.AIListingComments.likelihood_score.desc())  # Order by highest likelihood score
+            .all()
+        )
+
+        return latest_evaluations
 
 
 ailistingcontroller = AIListingController()

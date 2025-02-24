@@ -48,7 +48,7 @@
     </div>
 
     <!-- Right Section: AI Evaluation (Shown Only If Comment Exists) -->
-{% if aicomments %}
+{% if aicomment %}
     <div class="ai-comment-section" style="
         flex: 0 0 200px;
         text-align: left;
@@ -57,12 +57,12 @@
         background: #f9f9f9;
         border-radius: 5px;">
 
-        <p style="margin: 0; font-size: 16px; font-weight: bold;">AI Evaluation</p>
+        <p style="margin: 0; font-size: 16px; font-weight: bold;">Wayber Evaluation</p>
+{#        <p style="margin: 2px 0; font-size: 14px;">#}
+{#            <strong>Likelihood Score:</strong> {{ aicomment.likelihood_score }}/100#}
+{#        </p>#}
         <p style="margin: 2px 0; font-size: 14px;">
-            <strong>Likelihood Score:</strong> {{ aicomments.likelihood_score }}/100
-        </p>
-        <p style="margin: 2px 0; font-size: 14px;">
-            <strong>Comment:</strong> {{ aicomments.ai_comment }}
+            <strong>Comment:</strong> {{ aicomment.ai_comment }}
         </p>
     </div>
 {% endif %}

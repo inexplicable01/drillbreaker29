@@ -169,7 +169,22 @@ def gatherCustomerData(customer_id, selected_doz):
     # for n in locations:
     #     neighbourhoods_subs.append(n["neighbourhood_sub"])
     #     cities.append(n["city"])
-    customerlistings = brieflistingcontroller.getListingByCustomerPreference(customer, FOR_SALE, 90)
+    # customerlistings = brieflistingcontroller.getListingByCustomerPreference(customer, FOR_SALE, 90)
+    aicomments = ailistingcontroller.retrieve_ai_evaluation(customer_id)
+    customerlistings=[]
+    selectedaicomments=[]
+    ai_comment_zpid=[]
+    for aicomment in aicomments:
+        print(aicomment.listing.homeStatus)
+        if aicomment.listing.homeStatus !=FOR_SALE:
+            continue
+        selectedaicomments.append((aicomment,aicomment.listing))
+        customerlistings.append(aicomment.listing )
+        ai_comment_zpid.append(aicomment.listing.zpid)
+        if selectedaicomments.__len__()>10:
+            break
+
+
     housesoldpriceaverage, plot_url, plot_url2, soldhomes = AreaReportModelRun(locationzonenames,
                                                                                [SW.TOWNHOUSE, SW.SINGLE_FAMILY], selected_doz)
 
@@ -189,7 +204,9 @@ def gatherCustomerData(customer_id, selected_doz):
             )
 
 
-    return customer, locations , locationzonenames , customerlistings , housesoldpriceaverage, plot_url, plot_url2, soldhomes , forsalehomes_dict, brieflistings_SoldHomes_dict
+    return (customer, locations , locationzonenames , customerlistings , housesoldpriceaverage,
+            plot_url, plot_url2, soldhomes , forsalehomes_dict, brieflistings_SoldHomes_dict ,
+            selectedaicomments,ai_comment_zpid)
     # return customer, locations, cities, neighbourhoods_subs, forsalehomes
 
 
@@ -199,7 +216,10 @@ def send_email(customer_id):
     # Query the customer and their interests
     # customer = Customer.query.get(customer_id)
 
-    customer, locations, locationzonenames, customerlistings,housesoldpriceaverage, plot_url, plot_url2, soldhomes, forsalehomes_dict, brieflistings_SoldHomes_dict  = gatherCustomerData(customer_id, selected_doz)
+    (customer, locations, locationzonenames, customerlistings,
+     housesoldpriceaverage, plot_url, plot_url2,
+     soldhomes, forsalehomes_dict,
+     brieflistings_SoldHomes_dict, selectedaicomments, ai_comment_zpid)  = gatherCustomerData(customer_id, 30)
 
     if not customer:
         return "No customers found", 404
@@ -216,7 +236,10 @@ def displayCustomerInterest():
     # Mock data for the example
     customer_id = request.args.get("customer_id", type=int, default=None)
     selected_doz=30
-    customer, locations, locationzonenames, customerlistings,housesoldpriceaverage, plot_url, plot_url2, soldhomes, forsalehomes_dict, brieflistings_SoldHomes_dict\
+    (customer, locations, locationzonenames, customerlistings,housesoldpriceaverage, plot_url,
+     plot_url2,
+     soldhomes, forsalehomes_dict, brieflistings_SoldHomes_dict,
+     selectedaicomments,ai_comment_zpid)\
         = gatherCustomerData(customer_id, selected_doz)
 
     aicomments=[]
@@ -262,7 +285,9 @@ def displayCustomerInterest():
                            selected_doz=selected_doz,
                            customerlistings=customerlistings,
                            selected_zones = locationzonenames,
-                           brieflistings_SoldHomes_dict = brieflistings_SoldHomes_dict
+                           brieflistings_SoldHomes_dict = brieflistings_SoldHomes_dict,
+                            selectedaicomments=selectedaicomments,
+                           ai_comment_zpid=ai_comment_zpid,
                            )
 
 

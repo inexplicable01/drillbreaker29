@@ -66,11 +66,16 @@
             <tbody>
                 {% for customer in customers %}
                 <tr>
-                    <td>{{ customer.id }}</td>
+{#                    <td>{{ customer.id }}</td>#}
                     <td>{{ customer.name }}</td>
                     <td>
                         {% for property_type in customer.property_types %}
                         {{ property_type.name }},
+                        {% endfor %}
+                        </td>
+                                    <td>
+                        {% for customerzone in customer.zones %}
+                        {{ customerzone.zone.zonename() }},
                         {% endfor %}
                         </td>
                     <td>

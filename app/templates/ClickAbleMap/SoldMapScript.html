@@ -127,25 +127,28 @@
         }
     }
 
-
+    function getCustomIcon(color) {
+    return L.icon({
+        iconUrl: `https://maps.google.com/mapfiles/ms/icons/${color}-dot.png`, // Google Maps-style marker icons
+        iconSize: [32, 32],  // Adjust the size
+        iconAnchor: [16, 32], // Center the marker at the bottom
+        popupAnchor: [0, -30]  // Adjust popup position
+    });
+}
     brieflistings_SoldHomes_dict.forEach(function (listing) {
         // Calculate the marker’s color
-        var markerColor = getMarkerColor(listing.list2penddays);
 
-        console.log("listing:", listing);
+        let markerColor=getMarkerColor(listing.list2penddays)
+        {#console.log("listing:", listing);#}
         // Create a marker using a custom icon with the selected color
 
-        var customIcon = L.divIcon({
-            html: `<div style="background-color: ${markerColor}; width: 20px; height: 20px;"></div>`,
-            {#iconSize: [25, 29],      // Default size of the marker#}
-            {#iconAnchor: [12, 41],    // Point where the icon is anchored#}
-            {#popupAnchor: [1, -34],   // Popup anchor relative to the marker icon#}
-            {#shadowSize: [41, 41]     // Size of the shadow#}
-        });
+        var customIcon = getCustomIcon(markerColor);
+
+    // Create the marker with the custom icon
+        var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map_Sold);
 
         // Add the marker to the map
-        var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map_Sold);
-        {#var marker = L.marker([listing.latitude, listing.longitude],markerColor).addTo(map);#}
+
         // Bind a popup with details about the listing
 
                 marker.bindPopup(
