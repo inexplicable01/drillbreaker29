@@ -40,9 +40,7 @@ def AIModel(brieflisting,  customer, propertydata):
     - Budget: {customer.minprice} to {customer.maxprice} (Ideal: {customer.idealprice})
     - Preferred square footage: {customer.minsqft} to {customer.maxsqft} (Ideal: {customer.idealsqft})
     - Parking Space needed : {customer.parkingspaceneeded} 
-
-    - Home Owner much much prefer Single Family Homes
-    - Additional Customer Preferences: {customer_description_text}
+   - Additional Customer Preferences: {customer_description_text}
 
     Listing Details:
     - Price: {brieflisting.price}
@@ -57,7 +55,8 @@ def AIModel(brieflisting,  customer, propertydata):
     - Days on Market: {brieflisting.daysOnZillow}
     - Listed on: {brieflisting.listtime}
     - Year Built : {brieflisting.yearBuilt}
-    - Parking Spaces : {brieflisting.parkingSpaces}
+    - Covered or Garage Space: {brieflisting.parkingSpaces}
+    - Have driveway parking : {brieflisting.hasDrivewayParking}
     - Wayber Comments: {brieflisting.waybercomments}
 
 

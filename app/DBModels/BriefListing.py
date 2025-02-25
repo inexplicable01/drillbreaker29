@@ -17,6 +17,21 @@ from app.UsefulAPI.UseFulAPICalls import get_neighborhood
 def is_equal_with_tolerance(val1, val2, tolerance=1e-4):
     return abs(val1 - val2) <= tolerance
 
+def hasDrivewayParkingFromPropertyData(propertydata):
+    try:
+        if propertydata['resoFacts']['parkingFeatures'] is None:
+            return None
+    except:
+        print(f'Cannot Find Parking Features Information for {propertydata["abbreviatedAddress"]}')
+        return None
+    hasDrivewayParking = False
+    for feature in propertydata['resoFacts']['parkingFeatures']:
+        if feature =='Driveway':
+            hasDrivewayParking = True
+            return hasDrivewayParking
+    return hasDrivewayParking
+
+
 
 class BriefListing(db.Model):
     __tablename__= 'BriefListing'
@@ -86,6 +101,7 @@ class BriefListing(db.Model):
     parkingSpaces = db.Column(db.Integer, nullable=True)
     yearBuilt = db.Column(db.Integer, nullable=True)
     yearBuiltEffective = db.Column(db.Integer, nullable=True)
+    hasDrivewayParking = db.Column(db.Boolean, nullable=True)
     # Define the one-to-one relationship to FSBOStatus
     # zone = db.relationship('WashingtonZones', backref='brief_listings', lazy=True)
     fsbo_status = db.relationship('FSBOStatus', backref='brief_listing', uselist=False, lazy=True)
@@ -149,9 +165,10 @@ class BriefListing(db.Model):
         self.updateListingLength(listresults)
         self.hdpUrl = propertydata['hdpUrl']
         self.description = propertydata['description']
-        self.parkingSpaces = propertydata.get('parking', 'Missing')
+        self.parkingSpaces = propertydata['resoFacts']['parking']
         self.yearBuilt = propertydata.get('yearBuilt', 'Missing')
         self.yearBuiltEffective = propertydata.get('yearBuiltEffective', 'Missing')
+        self.hasDrivewayParking=hasDrivewayParkingFromPropertyData(propertydata)
         if self.soldprice is not None:
             self.soldprice = propertydata['lastSoldPrice']
         try:
@@ -341,6 +358,7 @@ class BriefListing(db.Model):
             new_listing.pricedelta = safe_int_conversion(propertydata.get('pricedelta', 0))
             new_listing.yearBuilt = propertydata.get('yearBuilt', 'Missing')
             new_listing.yearBuiltEffective = propertydata.get('yearBuiltEffective', 'Missing')
+            new_listing.hasDrivewayParking =hasDrivewayParkingFromPropertyData(propertydata)
             listing_time = datetime.utcnow() - timedelta(seconds=safe_int_conversion(propertydata.get('timeOnZillow', 0))/1000)
             new_listing.listtime = int(listing_time.timestamp())
             new_listing.soldBy = "AGENT"
