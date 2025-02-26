@@ -179,6 +179,7 @@ class BriefListing(db.Model):
                 print(propertydata['attributionInfo'])
         except Exception as e:
             print(e, self, 'Failed getting NWMLS ID')
+        print(self)
         return propertydata
 
 

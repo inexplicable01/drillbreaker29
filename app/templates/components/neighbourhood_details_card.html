@@ -1,7 +1,7 @@
 <div class="neighbourhood-details-card">
     <h2>Details for {{ zonename }}</h2>
-{#    <p><strong>Recent Sales:</strong> {{ recent_sales }}</p>#}
-{#    <p><strong>Average Price:</strong> ${{ avg_price }}</p>#}
+    {#    <p><strong>Recent Sales:</strong> {{ recent_sales }}</p>#}
+    {#    <p><strong>Average Price:</strong> ${{ avg_price }}</p>#}
     {#    <p><strong>Market Trends:</strong> {{ trends }}</p>#}
 
     <h3>Market Overview</h3>
@@ -15,21 +15,26 @@
         </thead>
         <tbody>
         <tr>
+
+
             <td><strong>New Listings (Last 7 Days)</strong></td>
-            <td>
-                {% for home in forsaleadded7_SFH %}
-                    {% include "components/neighbourhood_details_card_mini.html" %}
-                {% endfor %}
-            </td>
-            <td>
-                {% for home in forsaleadded7_TCA %}
-                    {% include "components/neighbourhood_details_card_mini.html" %}
-                {% endfor %}
-            </td>
+            {% with showScheduleButton=True , showTrackButton = True %}
+                <td>
+                    {% for home in forsaleadded7_SFH %}
+                        {% include "components/neighbourhood_details_card_mini.html" %}
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for home in forsaleadded7_TCA %}
+                        {% include "components/neighbourhood_details_card_mini.html" %}
+                    {% endfor %}
+                </td>
+            {% endwith %}
         </tr>
 
         <tr>
             <td><strong>Pending (Last 7 Days)</strong></td>
+        {% with showScheduleButton=False , showTrackButton = True %}
             <td>
                 {% for home in pending7_SFH %}
                     {% include "components/neighbourhood_details_card_mini.html" %}
@@ -40,8 +45,10 @@
                     {% include "components/neighbourhood_details_card_mini.html" %}
                 {% endfor %}
             </td>
+        {% endwith %}
         </tr>
         <tr>
+        {% with showScheduleButton=False , showTrackButton = True %}
             <td><strong>Sold (Last 7 Days)</strong></td>
             <td>
                 {% for home in sold7_SFH %}
@@ -53,6 +60,7 @@
                     {% include "components/neighbourhood_details_card_mini.html" %}
                 {% endfor %}
             </td>
+        {% endwith %}
         </tr>
 
         </tbody>

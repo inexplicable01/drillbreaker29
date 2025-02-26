@@ -22,11 +22,11 @@
 
         <div>
             <p style="margin: 2px 0; font-size: 8px;">
-            Zpid {{ home.zpid }} MLS {{  home.NWMLS_id}}
-                </p>
-                        <p style="margin: 2px 0; font-size: 12px;">
-            {{ home.homeStatus }}
-                </p>
+                Zpid {{ home.zpid }} MLS {{ home.NWMLS_id }}
+            </p>
+            <p style="margin: 2px 0; font-size: 12px;">
+                {{ home.homeStatus }}
+            </p>
             <p style="margin: 2px 0; font-size: 14px;">
                 <strong>Address:</strong> {{ home.streetAddress }}, {{ home.city }}, {{ home.state }}, {{ home.zipcode }}
 
@@ -44,12 +44,56 @@
                     View Listing
                 </a>
             </p>
+
+
+            {% if showScheduleButton %}
+                <!-- Buttons -->
+                <button onclick="scheduleHomeTour('{{ home.zpid }}', '{{ customer.id }}')" style="
+                    background-color: #28a745;
+                    color: white;
+                    border: none;
+                    padding: 8px 12px;
+                    margin-top: 5px;
+                    cursor: pointer;
+                    border-radius: 5px;
+                    font-size: 14px;">
+                    Schedule a Home Tour!
+                </button>
+            {% endif %}
+            {% if showTrackButton %}
+                {% set tracking = false %}
+                {% if home.zpid in zpidlist %}
+                    {% set tracking = true %}
+                {% endif %}
+
+
+                <button onclick="trackListing('{{ home.zpid }}', '{{ customer.id }}')" style="
+                        background-color: {% if tracking %} #ccc {% else %} #0073e6 {% endif %};
+                        color: {% if tracking %} #666 {% else %} white {% endif %};
+                        border: none;
+                        padding: 8px 12px;
+                        margin-top: 5px;
+                        cursor: {% if tracking %} not-allowed {% else %} pointer {% endif %};
+                        border-radius: 5px;
+                        font-size: 14px;"
+                        {% if tracking %} disabled {% endif %}
+                >
+                    {% if tracking %}
+                        Tracking
+                    {% else %}
+                        Track!
+
+                    {% endif %}
+                </button>
+            {% endif %}
+
+
         </div>
     </div>
 
     <!-- Right Section: AI Evaluation (Shown Only If Comment Exists) -->
-{% if aicomment %}
-    <div class="ai-comment-section" style="
+    {% if aicomment %}
+        <div class="ai-comment-section" style="
         flex: 0 0 200px;
         text-align: left;
         padding: 10px;
@@ -57,13 +101,13 @@
         background: #f9f9f9;
         border-radius: 5px;">
 
-        <p style="margin: 0; font-size: 16px; font-weight: bold;">Wayber Evaluation</p>
-        <p style="margin: 2px 0; font-size: 14px;">
-            <strong>Likelihood Score:</strong> {{ aicomment.likelihood_score }}/100
-        </p>
-        <p style="margin: 2px 0; font-size: 14px;">
-            <strong>Comment:</strong> {{ aicomment.ai_comment }}
-        </p>
-    </div>
-{% endif %}
+            <p style="margin: 0; font-size: 16px; font-weight: bold;">Wayber Evaluation</p>
+            <p style="margin: 2px 0; font-size: 14px;">
+                <strong>Likelihood Score:</strong> {{ aicomment.likelihood_score }}/100
+            </p>
+            <p style="margin: 2px 0; font-size: 14px;">
+                <strong>Comment:</strong> {{ aicomment.ai_comment }}
+            </p>
+        </div>
+    {% endif %}
 </div>

@@ -53,16 +53,19 @@ def EmailCustomersIfInterested(api_zpid, apibrieflisting, brieflistdb):
     # if brieflistdb.price != apibrieflisting.price:
 #     print(message)
         ## Create a latestPriceChangeTime column set time, update price
-    customerzpids = customerzpidcontroller.getCustomerZpidByZpid(api_zpid)
-    if customerzpids:
-        message = (f"Price Change for {brieflistdb}\nFrom {brieflistdb.price} to {apibrieflisting.price}")
-        for customerzpid in customerzpids:
-            print(f"{customerzpid.customer.name} is interested in this property!")
-            # SendEmail()
-            if customerzpid.is_retired:
-                continue
-            title = f'{brieflistdb.__str__()} has changed.'
-            sendEmailListingChange(message, title, brieflistdb.hdpUrl)
-
+    try:
+        customerzpids = customerzpidcontroller.getCustomerZpidByZpid(api_zpid)
+        if customerzpids:
+            message = (f"Price Change for {brieflistdb}\nFrom {brieflistdb.price} to {apibrieflisting.price}")
+            for customerzpid in customerzpids:
+                print(f"{customerzpid.customer.name} is interested in this property!")
+                # SendEmail()
+                if customerzpid.is_retired:
+                    continue
+                title = f'{brieflistdb.__str__()} has changed.'
+                sendEmailListingChange(message, title, brieflistdb.hdpUrl)
+    except Exception as e:
+        print(f'Email to customer for {brieflistdb.__str__()} failed.')
+        print(e)
 
     return

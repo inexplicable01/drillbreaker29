@@ -17,7 +17,7 @@ from app.DBFunc.AIListingController import ailistingcontroller
 from app.DBFunc.CustomerController import customercontroller
 from app.MapTools.MappingTools import WA_geojson_features, create_map
 from app.RouteModel.AIModel import AIModel
-from app.RouteModel.EmailModel import sendCustomerEmail
+from app.RouteModel.EmailModel import sendCustomerEmail, sendemailforcustomerhometour
 from app.DBFunc.CustomerZpidController import customerzpidcontroller
 from app.ZillowAPI.ZillowAPICall import SearchZilowByMLSID, SearchZillowByZPID
 
@@ -99,6 +99,59 @@ def save_zpid():
 
     return redirect(url_for('customer_interest_bp.listCustomersforAlerts'))  # Replace 'customer_list' with your route name
 
+
+@customer_interest_bp.route('/save_customer_zpid_interest', methods=['POST'])
+def save_customer_zpid_interest():
+    data = request.json
+    zpid = data.get('zpid')
+    customer_id = data.get('customer_id')        # Retrieve ZPID (fallback)
+
+    customer = customercontroller.getCustomerByID(customer_id)
+    if not customer:
+        print("Customer not found.", "error")
+        return "Customer not found.", 400
+    brieflisting = brieflistingcontroller.get_listing_by_zpid(zpid)
+    if not brieflisting:
+        print("Customer not found.", "error")
+        return "Customer not found.", 400
+
+    existing_entry = customerzpidcontroller.getCustomerZpidByCustomerAndZpid(customer_id, zpid)
+    if existing_entry:
+        return jsonify({"message": "Already tracking this listing.",
+                        "html": render_template('components/Customer_Interest_Track.html',
+                                                customer=customer,
+                                                customerzpid_array=customer.customerzpid_array
+                                                )
+
+                        })
+
+
+
+    customerzpidcontroller.saveCustomerzpid(brieflisting, customer)
+    # **Re-fetch the customer to get updated customerzpid_array**
+    customer = customercontroller.getCustomerByID(customer_id)
+
+
+    return jsonify({
+        "html": render_template('components/Customer_Interest_Track.html',
+                                customer=customer,
+        customerzpid_array=customer.customerzpid_array
+                                )})
+
+
+@customer_interest_bp.route('/schedule_home_tour', methods=['POST'])
+def schedule_home_tour():
+    data = request.json
+    zpid = data.get('zpid')
+    customer_id = data.get('customer_id')
+    customer = customercontroller.getCustomerByID(customer_id)
+    brieflisting = brieflistingcontroller.get_listing_by_zpid(zpid)
+    # Send an email with both ZPID and Customer ID
+
+    sendemailforcustomerhometour(customer, brieflisting)
+
+    return jsonify({"message": "Home tour request sent!"})
+
 @customer_interest_bp.route('/retire_zpid', methods=['POST'])
 def retire_zpid():
     customer_id = request.form['customer_id']
@@ -125,6 +178,8 @@ def gatherCustomerData(customer_id, selected_doz):
     locations=[]
     locationzonenames=[]
     # Loop through neighborhoods to extract data when city is 'Seattle'
+    customerzpidcontroller
+
     for customerzone in customer.zones:
         city_name = customerzone.zone.City
         # city_name = area["city"]  # Assuming `city` is in the returned dictionary
@@ -270,6 +325,9 @@ def displayCustomerInterest():
     #         map_image_path = str(map_image_path)
     #     )
 
+    zpidlist = []
+    for customerzpid in customer.customerzpid_array:
+        zpidlist.append(customerzpid.brief_listing.zpid)
 
     return render_template('InterestReport/NeighbourhoodInterest.html',
                            customer=customer,
@@ -288,6 +346,8 @@ def displayCustomerInterest():
                            brieflistings_SoldHomes_dict = brieflistings_SoldHomes_dict,
                             selectedaicomments=selectedaicomments,
                            ai_comment_zpid=ai_comment_zpid,
+                           customerzpid_array=customer.customerzpid_array,
+                           zpidlist=zpidlist
                            )
 
 
@@ -306,8 +366,9 @@ def displayCustomerInterest():
 def get_zone_details():
     data = request.get_json()
     zone_id = data.get('zone_id')
-
+    customer_id = data.get('customer_id')
     zone = washingtonzonescontroller.getZonebyID(zone_id)
+    customer = customercontroller.getCustomerByID(customer_id)
 
     zone_stats = zonestatscachecontroller.get_zone_stats_by_zone(zone)
 
@@ -342,6 +403,7 @@ def get_zone_details():
                                 pending7_TCA=pending7_TCA_homes,
                                 forsaleadded7_SFH=forsaleadded7_SFH_homes,
                                 forsaleadded7_TCA=forsaleadded7_TCA_homes,
+                                customer=customer
                                 )
     })
 

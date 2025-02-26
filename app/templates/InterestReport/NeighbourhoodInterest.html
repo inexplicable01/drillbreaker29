@@ -10,11 +10,12 @@
     {% include "InterestReport/ReportCSS.html" with context %}
     <script src="https://unpkg.com/leaflet-image/leaflet-image.js"></script>
     <script>
-        function fetchZoneDetails(zone_id) {
+        function fetchZoneDetails(zone_id, customer_id) {
+            console.log("Sending Data:", { zone_id: zone_id, customer_id: customer_id });
             fetch(`/customer_interest/get_zone_details`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({zone_id: zone_id})
+                body: JSON.stringify({zone_id: zone_id, customer_id:customer_id})
             })
                 .then(response => response.json())
                 .then(data => {
@@ -49,6 +50,7 @@
                 `<h3>Likelihood Score: ${data.likelihood_score}%</h3><h3>Reason: ${data.reason}%</h3>`;
         }
     </script>
+    {% include "js/card_mini_buttons.html" with context %}
 </head>
 <body>
 <div class="container">
@@ -67,12 +69,27 @@
                       style="margin-top: 20px;">
                     <button type="submit">Send Neighborhood Interests to Email</button>
                 </form>
-{#                <button id="capture-map">Capture Map</button>#}
+                {#                <button id="capture-map">Capture Map</button>#}
             </div>
 
 
         </div>
-
+        <div id="message-box" style="
+    display: none;
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #f8f9fa;
+    color: #333;
+    padding: 8px 16px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    z-index: 1000;">
+        </div>
         <div>
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -84,6 +101,7 @@
                 {% endif %}
             {% endwith %}
         </div>
+
 
 
     {% endif %}
@@ -98,7 +116,9 @@
             </div>
             <div class="forsale-box ">
                 {% for (aicomment,home) in selectedaicomments %}
-                    {% include "components/neighbourhood_details_card_mini.html" %}
+                    {% with showScheduleButton=True , showTrackButton = True %}
+                        {% include "components/neighbourhood_details_card_mini.html" %}
+                    {% endwith %}
                 {% endfor %}
             </div>
 
@@ -126,6 +146,10 @@
         {##}
         <div id="details-container"></div>
 
+        <div id="customer_interest">
+        {% include "components/Customer_Interest_Track.html" with context %}
+        </div>
+
         <h1>Market Analysis of Sold Properties</h1>
         <div class="content-wrapper">
             <div class="map-box">
@@ -139,7 +163,8 @@
             <div class="forsale-box ">
                 <div style="text-align: center;">
                     <h2>Sold Houses in the last {{ selected_doz }} days</h2>
-                    <img id="graphImage" src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
+                    <img id="graphImage" src="data:image/png;base64,{{ plot_url }}"
+                         alt="House Price vs. Days to Pending">
 
                     {#                <img id="graphImage" src="{{ plot_url }}" alt="House Price vs. Days to Pending">#}
                 </div>
@@ -148,8 +173,7 @@
         {% include 'ClickAbleMap/data_table.html' %}
     {% else %}
         <p>Check Out the full area report for your interested Areas!</p>
-     {% endif %}
-
+    {% endif %}
 
 
 </div>

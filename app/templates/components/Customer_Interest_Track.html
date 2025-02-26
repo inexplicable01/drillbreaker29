@@ -1,0 +1,28 @@
+<div class="customer_interest_track">
+    <h2>{{ customer.name }} interests</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Listings</th>
+            <th>Description</th>
+        </tr>
+        </thead>
+        <tbody>
+
+
+        {% for customerzpid in customerzpid_array %}
+            <tr>
+                {% set home = customerzpid.brief_listing %}
+                <td><strong>Noted on {{ customerzpid.created_at }}</strong></td>
+                {% with showScheduleButton=(home.homeStatus=="FOR_SALE") , showTrackButton = False %}
+                <td>
+                    {% include "components/neighbourhood_details_card_mini.html" %}
+                </td>
+            {% endwith %}
+            </tr>
+        {% endfor %}
+
+
+        </tbody>
+    </table>
+</div>

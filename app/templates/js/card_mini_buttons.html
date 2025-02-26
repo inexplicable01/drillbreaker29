@@ -1,0 +1,41 @@
+<script>
+
+    function showMessage(message) {
+    const messageBox = document.getElementById("message-box");
+    messageBox.innerText = message;
+    messageBox.style.display = "block";
+
+    setTimeout(() => {
+        messageBox.style.display = "none";
+    }, 3000); // Hide message after 3 seconds
+}
+function scheduleHomeTour(zpid, customer_id) {
+    fetch('/customer_interest/schedule_home_tour', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ zpid: zpid, customer_id: customer_id })
+    }).then(response => response.json())
+      .then(data => showMessage(data.message))
+      .catch(error => console.error('Error:', error));
+}
+
+function trackListing(zpid, customer_id) {
+    fetch('/customer_interest/save_customer_zpid_interest', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ zpid: zpid, customer_id: customer_id })
+    }).then(response => response.json())
+      .then(data =>{showMessage(data.message);
+       let customer_interest = document.getElementById('customer_interest');
+       customer_interest.style.display = 'block';
+       customer_interest.innerHTML = data.html;
+
+      } )
+      .catch(error => console.error('Err01or:', error));
+}
+
+</script>

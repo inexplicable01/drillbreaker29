@@ -194,12 +194,17 @@ def maintainForSaleListings():
             forsaleAPIbrief_dict = {listing.zpid: listing for listing in forsalebrieflistingarr}
 
             ## This is a good daily check
-
+            count =0
             newsalebriefs = []
             for_sale_DB = brieflistingcontroller.forSaleInSearchNeigh(city)
             forsaledb_ids = [brieflist.zpid for brieflist in for_sale_DB]
+            zpidofinterest = customerzpidcontroller.getAllCustomerzpids()
             for api_zpid, brieflisting in forsaleAPIbrief_dict.items():  ##LOOP THROUGH API
+                count += 1
+                print(count)
                 # print(brieflisting.streetAddress)
+                if api_zpid == 48827909:
+                    print('wait')
                 if api_zpid in forsaledb_ids:
                     ## If API listing (brieflisting is from API) is in DB already
                     ## This is where you would check if priced change
@@ -207,7 +212,8 @@ def maintainForSaleListings():
                     if brieflistdb.price != brieflisting.price:
                         print(f"Price Change for {brieflistdb}")
                         print(f"From {brieflistdb.price} to {brieflisting.price}")### Is zpid under amusement, if so send alert email
-                        EmailCustomersIfInterested(api_zpid, brieflisting, brieflistdb)## Create a latestPriceChangeTime column set time, update price
+                        if api_zpid in zpidofinterest:
+                            EmailCustomersIfInterested(api_zpid, brieflisting, brieflistdb)## Create a latestPriceChangeTime column set time, update price
                         brieflistdb.price= brieflisting.price
                         brieflistdb.lpctime = datetime.now().timestamp()
                         brieflistingcontroller.UpdateBriefListing(brieflistdb)
@@ -219,7 +225,7 @@ def maintainForSaleListings():
                     brieflisting.getPropertyData()
                     brieflistingcontroller.setZoneForBriefListing(brieflisting)
                     newsalebriefs.append(brieflisting)
-                    if len(newsalebriefs) > 100:
+                    if len(newsalebriefs) > 10:
                         brieflistingcontroller.SaveBriefListingArr(
                             newsalebriefs)  # if its sold then maybe it was pending at some point. This line updates it.
                         newsalebriefs = []

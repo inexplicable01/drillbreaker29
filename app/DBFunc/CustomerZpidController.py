@@ -23,6 +23,16 @@ class CustomerZpidController():
             print_and_log(f"Error retrieving all CustomerZpids: {str(e)}")
             return []
 
+    def getAllCustomerzpids(self):
+        try:
+            zpids=[]
+            for customerzpid  in self.CustomerZpid.query.all():
+                zpids.append(customerzpid.zpid)
+            return zpids
+        except Exception as e:
+            print_and_log(f"Error retrieving all CustomerZpids: {str(e)}")
+            return []
+
     # Retrieve a single CustomerZpid by ID
     def getCustomerZpidByID(self, id):
         try:
@@ -31,9 +41,24 @@ class CustomerZpidController():
             print_and_log(f"Error retrieving CustomerZpid by ID: {str(e)}")
             return None
 
+    def getCustomerZpidByCustomerAndZpid(self,customer_id, zpid):
+        return CustomerZpid.query.filter_by(customer_id=customer_id, zpid=zpid).first()
+
+
+    def getlistingsofCustomerByCustomerID(self, id):
+        try:
+            customerzpids = self.CustomerZpid.query.filter_by(id=id).all()
+            brieflistingsarray = []
+            for customerzpid in customerzpids:
+                brieflistingsarray.append(customerzpid.brieflisting)
+            return
+        except Exception as e:
+            print_and_log(f"Error retrieving CustomerZpid by ID: {str(e)}")
+            return None
+
     def getCustomerZpidByZpid(self, zpid):
         try:
-            return self.CustomerZpid.query.filter_by(zpid=zpid).first()
+            return self.CustomerZpid.query.filter_by(zpid=zpid).all()
         except Exception as e:
             print_and_log(f"Error retrieving CustomerZpid by ID: {str(e)}")
             return None

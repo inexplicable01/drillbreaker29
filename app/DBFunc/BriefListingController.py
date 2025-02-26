@@ -459,6 +459,33 @@ class BriefListingController():
         # Execute the query with all filters applied at once
         return BriefListing.query.filter(*filters)
 
+    def listingsByZonesandStatus(self, zones, homeStatus, fromdays, homeType=None, maxprice=None,
+                              minprice=None ):
+        fromdays_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())
+        # Count entries with homestatus = 'PENDING' and pendday in the last 7 days
+
+        filters = [
+            BriefListing.homeStatus == homeStatus,
+            BriefListing.zone_id.in_(zones)
+        ]
+        if homeStatus== RECENTLYSOLD:
+            filters.append(BriefListing.soldtime >= fromdays_ago)
+        elif homeStatus== FOR_SALE:
+            filters.append(BriefListing.listtime >= fromdays_ago)
+        elif homeStatus==PENDING:
+            filters.append(BriefListing.pendday >= fromdays_ago)
+        # Add optional parameters dynamically
+        if homeType:
+            filters.append(
+                BriefListing.homeType.in_(homeType) if isinstance(homeType,
+                                                                  list) else BriefListing.homeType == homeType)
+        if maxprice:
+            filters.append(BriefListing.price <= maxprice)
+        if minprice:
+            filters.append(BriefListing.price >= minprice)
+        # Execute the query with all filters applied at once
+        return BriefListing.query.filter(*filters)
+
 # +++++++++++++++++ZoneEnds
     def getALLlistings(self):
         """

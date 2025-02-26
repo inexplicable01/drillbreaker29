@@ -95,6 +95,39 @@ def sendEmailListingChange(message=None, title=None, hdpUrl=None):
                recipient =defaultrecipient)
 
 from pathlib import Path
+def sendemailforcustomerhometour(customer:Customer,brieflisting):
+    seattle_tz = pytz.timezone('America/Los_Angeles')
+    current_time = datetime.now(seattle_tz)
+    formatted_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+
+
+    email_subject = f"Customer {customer.name} , {customer.id} wants to tour {brieflisting.__str__()}!"
+    # Prepare the email content
+    html_content = f"""
+    <html>
+        <body>
+            <p>The email was sent on {formatted_time} (Seattle Time).</p>
+            <p>{email_subject}</p>
+            <a href='https://www.zillow.com{brieflisting.hdpUrl}' target='_blank'>House Link</a>
+        </body>
+    </html>
+    """
+
+    try:
+        send_email(
+            subject=email_subject,
+            recipient='waichak.luk@gmail.com',#customer.email,  # Email address of the customer
+            html_content=html_content
+        )
+        send_email(
+            subject=email_subject,
+            recipient='mohamedzabuzaid@gmail.com',#customer.email,  # Email address of the customer
+            html_content=html_content
+        )
+        flash("The email was sent successfully!", "success")
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        flash("An error occurred while sending the email.", "danger")
 
 def sendCustomerEmail(customer:Customer,locations,
                       plot_url, soldhomes):
