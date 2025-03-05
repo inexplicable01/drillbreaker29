@@ -1,0 +1,42 @@
+<!-- Form Section Above the Mini Card -->
+<div class="mini-card" style="
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    background: #fff;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 1000px;
+    margin-bottom: 10px;"> <!-- Added margin-bottom to separate from the mini-card below -->
+
+
+    Type in MLS Number to Start Tracking
+
+    <input type="text" name="nwmls_id"  id="nwmls_id" placeholder="Enter MLS" required style="
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;">
+
+    <button onclick="saveNWMLS('{{ customer.id }}')" style="
+            background-color: {% if tracking %} #ccc {% else %} #0073e6 {% endif %};
+            color: {% if tracking %} #666 {% else %} white {% endif %};
+            border: none;
+            padding: 8px 12px;
+            margin-top: 5px;
+            cursor: {% if tracking %} not-allowed {% else %} pointer {% endif %};
+            border-radius: 5px;
+            font-size: 14px;"
+            {% if tracking %} disabled {% endif %}
+    >
+
+        Track!
+
+    </button>
+
+</div>
+
+

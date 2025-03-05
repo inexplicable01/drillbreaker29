@@ -426,6 +426,26 @@ def updateathing4():
 
     return {"Seattle Neighbourhood_subs updated": 'listings.__len__()'}, 200
 
+
+@maintanance_bp.route('/updateathing5', methods=['post'])
+def updateathing5():
+    # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
+    # iter_value = request.args.get('iter')
+    zone_id = int(request.args.get('zone_id'))
+    listings = (BriefListing.query.filter(BriefListing.zone_id== zone_id)
+     .filter(BriefListing.homeStatus == RECENTLYSOLD) .all())
+
+    for brieflisting in listings:
+
+        brieflisting.getPropertyData()
+        brieflistingcontroller.setZoneForBriefListing(brieflisting)
+        print(brieflisting.zone_id)
+        print(brieflisting)
+        brieflistingcontroller.updateBriefListing(brieflisting)
+        # brieflistingcontroller.setZoneForBriefListingList(listings)
+
+
+    return {"Seattle Neighbourhood_subs updated": 'listings'}, 200
 # @maintanance_bp.route('/export-pdf',methods=['get'])
 # def export_pdf():
 #     # Render the HTML template

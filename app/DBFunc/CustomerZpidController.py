@@ -72,6 +72,16 @@ class CustomerZpidController():
             return True
         return False
 
+    def delete_customerzpid(self, zpid, customer_id):
+        """Permanently delete a CustomerZpid entry."""
+        customer_zpid = CustomerZpid.query.filter_by(zpid=zpid, customer_id=customer_id).first()
+
+        if customer_zpid:
+            self.db.session.delete(customer_zpid)  # Delete from the database
+            self.db.session.commit()
+            return True  # Successfully deleted
+
+        return False  # No matching record found
 
     # Save a new CustomerZpid or update an existing one
     def saveCustomerzpid(self, brieflisting, customer):

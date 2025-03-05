@@ -38,4 +38,41 @@ function trackListing(zpid, customer_id) {
       .catch(error => console.error('Err01or:', error));
 }
 
+    function saveNWMLS(customer_id) {
+        let nwmls_id = document.getElementById("nwmls_id").value;
+
+    fetch('/customer_interest/save_customer_nwmls_id_interest', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ nwmls_id: nwmls_id, customer_id: customer_id })
+    }).then(response => response.json())
+      .then(data =>{showMessage(data.message);
+       let customer_interest = document.getElementById('customer_interest');
+       customer_interest.style.display = 'block';
+       customer_interest.innerHTML = data.html;
+
+      } )
+      .catch(error => console.error('Err01or:', error));
+    }
+
+    function removetracking(zpid, customer_id) {
+
+    fetch('/customer_interest/remove_customer_interest', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ zpid: zpid, customer_id: customer_id })
+    }).then(response => response.json())
+      .then(data =>{showMessage(data.message);
+       let customer_interest = document.getElementById('customer_interest');
+       customer_interest.style.display = 'block';
+       customer_interest.innerHTML = data.html;
+
+      } )
+      .catch(error => console.error('Err01or:', error));
+    }
+
 </script>

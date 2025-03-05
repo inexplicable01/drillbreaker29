@@ -7,6 +7,7 @@ from app.DBFunc.WashingtonZonesController import WashingtonZones
 from app.DBFunc.CustomerZoneController import CustomerZone
 from app.DBFunc.ZoneStatsCacheController import ZoneStatsCache
 from app.DBFunc.WashingtonCitiesController import WashingtonCities
+from app.DBFunc.PropertyListingController import PropertyListing
 from app import db
 
 # Define relationships explicitly
@@ -72,3 +73,9 @@ Customer.property_types = db.relationship('PropertyType', secondary=Customer_pro
 Customer.descriptions = db.relationship('CustomerDescription', back_populates='customer', cascade="all, delete")
 
 CustomerDescription.customer = db.relationship('Customer', back_populates='descriptions')
+
+# BriefListings to PropertyListings
+
+BriefListing.property_listing = db.relationship("PropertyListing", back_populates="brief_listing", uselist=False, cascade="all, delete")
+
+PropertyListing.brief_listing = db.relationship("BriefListing", back_populates="property_listing")

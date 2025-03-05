@@ -114,12 +114,15 @@
                 <div id="map_forsale"></div>
                 {% include "InterestReport/ForSaleMapScript.html" with context %}
             </div>
+
             <div class="forsale-box ">
+                {% include "components/AddMLSDiv.html" with context %}
                 {% for (aicomment,home) in selectedaicomments %}
                     {% with showScheduleButton=True , showTrackButton = True %}
                         {% include "components/neighbourhood_details_card_mini.html" %}
                     {% endwith %}
                 {% endfor %}
+
             </div>
 
 

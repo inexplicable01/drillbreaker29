@@ -15,6 +15,7 @@ from app.DBFunc.CustomerZoneController import customerzonecontroller
 from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from app.DBFunc.AIListingController import ailistingcontroller
 from app.DBFunc.CustomerController import customercontroller
+from app.DBFunc.PropertyListingController import propertylistingcontroller
 from app.MapTools.MappingTools import WA_geojson_features, create_map
 from app.RouteModel.AIModel import AIModel
 from app.RouteModel.EmailModel import sendCustomerEmail, sendemailforcustomerhometour
@@ -100,6 +101,85 @@ def save_zpid():
     return redirect(url_for('customer_interest_bp.listCustomersforAlerts'))  # Replace 'customer_list' with your route name
 
 
+@customer_interest_bp.route('/save_customer_nwmls_id_interest', methods=['POST'])
+def save_customer_nwmls_id_interest():
+    data = request.json
+    nwmls_id = data.get('nwmls_id')
+    customer_id = data.get('customer_id')        # Retrieve ZPID (fallback)
+
+    customer = customercontroller.getCustomerByID(customer_id)
+    if not customer:
+        print("Customer not found.", "error")
+        return "Customer not found.", 400
+    if nwmls_id:
+        brieflisting = brieflistingcontroller.get_listing_by_mls_id(nwmls_id)
+    # if not brieflisting:
+    #     print("Customer not found.", "error")
+    #     return "Customer not found.", 400
+
+    if not brieflisting:
+        if nwmls_id:
+            print(f"Listing with NWMLS_id '{nwmls_id}' not found, attempting to fetch via Zillow API...")
+            zpid = SearchZilowByMLSID(nwmls_id)  # Attempt API lookup with MLS ID
+            if zpid:
+                propertydata = SearchZillowByZPID(zpid)
+                brieflisting = brieflistingcontroller.CreateBriefListingFromPropertyData(propertydata)
+                propertylistingcontroller.create_property(zpid, propertydata)
+                brieflistingcontroller.updateBriefListing(brieflisting)
+        else:
+            # If neither NWMLS_id nor ZPID exists, don't proceed with saving
+            print("No NWMLS_id or ZPID provided. Cannot find listing.", "error")
+            return "No NWMLS_id or ZPID provided. Cannot find listing.", 400
+
+
+    existing_entry = customerzpidcontroller.getCustomerZpidByCustomerAndZpid(customer_id, zpid)
+    if existing_entry:
+        message="Already tracking this listing."
+    else:
+        message="New Listing added to tracking!"
+        customerzpidcontroller.saveCustomerzpid(brieflisting, customer)
+        # **Re-fetch the customer to get updated customerzpid_array**
+        customer = customercontroller.getCustomerByID(customer_id)
+
+    for customerzpid in customer.customerzpid_array:
+        if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
+            customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data()
+
+    return jsonify({"message": message,
+        "html": render_template('components/Customer_Interest_Track.html',
+                                customer=customer,
+        customerzpid_array=customer.customerzpid_array
+                                )})
+
+
+@customer_interest_bp.route('/remove_customer_interest', methods=['POST'])
+def remove_customer_interest():
+    data = request.json
+    zpid = data.get('zpid')
+    customer_id = data.get('customer_id')        # Retrieve ZPID (fallback)
+
+    customer = customercontroller.getCustomerByID(customer_id)
+    if not customer:
+        print("Customer not found.", "error")
+        return "Customer not found.", 400
+
+    customerzpidcontroller.delete_customerzpid(zpid, customer_id)
+        # **Re-fetch the customer to get updated customerzpid_array**
+    customer = customercontroller.getCustomerByID(customer_id)
+
+    for customerzpid in customer.customerzpid_array:
+        if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
+            customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data()
+
+    return jsonify({"message": 'Entry succesfully removed',
+        "html": render_template('components/Customer_Interest_Track.html',
+                                customer=customer,
+        customerzpid_array=customer.customerzpid_array
+                                )})
+
+
+
+
 @customer_interest_bp.route('/save_customer_zpid_interest', methods=['POST'])
 def save_customer_zpid_interest():
     data = request.json
@@ -117,22 +197,20 @@ def save_customer_zpid_interest():
 
     existing_entry = customerzpidcontroller.getCustomerZpidByCustomerAndZpid(customer_id, zpid)
     if existing_entry:
-        return jsonify({"message": "Already tracking this listing.",
-                        "html": render_template('components/Customer_Interest_Track.html',
-                                                customer=customer,
-                                                customerzpid_array=customer.customerzpid_array
-                                                )
+        message="Already tracking this listing."
+    else:
+        message="New Listing added to tracking!"
+        if propertylistingcontroller.get_property(brieflisting.zpid) is None:
+            propertydata = SearchZillowByZPID(zpid)
+            propertylistingcontroller.create_property(zpid, propertydata)
+        customerzpidcontroller.saveCustomerzpid(brieflisting, customer)
+        # **Re-fetch the customer to get updated customerzpid_array**
+        customer = customercontroller.getCustomerByID(customer_id)
+    for customerzpid in customer.customerzpid_array:
+        if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
+            customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data()
 
-                        })
-
-
-
-    customerzpidcontroller.saveCustomerzpid(brieflisting, customer)
-    # **Re-fetch the customer to get updated customerzpid_array**
-    customer = customercontroller.getCustomerByID(customer_id)
-
-
-    return jsonify({
+    return jsonify({"message": message,
         "html": render_template('components/Customer_Interest_Track.html',
                                 customer=customer,
         customerzpid_array=customer.customerzpid_array
@@ -327,7 +405,15 @@ def displayCustomerInterest():
 
     zpidlist = []
     for customerzpid in customer.customerzpid_array:
+        if propertylistingcontroller.get_property(customerzpid.brief_listing.zpid) is None:
+            propertydata = SearchZillowByZPID(customerzpid.brief_listing.zpid)
+            propertylistingcontroller.create_property(customerzpid.brief_listing.zpid, propertydata)
+
+    customer = customerzonecontroller.get_customer_zone(customer_id)
+    for customerzpid in customer.customerzpid_array:
         zpidlist.append(customerzpid.brief_listing.zpid)
+        if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
+            customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data()
 
     return render_template('InterestReport/NeighbourhoodInterest.html',
                            customer=customer,
