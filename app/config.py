@@ -8,6 +8,8 @@ class SW(object):
     SINGLE_FAMILY = 'SINGLE_FAMILY'
     CONDO = 'CONDO'
     APARTMENT='APARTMENT'
+    MANUFACTURED = 'MANUFACTURED'
+    LOT='LOT'
 
 
 class Config(object):

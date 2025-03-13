@@ -7,7 +7,7 @@ from app.DBFunc.WashingtonCitiesController import WashingtonCities
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime , Numeric , ForeignKey
 
-from app.DBModels.Customer import Customer
+from app.DBFunc.CustomerController import Customer
 # from app.DBModels.CustomerZone import CustomerZone
 from typing import Optional
 
@@ -38,37 +38,6 @@ class CustomerZoneController:
         customer = self.Customer.query.filter_by(id=customer_id).first()
         if not customer:
             return None, []  # Return None if the customer is not found
-
-        # Fetch neighborhoods of interest for the customer
-        # interests = (
-        #     self.db.session.query(self.CustomerZone)
-        #     .filter(self.CustomerZone.customer_id == customer_id)
-        #     .all()
-        # )
-        #
-        # # Format customer details
-        # customer_data = {
-        #     "name": customer.name,
-        #     "email": customer.email,
-        #     "phone": customer.phone
-        # }
-        #
-        # # Format neighbourhood interests
-        # locations = []
-        # for n in interests:
-        #     if n.zone:
-        #         locations.append({
-        #             "neighbourhood": n.zone.neighbourhood,
-        #             "neighbourhood_sub": n.zone.neighbourhood_sub,
-        #             "city": n.zone.city
-        #         })
-        #     else:
-        #         locations.append({
-        #             "neighbourhood": None,
-        #             "neighbourhood_sub": None,
-        #             "city": n.WashingtonCities.city
-        #         })
-
 
         return customer
 

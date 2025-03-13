@@ -96,7 +96,6 @@ def create_app(debug=False,config_object="config.module.path"):
     # Optionally, you can use Flask's app context to create the tables.
     # However, this is generally done outside the create_app to allow more control over when tables are created.
     with app.app_context():
-        from app.DBModels.Customer import Customer
         from app.DBModels.BriefListing import BriefListing
         from app.DBModels.CustomerZpid import CustomerZpid
 

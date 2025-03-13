@@ -1,4 +1,6 @@
 from flask import Flask
+
+from .investmentclients import investmentclients_bp
 # from .auth import auth_bp
 from .openhouse import openhouse_bp
 from .soldhomes import soldhomes_bp
@@ -36,3 +38,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(zonestats_bp)
     app.register_blueprint(customer_interest_bp)
     app.register_blueprint(save_image_bp)
+    app.register_blueprint(investmentclients_bp)

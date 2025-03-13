@@ -43,4 +43,8 @@ class WashingtonCitiesController():
     def getCity(self, City):
         return self.WashingtonCities.query.filter_by(City=City).first()
 
+    def get_cities_by_county(self, counties):
+        return [c.City for c in self.WashingtonCities.query.filter(self.WashingtonCities.county.in_(counties)).all()]
+
+
 washingtoncitiescontroller = WashingtonCitiesController()

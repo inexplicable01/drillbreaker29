@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Listings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h2 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h2>Investment Property Listings - Sorted by Cash Flow</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ZPID</th>
+                <th>MLS</th>
+                <th>Address</th>
+                <th>Price</th>
+                <th>Estimated Rent</th>
+                <th>Mortgage (P&I) 30 year</th>
+                <th>Property Tax</th>
+                <th>HOA Fee</th>
+                <th>Insurance</th>
+                <th>Maintenance</th>
+                <th>Cash Flow</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for listing in listings %}
+            <tr>
+                <td>{{ listing.zpid }}</td>
+                <td>{{ listing.mls }}</td>
+                <td><a href="https://www.zillow.com{{ listing.hdpUrl }}" target='_blank'>{{ listing.address }}</a></td>
+
+                <td>{{ listing.price }}</td>
+                <td>{{ listing.estimated_rent }}</td>
+                <td>{{ listing.mortgage }}</td>
+                <td>{{ listing.property_tax }}</td>
+                <td>{{ listing.hoa_fee }}</td>
+                <td>{{ listing.insurance }}</td>
+                <td>{{ listing.maintenance }}</td>
+                <td style="color: {% if listing.cash_flow.startswith('-') %}red{% else %}green{% endif %};">
+                    {{ listing.cash_flow }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

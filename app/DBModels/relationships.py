@@ -1,13 +1,14 @@
 from app.DBFunc.CustomerDescriptionController import CustomerDescription
-from app.DBModels.Customer import Customer
+from app.DBFunc.CustomerController import Customer
 from app.DBModels.BriefListing import BriefListing
 from app.DBModels.CustomerZpid import CustomerZpid
-from app.DBModels.property_types import PropertyType
+from app.DBFunc.CachedInvestmentController import CachedInvestmentData
 from app.DBFunc.WashingtonZonesController import WashingtonZones
 from app.DBFunc.CustomerZoneController import CustomerZone
 from app.DBFunc.ZoneStatsCacheController import ZoneStatsCache
 from app.DBFunc.WashingtonCitiesController import WashingtonCities
 from app.DBFunc.PropertyListingController import PropertyListing
+from app.DBModels.property_types import PropertyType
 from app import db
 
 # Define relationships explicitly
@@ -79,3 +80,10 @@ CustomerDescription.customer = db.relationship('Customer', back_populates='descr
 BriefListing.property_listing = db.relationship("PropertyListing", back_populates="brief_listing", uselist=False, cascade="all, delete")
 
 PropertyListing.brief_listing = db.relationship("BriefListing", back_populates="property_listing")
+
+##Investment Cache
+BriefListing.cached_investments = db.relationship("CachedInvestmentData", back_populates="brief_listing")
+CachedInvestmentData.brief_listing = db.relationship("BriefListing", back_populates="cached_investments")
+
+CachedInvestmentData.customer = db.relationship("Customer", back_populates="cached_investments")
+Customer.cached_investments = db.relationship("CachedInvestmentData", back_populates="customer")

@@ -1,6 +1,6 @@
 import requests
-# base = "http://127.0.0.1:5000/"
-base = "https://www.drillbreaker29.com/"
+base = "http://127.0.0.1:5000/"
+# base = "https://www.drillbreaker29.com/"
 
 getcitylisturl = base + "maintanance/getCityList"
 url3 = base + "maintanance/listingscheck"
@@ -10,7 +10,7 @@ getforsalelistingsurl = base + "maintanance/maintainFORSALEListings"
 urlfsbo = f"{base}maintanance/fsbo"
 urlopen = f"{base}maintanance/updateopenhouse"
 
-params = [("county", "King"), ("county", "Pierce")]
+params = [("county", "King"), ("county", "Snohomish")]
 payload = {}
 headers = {}
 

@@ -19,14 +19,6 @@ from app.RouteModel.BriefListingsVsApi import ZPIDinDBNotInAPI_FORSALE, EmailCus
 
 maintanance_bp = Blueprint('maintanance_bp', __name__, url_prefix='/maintanance')
 
-
-@maintanance_bp.route('/neighcleanup', methods=['POST'])
-def neighcleanup():
-    # Assuming sendEmailwithNewListing() is a function that sends an email with new listings.
-    cleanupresults = brieflistingcontroller.listingsN_Cleanup()
-    return cleanupresults, 200
-
-
 @maintanance_bp.route('/updateopenhouse', methods=['PATCH'])
 def updateopenhouse():
     openhouses = []
@@ -65,7 +57,15 @@ def updateopenhouse():
 
 @maintanance_bp.route('/getCityList', methods=['GET'])
 def cityList():
-    return {"cities": washingtoncitiescontroller.getallcities()}, 200
+    counties = request.args.getlist('county')  # Get list of counties from query parameters
+
+    if counties:
+        cities = washingtoncitiescontroller.get_cities_by_county(
+            counties)  # Assuming this function filters cities by county
+    else:
+        cities = washingtoncitiescontroller.getallcities()
+
+    return {"cities": cities}, 200
 
 
 from app.DBFunc.CustomerZpidController import customerzpidcontroller

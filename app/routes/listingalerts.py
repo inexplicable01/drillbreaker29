@@ -4,9 +4,15 @@ from flask import Blueprint, redirect, url_for
 # from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,loadPropertyDataFromBrief
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.RouteModel.EmailModel import SendEmailOfListings
+from app.DBFunc.CustomerController import customercontroller
 
 alert_bp = Blueprint('alerts', __name__, url_prefix='/listingalerts')
-#
+
+
+@alert_bp.route('/activeCustomers', methods=['GET'])
+def activeCustomers():
+    return {'activeCustomers':customercontroller.get_active_customers(as_dict=True)},200
+
 # @alert_bp.route('/clientalerts', methods=['GET'])
 # def sendalerts():
 #     # Assuming sendEmailwithNewListing() is a function that sends an email with new listings.

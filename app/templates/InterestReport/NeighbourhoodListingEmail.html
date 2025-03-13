@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Neighborhood Interests</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    {% include "InterestReport/ReportCSS.html" with context %}
+</head>
+<body>
+<div class="container">
+
+    <h1>Homes for you</h1>
+
+    <div class="forsale-box ">
+        {% for (aicomment,home) in selectedaicomments %}
+            {% with showScheduleButton=True , showTrackButton = True %}
+                {% include "components/neighbourhood_details_card_mini.html" %}
+            {% endwith %}
+        {% endfor %}
+
+    </div>
+
+
+</div>
+</body>
+</html>

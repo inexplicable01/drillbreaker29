@@ -356,7 +356,7 @@ def send_email(customer_id):
 
     if not customer:
         return "No customers found", 404
-    sendCustomerEmail(customer,locations, plot_url, soldhomes)
+    sendCustomerEmail(customer,locations, plot_url, soldhomes, selectedaicomments)
 
     # Redirect back to the same interests page after sending email
     return redirect(url_for('customer_interest_bp.displayCustomerInterest', customer_id=customer_id))
@@ -378,13 +378,6 @@ def displayCustomerInterest():
     aicomments=[]
     selectedhomes=[]
     homes_with_comments=[]
-    # for brieflisting in forsalehomes:
-    #     ai_comment = ailistingcontroller.check_existing_evaluation(customer_id, brieflisting.zpid)
-    #     if ai_comment and ai_comment.likelihood_score>50:
-    #         selectedhomes.append(brieflisting)
-    #         aicomments.append(ai_comment)
-    # homes_with_comments = list(zip(selectedhomes, aicomments))
-
     geojson_features = WA_geojson_features  # Replace `WA_geojson_features` with your actual data
 
     # Define file paths
@@ -393,15 +386,6 @@ def displayCustomerInterest():
     map_image_path = output_dir / f"map_{customer.name}_screenshot.png"
     url_image_path= f"maps/map_{customer.name}_screenshot.png"
     # # Step 1: Generate map HTML
-
-    # if not os.path.exists(map_html_path):
-    #     map_html = create_map(
-    #         geojson_features=geojson_features,
-    #         neighbourhoods_subs=locationzonenames,
-    #         cities=locationzonenames,
-    #         map_html_path=str(map_html_path),
-    #         map_image_path = str(map_image_path)
-    #     )
 
     zpidlist = []
     for customerzpid in customer.customerzpid_array:

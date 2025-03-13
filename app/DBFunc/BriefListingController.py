@@ -145,15 +145,6 @@ class BriefListingController():
     def listingsN_Cleanup(self):
         # Query to find all listings with 'FIX ME' as the neighborhood
         FIXMEListingsQuery = self.db.session.query(BriefListing).filter_by(neighbourhood='FIX ME')
-        for fixmelisting in FIXMEListingsQuery:
-            print(fixmelisting)
-            fixmelisting.gapis_neighbourhood = get_neighborhood(fixmelisting.latitude, fixmelisting.longitude)
-            self.db.session.merge(fixmelisting)
-            print(fixmelisting.zpid)
-            loadPropertyDataFromBrief(fixmelisting)
-        self.db.session.commit()
-
-        # Execute the query and count the results
         FIXMEListingsCount = FIXMEListingsQuery.count()
 
         # Return the count of listings needing cleanup
