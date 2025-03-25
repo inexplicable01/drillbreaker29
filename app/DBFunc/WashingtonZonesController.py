@@ -76,6 +76,9 @@ class WashingtonZonesController:
         WashingtonZones = self.WashingtonZones.query.all()
         return WashingtonZones
 
+    def getZoneListbyCity_id(self, city_id):
+        return self.WashingtonZones.query.filter_by(city_id=city_id).all()
+
     def getZonebyID(self,id):
         return self.WashingtonZones.query.filter_by(id=id).first()
 

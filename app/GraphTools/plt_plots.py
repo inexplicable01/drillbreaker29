@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
 
-def createPriceChangevsDays2PendingPlot(soldhomes):
+def createPriceChangevsDays2PendingPlot(soldhomes, savefilepath=None):
     plt.figure()
     colors = ['grey', 'olive',  'magenta']  # Example colors for 1-5 bedrooms
     for brieflisting in soldhomes:
@@ -34,7 +34,7 @@ def createPriceChangevsDays2PendingPlot(soldhomes):
 
     plt.title('Price Change vs. Days to Pending')
     plt.xlabel('Days to Pending')
-    plt.ylabel('Price Change')
+    plt.ylabel('Price Change ($)')
     for i, color in enumerate(colors):
         plt.scatter([], [], c=color, label=f'{i + 1} Bedrooms')
     plt.scatter([], [], c='purple', label='>4 Bedrooms')
@@ -48,9 +48,12 @@ def createPriceChangevsDays2PendingPlot(soldhomes):
     plt.savefig(buf, format='png')
     buf.seek(0)
 
+    if savefilepath:
+        plt.savefig(savefilepath, format='png', dpi=300)
+
     return base64.b64encode(buf.read()).decode('utf-8')
 
-def createPricevsDays2PendingPlot(soldhomes):
+def createPricevsDays2PendingPlot(soldhomes, savefig=False):
     plt.figure()
     colors = ['blue', 'yellow',  'magenta']  # Example colors for 1-5 bedrooms
     for brieflisting in soldhomes:

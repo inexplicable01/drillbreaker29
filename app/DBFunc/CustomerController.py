@@ -20,6 +20,8 @@ class Customer(db.Model):
     last_contacted =  db.Column(db.DateTime, default=datetime.utcnow)
     lot_size = db.Column(db.Integer, nullable=True)
     parkingspaceneeded = db.Column(db.Integer, nullable=True)
+    customer_type_id = db.Column(db.Integer, db.ForeignKey('CustomerType.id'))
+    maincity_id = db.Column(db.Integer, db.ForeignKey('WashingtonCities.city_id'))
 
     # interests = db.relationship('CustomerZone', back_populates='customer')
 

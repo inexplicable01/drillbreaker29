@@ -3,6 +3,9 @@ from app.RouteModel.AreaReportModel import AreaReportModelRun,AreaReportModelRun
 from app.config import Config,SW
 from app.MapTools.MappingTools import WA_geojson_features, featureAreas
 soldhomes_bp = Blueprint('soldhomes_bp', __name__,url_prefix='/soldhomes')
+from app.GraphTools.plt_plots import *
+
+
 # @soldhomes_bp.route('/update-graph', methods=['POST'])
 # def update_graph():
 #     # Extract parameters from the request
@@ -70,7 +73,9 @@ def AreaReport():
         selected_doz = 30
         selected_zones=[]
 
-    housesoldpriceaverage, plot_url, plot_url2 , soldhomes=AreaReportModelRun(selected_zones, selectedhometypes,selected_doz)
+    housesoldpriceaverage, soldhomes=AreaReportModelRun(selected_zones, selectedhometypes,selected_doz)
+    plot_url = createPriceChangevsDays2PendingPlot(soldhomes)
+    plot_url2= createPricevsDays2PendingPlot(soldhomes)
     brieflistings_SoldHomes_dict=[]
     for brieflisting in soldhomes:
         if brieflisting.fsbo_status is None: # don't want to include fsbos cause it causes an error

@@ -21,7 +21,7 @@ from app.RouteModel.AIModel import AIModel
 from app.RouteModel.EmailModel import sendCustomerEmail, sendemailforcustomerhometour
 from app.DBFunc.CustomerZpidController import customerzpidcontroller
 from app.ZillowAPI.ZillowAPICall import SearchZilowByMLSID, SearchZillowByZPID
-
+from app.GraphTools.plt_plots import *
 
 @customer_interest_bp.route('/customers', methods=['GET'])
 def listCustomers():
@@ -318,8 +318,12 @@ def gatherCustomerData(customer_id, selected_doz):
             break
 
 
-    housesoldpriceaverage, plot_url, plot_url2, soldhomes = AreaReportModelRun(locationzonenames,
+    housesoldpriceaverage, soldhomes = AreaReportModelRun(locationzonenames,
                                                                                [SW.TOWNHOUSE, SW.SINGLE_FAMILY], selected_doz)
+
+    plot_url = createPriceChangevsDays2PendingPlot(soldhomes)
+    plot_url2= createPricevsDays2PendingPlot(soldhomes)
+
 
     asdf, forsalebrieflistings = AreaReportModelRunForSale(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
                                                                             365)

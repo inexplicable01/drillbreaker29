@@ -305,13 +305,26 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import os
 import time
+from folium.plugins import MarkerCluster
 
-def create_map(geojson_features, neighbourhoods_subs, cities, map_html_path,map_image_path):
+def get_marker_color(list2penddays):
+    # Replicates getMarkerColor()
+    if list2penddays is None:
+        return 'gray'
+    elif list2penddays < 7:
+        return 'green'
+    elif list2penddays < 14:
+        return 'orange'
+    else:
+        return 'red'
+
+def create_map(geojson_features, zonenames, map_html_path,map_image_path, soldhomes):
     # Create a base map
-    m = folium.Map(location=[47.6791, -122.3270], zoom_start=13)
+    m = folium.Map(location=[47.6815, -122.2087], zoom_start=13)
 
     geojson_features_clone = copy.deepcopy(geojson_features)
     # Iterate through GeoJSON features and add them to the map
+    bounds_points = []
     for feature in geojson_features_clone:
         if feature["geometry"]["type"] == "Polygon":
             # Adjust coordinates for Leaflet format
@@ -329,27 +342,26 @@ def create_map(geojson_features, neighbourhoods_subs, cities, map_html_path,map_
             ]
 
         # Determine color based on cities or neighbourhoods
-        color = "gray"  # Default color
+        color = "purple"  # Default color
         label = "Unknown"
-        if "CityName" in feature["properties"]:
-            city_name = feature["properties"]["CityName"]
-            color = "orange" if city_name in cities else "purple"
-            label = city_name
-        elif "S_HOOD" in feature["properties"]:
+        matches_zone=False
+        if "S_HOOD" in feature["properties"]:
             neighbourhood = feature["properties"]["S_HOOD"]
-            color = "orange" if neighbourhood in neighbourhoods_subs else "purple"
+            if neighbourhood in zonenames:
+                color = "orange"
+                matches_zone = True
             label = neighbourhood
+        elif "CityName" in feature["properties"]:
+            city_name = feature["properties"]["CityName"]
+            if city_name in zonenames:
+                color = "orange"
+                matches_zone = True
+            label = city_name
 
-        # Add a polygon to the map
-        # poly = GeoJson(
-        #     feature,
-        #     style_function=lambda x, color=color: {
-        #         "fillColor": color,
-        #         "color": color,
-        #         "weight": 2,
-        #         "fillOpacity": 0.5
-        #     }
-        # )
+        if matches_zone:
+            for ring in polygon_coords:
+                for coord in ring:
+                    bounds_points.append([coord[1], coord[0]])  # lat, lon
 
         pgGON = folium.Polygon(
             locations=polygon_coords[0],
@@ -378,7 +390,24 @@ def create_map(geojson_features, neighbourhoods_subs, cities, map_html_path,map_
         # Add the polygon to the map
         pgGON.add_to(m)
 
-    # Save the map as an HTML file
+    # marker_cluster = MarkerCluster().add_to(m)
+    for listing in soldhomes:
+        color = get_marker_color(listing.list2penddays)
+
+        folium.Marker(
+            location=[listing.latitude, listing.longitude],
+            icon=folium.Icon(color=color, icon='home', prefix='fa')
+        ).add_to(m)
+
+
+    if bounds_points:
+        min_lat = min(pt[0] for pt in bounds_points)
+        max_lat = max(pt[0] for pt in bounds_points)
+        min_lon = min(pt[1] for pt in bounds_points)
+        max_lon = max(pt[1] for pt in bounds_points)
+        m.fit_bounds([[min_lon, min_lat], [max_lon, max_lat]])
+    else:
+        m = folium.Map(location=[47.6815, -122.2087], zoom_start=13)  # fallback
     map_html = m._repr_html_()
 
     m.save(map_html_path)  # Save the map as an HTML file

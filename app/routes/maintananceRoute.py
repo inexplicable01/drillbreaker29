@@ -104,7 +104,7 @@ def maintainSoldListings():
             solddb = brieflistingcontroller.SoldHomesinSearch_Neigh(search_neigh=city, days_ago=doz)
             solddb_ids = [listing.zpid for listing in solddb]
             newsoldbriefs = []
-
+            zpidofinterest = customerzpidcontroller.getAllCustomerzpids()
             for ccc, brieflisting in enumerate(soldbrieflistingarr):
                 if brieflisting.zpid in solddb_ids:
                     ##code to remove brieflisting from soldbriefarr
@@ -120,10 +120,15 @@ def maintainSoldListings():
                             print(brieflisting.__str__() + ' has changed from Pending to SOLD!!!')
                         elif brieflistinginDB.homeStatus == 'FOR_SALE':
                             print(brieflisting.__str__() + ' has changed from For sale to Sold!!!')
+                        if brieflisting.zpid in zpidofinterest:
+                            EmailCustomersIfInterested(brieflisting.zpid, brieflisting,
+                                                       brieflistinginDB)  ## Create a latestPriceChangeTime column set time, update price
                         brieflistinginDB.homeStatus = brieflisting.homeStatus
                         # print(brieflistinginDB.soldtime)
                         brieflistinginDB.soldprice =brieflisting.price
+                        brieflistinginDB.price = brieflisting.price
                         brieflistinginDB.soldtime = brieflisting.soldtime
+
                         brieflistingcontroller.updateBriefListing(brieflistinginDB)
                     except Exception as e:
                         print(e, brieflisting,
@@ -154,27 +159,35 @@ def maintainPendingListings():
     if request.method == 'PATCH':
 
         city = request.form.get('city')
-        brieflistingpending = brieflistingcontroller.getallPendings()
-        for brieflisting in brieflistingpending:
+        brieflistingpendingdb = brieflistingcontroller.getallPendings()
+        zpidofinterest = customerzpidcontroller.getAllCustomerzpids()
+        for brieflistingdb in brieflistingpendingdb:
             try:
-                propertydata = loadPropertyDataFromBrief(brieflisting)
+                propertydata = loadPropertyDataFromBrief(brieflistingdb)
+                brieflistingapi = BriefListing.CreateBriefListingFromPropertyData(propertydata)
                 status = propertydata['homeStatus']
                 if status == 'PENDING':
                     continue
-                    print(brieflisting.__str__() + ' has changed from Pending to SOLD!!!')
+                    # print(brieflisting.__str__() + ' has changed from Pending to SOLD!!!')
                 elif status == 'FOR_SALE':
-                    print(brieflisting.__str__() + ' has changed from For sale to Sold!!!')
-                    brieflisting.homeStatus = status
-                    brieflistingcontroller.updateBriefListing(brieflisting)
+                    print(brieflistingdb.__str__() + ' has changed from For sale to Sold!!!')
+
+                    if brieflistingdb.zpid in zpidofinterest:
+                        EmailCustomersIfInterested(brieflistingdb.zpid, brieflistingapi,
+                                                   brieflistingdb)  ## Create a latestPriceChangeTime column set time, update price
+                    brieflistingdb.homeStatus = status
+                    brieflistingcontroller.updateBriefListing(brieflistingdb)
                     continue
                 elif status == RECENTLYSOLD:
-                    brieflisting.homeStatus = status
-                    # print(brieflistinginDB.soldtime)
-                    brieflisting.soldprice = propertydata['lastSoldPrice']
-                    brieflisting.soldtime = int(propertydata['dateSold'])/1000
-                    brieflistingcontroller.updateBriefListing(brieflisting)
+                    if brieflistingdb.zpid in zpidofinterest:
+                        EmailCustomersIfInterested(brieflistingdb.zpid, brieflistingapi,
+                                                   brieflistingdb)  ## Create a latestPriceChangeTime column set time, update price
+                    brieflistingdb.homeStatus = status
+                    brieflistingdb.soldprice = propertydata['lastSoldPrice']
+                    brieflistingdb.soldtime = int(propertydata['dateSold'])/1000
+                    brieflistingcontroller.updateBriefListing(brieflistingdb)
             except Exception as e:
-                print(e, brieflisting)
+                print(e, brieflistingdb)
     return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200
 
 
@@ -203,8 +216,6 @@ def maintainForSaleListings():
                 count += 1
                 print(count)
                 # print(brieflisting.streetAddress)
-                if api_zpid == 48827909:
-                    print('wait')
                 if api_zpid in forsaledb_ids:
                     ## If API listing (brieflisting is from API) is in DB already
                     ## This is where you would check if priced change
@@ -380,7 +391,8 @@ def updateathing():
 
 @maintanance_bp.route('/updateathing2', methods=['post'])
 def updateathing2():
-    listings = brieflistingcontroller.getFirstTenListingsWhereMLSisNull()
+    iter_value = request.args.get('iter')
+    listings = brieflistingcontroller.getFirstTenListingsWhereMLSisNull(iter_value)
     for brieflisting in listings:
         brieflisting.getPropertyData()
         brieflistingcontroller.updateBriefListing(brieflisting)

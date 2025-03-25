@@ -8,6 +8,7 @@ from app.DBFunc.CustomerZoneController import CustomerZone
 from app.DBFunc.ZoneStatsCacheController import ZoneStatsCache
 from app.DBFunc.WashingtonCitiesController import WashingtonCities
 from app.DBFunc.PropertyListingController import PropertyListing
+from app.DBFunc.CustomerTypeController import CustomerType
 from app.DBModels.property_types import PropertyType
 from app import db
 
@@ -87,3 +88,9 @@ CachedInvestmentData.brief_listing = db.relationship("BriefListing", back_popula
 
 CachedInvestmentData.customer = db.relationship("Customer", back_populates="cached_investments")
 Customer.cached_investments = db.relationship("CachedInvestmentData", back_populates="customer")
+
+Customer.customertype = db.relationship('CustomerType', back_populates='customers')
+CustomerType.customers =  db.relationship("Customer", back_populates="customertype")
+
+Customer.maincity = db.relationship('WashingtonCities', back_populates='customers')
+WashingtonCities.customers = db.relationship('Customer', back_populates='maincity')

@@ -4,6 +4,9 @@ from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
     loadPropertyDataFromBrief, ListingStatus
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime , Numeric
+
+from app.config import RECENTLYSOLD, LIKELYSOLDWITHOUTAGENTS, OTHER, AUCTIONITEM, FOR_RENT
+
 Base = declarative_base()
 from app.extensions import db
 from datetime import datetime, timedelta
@@ -163,20 +166,48 @@ class BriefListing(db.Model):
         propertydata = loadPropertyDataFromBrief(self)
         listresults = ListingLengthbyBriefListing(propertydata)
         self.updateListingLength(listresults)
-        self.hdpUrl = propertydata['hdpUrl']
-        self.description = propertydata['description']
-        self.parkingSpaces = propertydata['resoFacts']['parking']
-        self.yearBuilt = propertydata.get('yearBuilt', 'Missing')
-        self.yearBuiltEffective = propertydata.get('yearBuiltEffective', 'Missing')
-        self.hasDrivewayParking=hasDrivewayParkingFromPropertyData(propertydata)
+        try:
+            self.hdpUrl = propertydata['hdpUrl']
+            self.description = propertydata['description']
+            self.yearBuilt = propertydata.get('yearBuilt', 'Missing')
+            self.yearBuiltEffective = propertydata.get('yearBuiltEffective', 'Missing')
+            self.hasDrivewayParking = hasDrivewayParkingFromPropertyData(propertydata)
+        except Exception as e:
+            print(e, self, 'Failed to get hdpurl')
+        try:
+            if 'parking' in propertydata['resoFacts'].keys():
+                self.parkingSpaces = propertydata['resoFacts']['parking']
+            elif 'parkingCapacity' in propertydata['resoFacts'].keys():
+                self.parkingSpaces = propertydata['resoFacts']['parkingCapacity']
+        except Exception as e:
+            print(e, self, 'Failed to get parking spaces')
+
         if self.soldprice is not None:
             self.soldprice = propertydata['lastSoldPrice']
         try:
             self.NWMLS_id = propertydata['attributionInfo']['mlsId']
+            print(propertydata['attributionInfo']['mlsName'])
+            if "RMLS (OR)"==propertydata['attributionInfo']['mlsName']:
+                self.waybercomments = "RMLS (OR)"
+
+            if "SMLS"==propertydata['attributionInfo']['mlsName']:
+                self.waybercomments = "SMLS"
+
+            if "Zillow Rentals" == propertydata['attributionInfo']['mlsName']:
+                self.waybercomments = "Zillow Rentals"
+
             if self.NWMLS_id is None:
                 # if propertydata['attributionInfo']:
                 #     self.homeStatus == 'ForRent'
-                print(propertydata['attributionInfo'])
+                if propertydata['attributionInfo']['agentName'] is None and propertydata['homeStatus'] in [RECENTLYSOLD, OTHER, 'SOLD'] :
+                    self.waybercomments=LIKELYSOLDWITHOUTAGENTS
+                    print('no mls id!!', LIKELYSOLDWITHOUTAGENTS)
+                elif 'agentName' in propertydata['attributionInfo'].keys():
+                    if 'auction' in propertydata['attributionInfo']['agentName'].lower():
+                        self.waybercomments = AUCTIONITEM
+                        print('no mls id!!', AUCTIONITEM)
+                else:
+                    print('No MLS id!! ' ,  propertydata['attributionInfo'])
         except Exception as e:
             print(e, self, 'Failed getting NWMLS ID')
         print(self)

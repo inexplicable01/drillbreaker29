@@ -132,7 +132,7 @@ def sendemailforcustomerhometour(customer:Customer,brieflisting):
 def sendCustomerEmail(customer:Customer,locations,
                       plot_url, soldhomes, selectedaicomments):
 
-    email_subject = "Your Neighborhood Interests"
+    email_subject = f"{customer.name} Neighborhood Interests"
     email_html_content = render_template(
         'InterestReport/NeighbourhoodListingEmail.html',
         customer=customer,
@@ -253,6 +253,19 @@ def sendAppointmentEmail(name,email,phone,viewing_date,viewing_time,zpid,address
                                    phone=phone,viewing_date=viewing_date,viewing_time=viewing_time,zpid=zpid,address=address)
     # html_content=''
     send_email(subject='New Appointment',
+               html_content=html_content,
+               recipient =defaultrecipient)
+
+def sendLevel1Email(customer, mappng):
+    # subject, body, recipient = defaultrecipient, html_content = None
+
+    html_content = render_template(
+        'email_level1customer.html',  # Your template in app/templates
+        customer=customer,
+        mappng=mappng,
+    )
+
+    send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
                html_content=html_content,
                recipient =defaultrecipient)
 

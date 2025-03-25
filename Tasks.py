@@ -6,6 +6,7 @@ getcitylisturl = base + "maintanance/getCityList"
 url3 = base + "maintanance/listingscheck"
 getsoldlistingsurl = base + "maintanance/maintainSoldListings"
 getforsalelistingsurl = base + "maintanance/maintainFORSALEListings"
+getpendinglistingsurl = base + "maintanance/maintainPendingListings"
 # url3 = f"https://www.drillbreaker29.com/maintanance/listingscheck"
 urlfsbo = f"{base}maintanance/fsbo"
 urlopen = f"{base}maintanance/updateopenhouse"
@@ -30,6 +31,11 @@ for i,city in enumerate(response.json()["cities"]):
     payload = {'doz': '180',
                'city': city}
     res = requests.request("PATCH", getforsalelistingsurl, headers=headers, data=payload, files=files)
+    # resp = requests.request("PATCH", url3, headers=headers, data=payload)
+    print(res)
+    payload = {'doz': '60',
+               'city': city}
+    res = requests.request("PATCH", getpendinglistingsurl, headers=headers, data=payload, files=files)
     # resp = requests.request("PATCH", url3, headers=headers, data=payload)
     print(res)
 

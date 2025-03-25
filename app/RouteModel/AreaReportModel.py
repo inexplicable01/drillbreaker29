@@ -43,23 +43,6 @@ def AreaReportModelRun(selected_zones, selectedhometypes,soldlastdays):
             # for brieflisting in wzone.brief_listings:
             #     print(brieflisting.__str__())
     soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, soldlastdays, selectedhometypes).all()
-    # current_time = int(datetime.now().timestamp())  # Current time in milliseconds
-    # time_threshold = current_time - (soldlastdays * 24 * 60 * 60 )
-    i1=0
-    i2=0
-    i3=0
-
-    # for brieflisting in unfiltered_homes:
-    #     if brieflisting.homeType not in selectedhometypes:
-    #         i1+=1
-    #         continue
-    #     if brieflisting.homeStatus!=RECENTLYSOLD:
-    #         i2+=1
-    #         continue
-    #     if brieflisting.soldtime < time_threshold:
-    #         i3+=1# Check if the listing is older than the threshold
-    #         continue
-    #     soldhomes.append(brieflisting)
 
     housesoldpriceaverage={}
     for brieflisting in soldhomes:
@@ -95,11 +78,7 @@ def AreaReportModelRun(selected_zones, selectedhometypes,soldlastdays):
             if brieflisting.price>value['maxprice']:
                 value['maxprice'] = brieflisting.price
 
-    plot_url = createPriceChangevsDays2PendingPlot(soldhomes)
-    plot_url2= createPricevsDays2PendingPlot(soldhomes)
-
-
-    return housesoldpriceaverage, plot_url, plot_url2, soldhomes
+    return housesoldpriceaverage, soldhomes
 
 def AreaReportModelRunForSale(selected_zones, selectedhometypes,onsaledays):
     unfiltered_brieflistings = []

@@ -56,7 +56,8 @@ def EmailCustomersIfInterested(api_zpid, apibrieflisting, brieflistdb):
     try:
         customerzpids = customerzpidcontroller.getCustomerZpidByZpid(api_zpid)
         if customerzpids:
-            message = (f"Price Change for {brieflistdb}\nFrom {brieflistdb.price} to {apibrieflisting.price}")
+            message = (f"Price Change for {brieflistdb}\nFrom {brieflistdb.price} to {apibrieflisting.price}\n"
+                       f"Status went from {brieflistdb.homeStatus} to {apibrieflisting.homeStatus}")
             for customerzpid in customerzpids:
                 print(f"{customerzpid.customer.name} is interested in this property!")
                 # SendEmail()

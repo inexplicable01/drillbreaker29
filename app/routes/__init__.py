@@ -9,16 +9,16 @@ from .listingalerts import alert_bp
 from .main import main
 # from .hothomes import hothomes_bp
 from .neighbourhoodreport import neighbourhoodreport_bp
-from .maintanance import maintanance_bp
+from .maintananceRoute import maintanance_bp
 from .sellersupport import sellersupport_bp
 from .clickablemap import clickablemap_bp
-from .platformSMSsupport import platformSMSBP
 from .email_monitor import emailmonitorbp
 from .rentalhomes import rental_bp
 from .fsbo import fsbo_bp
 from .statsByZone import zonestats_bp
 from .customerzoneroute import customer_interest_bp
 from .picturedealingbp import save_image_bp
+from .campaignRoute import campaignRoute_bp
 
 def register_blueprints(app: Flask):
     app.register_blueprint(alert_bp)
@@ -31,7 +31,6 @@ def register_blueprints(app: Flask):
     app.register_blueprint(maintanance_bp)
     app.register_blueprint(sellersupport_bp)
     app.register_blueprint(clickablemap_bp)
-    app.register_blueprint(platformSMSBP)
     app.register_blueprint(emailmonitorbp)
     app.register_blueprint(rental_bp)
     app.register_blueprint(fsbo_bp)
@@ -39,3 +38,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(customer_interest_bp)
     app.register_blueprint(save_image_bp)
     app.register_blueprint(investmentclients_bp)
+    app.register_blueprint(campaignRoute_bp)
