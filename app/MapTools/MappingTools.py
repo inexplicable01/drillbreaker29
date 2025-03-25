@@ -299,14 +299,15 @@ def generateMap(brieflistings, neighbourhoods,showneighbounds):
     map_html = m._repr_html_()
     return map_html
 
-from folium import GeoJson
 import copy
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+# from selenium import webdriver
+# from selenium.webdriver.chrome.options import Options
 import os
 import time
-from folium.plugins import MarkerCluster
+import imgkit
 
+WKHTMLTOIMAGE_PATH = os.getenv("WKHTMLTOIMAGE_PATH")
+imgkitconfig = imgkit.config(wkhtmltoimage=WKHTMLTOIMAGE_PATH)
 def get_marker_color(list2penddays):
     # Replicates getMarkerColor()
     if list2penddays is None:
@@ -317,10 +318,12 @@ def get_marker_color(list2penddays):
         return 'orange'
     else:
         return 'red'
-
+from pathlib import Path
 def create_map(geojson_features, zonenames, map_html_path,map_image_path, soldhomes):
     # Create a base map
-    m = folium.Map(location=[47.6815, -122.2087], zoom_start=13)
+    m = folium.Map(location=[47.6815, -122.2087],
+                   tiles='CartoDB positron',  # Light static style
+                   zoom_start=13)
 
     geojson_features_clone = copy.deepcopy(geojson_features)
     # Iterate through GeoJSON features and add them to the map
@@ -412,22 +415,32 @@ def create_map(geojson_features, zonenames, map_html_path,map_image_path, soldho
 
     m.save(map_html_path)  # Save the map as an HTML file
     # Configure Selenium to run headless
-    options = Options()
-    options.add_argument("--headless")
-    driver = webdriver.Chrome(options=options)
+    # options = Options()
+    # options.add_argument("--headless")
+    # driver = webdriver.Chrome(options=options)
 
     # Open the saved HTML map
-    driver.get("file://" + os.path.abspath(map_html_path))
+    # driver.get("file://" + os.path.abspath(map_html_path))
 
     # Wait to ensure map is fully loaded
     time.sleep(2)
-
+    options = {
+        'format': 'png',
+        'width': '1200',
+        'height': '800',
+        'disable-smart-width': '',
+        'javascript-delay': 3000,
+        'no-stop-slow-scripts': '',
+        'disable-javascript': '',  # try this
+    }
+    html_path = Path(map_html_path).resolve()
+    imgkit.from_file(str(html_path), str(map_image_path), config=imgkitconfig, options=options)
     # Save screenshot of the map
     # image_path = f"static/map.png"
-    driver.save_screenshot(map_image_path)
+    # driver.save_screenshot(map_image_path)
 
     # Close the browser session
-    driver.quit()
+    # driver.quit()
 
     print(f"Map image saved at {map_image_path}")
     return map_html

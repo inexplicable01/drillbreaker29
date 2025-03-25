@@ -37,7 +37,9 @@ def is_valid_email(email):
     return re.match(regex, email) is not None
 
 from pathlib import Path
+import os
 
+base = os.getenv("BASE")
 @campaignRoute_bp.route('/sendLevel1Buyer', methods=['GET'])
 def sendLevel1Buyer():
     level1_type = customertypecontroller.get_customer_type_by_id(1)
@@ -81,7 +83,7 @@ def sendLevel1Buyer():
     for customer in level1_type.customers:
         print(customer.name)
         customernames.append(customer.name)
-        mappng = output_dir / f'citymap_{customer.maincity.City}_{next_thursday}.png'
+        mappng = f"{base}/static/maps/citymap_{customer.maincity.City}_{next_thursday}.png"
 
         if not is_valid_email(customer.email):
             invalid_emails.append({'name': customer.name, 'email': customer.email})
