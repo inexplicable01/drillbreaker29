@@ -40,8 +40,9 @@ from pathlib import Path
 import os
 
 base = os.getenv("BASE")
-@campaignRoute_bp.route('/sendLevel1Buyer_makepictures', methods=['POST'])
-def sendLevel1Buyer_makepictures():
+base = "https://www.drillbreaker29.com/"
+@campaignRoute_bp.route('/sendLevel1Buyer_sendEmail', methods=['GET'])
+def sendLevel1Buyer_sendEmail():
     level1_type = customertypecontroller.get_customer_type_by_id(1)
 
     next_thursday = get_next_thursday().strftime('%Y-%m-%d')
@@ -51,7 +52,7 @@ def sendLevel1Buyer_makepictures():
     output_dir = Path("app/static/maps")
 
     count = 0
-    base = "https://www.drillbreaker29.com/"
+
     for customer in level1_type.customers:
         print(customer.name)
         customernames.append(customer.name)
@@ -74,10 +75,11 @@ def sendLevel1Buyer_makepictures():
         'next_report_date': next_thursday,
         'uniquecities':uniquecities
     }), 200
+import requests
 
 
-@campaignRoute_bp.route('/sendLevel1Buyer_sendEmail', methods=['GET'])
-def sendLevel1Buyer_sendEmail():
+@campaignRoute_bp.route('/sendLevel1Buyer_makepictures', methods=['POST'])
+def sendLevel1Buyer_makepictures():
     next_thursday = get_next_thursday().strftime('%Y-%m-%d')
     customernames = []
     invalid_emails = []
@@ -101,10 +103,14 @@ def sendLevel1Buyer_sendEmail():
                                              [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
                                                             30)
         createPriceChangevsDays2PendingPlot(soldhomes,pricechangepng)
-
         create_map(WA_geojson_features, zonenames, map_html_path,mapname, soldhomes)
+        url = f'{base}useful/upload-map'
+        file_path = 'map_Kirkland_2025-03-27.png'
 
-
+        with open(mapname, 'rb') as f:
+            files = {'file': (f'citymap_{city}_{next_thursday}.png', f, 'image/png')}
+            response = requests.post(url, files=files)
+            print(response)
 
     return jsonify({
         'status': 'success',

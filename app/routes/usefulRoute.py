@@ -18,7 +18,7 @@ from datetime import datetime
 from app.RouteModel.BriefListingsVsApi import ZPIDinDBNotInAPI_FORSALE, EmailCustomersIfInterested
 import os
 useful_bp = Blueprint('useful_bp', __name__, url_prefix='/useful')
-UPLOAD_FOLDER = 'static/maps'
+UPLOAD_FOLDER = 'app/static/maps'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @useful_bp.route('/upload-map', methods=['POST'])
