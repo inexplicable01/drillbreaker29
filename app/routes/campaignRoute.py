@@ -40,14 +40,44 @@ from pathlib import Path
 import os
 
 base = os.getenv("BASE")
-@campaignRoute_bp.route('/sendLevel1Buyer', methods=['GET'])
-def sendLevel1Buyer():
+@campaignRoute_bp.route('/sendLevel1Buyer_makepictures', methods=['POST'])
+def sendLevel1Buyer_makepictures():
     level1_type = customertypecontroller.get_customer_type_by_id(1)
 
-    ## Write a function here that creates  a list of cities that the level 1 customers care about .images of
+    next_thursday = get_next_thursday().strftime('%Y-%m-%d')
+    customernames = []
+    invalid_emails = []
+    uniquecities = washingtoncitiescontroller.get_city_names_for_level1_customers()
+    output_dir = Path("app/static/maps")
 
-    ## create a real estate report for each of those cities.  The report will basically be images stored on the server.
-    ## the image names will be based on the nearest future thursday.  As these emails are supposed to only go out on thursdays.
+    count = 0
+    base = "https://www.drillbreaker29.com/"
+    for customer in level1_type.customers:
+        print(customer.name)
+        customernames.append(customer.name)
+        mappng = f"{base}static/maps/citymap_{customer.maincity.City}_{next_thursday}.png"
+
+        if not is_valid_email(customer.email):
+            invalid_emails.append({'name': customer.name, 'email': customer.email})
+            continue
+
+        sendLevel1Email(customer, mappng)
+        count += 1
+        if count>4:
+            break
+        print(f"Prepared email for {customer.email} with images: {mappng}")
+
+    return jsonify({
+        'status': 'success',
+        'customers': customernames,
+        'invalid_emails': invalid_emails,
+        'next_report_date': next_thursday,
+        'uniquecities':uniquecities
+    }), 200
+
+
+@campaignRoute_bp.route('/sendLevel1Buyer_sendEmail', methods=['GET'])
+def sendLevel1Buyer_sendEmail():
     next_thursday = get_next_thursday().strftime('%Y-%m-%d')
     customernames = []
     invalid_emails = []
@@ -67,33 +97,14 @@ def sendLevel1Buyer():
         zonenames=[]
         for result in results:
             zonenames.append(result.zonename())
-
         housesoldpriceaverage, soldhomes = AreaReportModelRun(zonenames,
-                                                                                   [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
-                                                                                   30)
+                                             [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
+                                                            30)
         createPriceChangevsDays2PendingPlot(soldhomes,pricechangepng)
 
         create_map(WA_geojson_features, zonenames, map_html_path,mapname, soldhomes)
-        ## create the customer attention emails
-    # cityname = washingtoncitiescontroller.get_city_name_by_id(city)
-    ##Create Pictures for these cities
-    #create the
-    count = 0
 
-    for customer in level1_type.customers:
-        print(customer.name)
-        customernames.append(customer.name)
-        mappng = f"{base}/static/maps/citymap_{customer.maincity.City}_{next_thursday}.png"
 
-        if not is_valid_email(customer.email):
-            invalid_emails.append({'name': customer.name, 'email': customer.email})
-            continue
-
-        sendLevel1Email(customer, mappng)
-        count += 1
-        if count>4:
-            break
-        print(f"Prepared email for {customer.email} with images: {mappng}")
 
     return jsonify({
         'status': 'success',

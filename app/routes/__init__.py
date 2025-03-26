@@ -19,6 +19,7 @@ from .statsByZone import zonestats_bp
 from .customerzoneroute import customer_interest_bp
 from .picturedealingbp import save_image_bp
 from .campaignRoute import campaignRoute_bp
+from .usefulRoute import useful_bp
 
 def register_blueprints(app: Flask):
     app.register_blueprint(alert_bp)
@@ -39,3 +40,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(save_image_bp)
     app.register_blueprint(investmentclients_bp)
     app.register_blueprint(campaignRoute_bp)
+    app.register_blueprint(useful_bp)
