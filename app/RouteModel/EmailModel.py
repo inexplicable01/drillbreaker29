@@ -293,7 +293,7 @@ def sendLevel1Email(customer, mappng, pricechangepng, forsalehomes, stats):
 
     send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
                html_content=html_content,
-               recipient =defaultrecipient)
+               recipient =customer.email)
 
 def sendunsubscribemeail(customer):
     html_content = f"""

@@ -106,7 +106,7 @@ def save_customer_nwmls_id_interest():
     data = request.json
     nwmls_id = data.get('nwmls_id')
     customer_id = data.get('customer_id')        # Retrieve ZPID (fallback)
-
+    brieflisting = None
     customer = customercontroller.getCustomerByID(customer_id)
     if not customer:
         print("Customer not found.", "error")
@@ -117,7 +117,14 @@ def save_customer_nwmls_id_interest():
     #     print("Customer not found.", "error")
     #     return "Customer not found.", 400
 
-    if not brieflisting:
+    if brieflisting:
+        zpid = brieflisting.zpid
+        if brieflisting.property_listing is None:
+            propertydata = SearchZillowByZPID(zpid)
+            propertylistingcontroller.create_property(zpid, propertydata)
+            brieflisting = brieflistingcontroller.get_listing_by_mls_id(nwmls_id)
+
+    else:
         if nwmls_id:
             print(f"Listing with NWMLS_id '{nwmls_id}' not found, attempting to fetch via Zillow API...")
             zpid = SearchZilowByMLSID(nwmls_id)  # Attempt API lookup with MLS ID
@@ -130,6 +137,7 @@ def save_customer_nwmls_id_interest():
             # If neither NWMLS_id nor ZPID exists, don't proceed with saving
             print("No NWMLS_id or ZPID provided. Cannot find listing.", "error")
             return "No NWMLS_id or ZPID provided. Cannot find listing.", 400
+
 
 
     existing_entry = customerzpidcontroller.getCustomerZpidByCustomerAndZpid(customer_id, zpid)

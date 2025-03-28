@@ -50,11 +50,6 @@ def sendLevel1Buyer_sendEmail():
     invalid_emails = []
     uniquecities = washingtoncitiescontroller.get_city_names_for_level1_customers()
     output_dir = Path("app/static/maps")
-
-    count = 0
-
-
-
     for customer in level1_type.customers:
         print(customer.name)
         customernames.append(customer.name)
@@ -84,9 +79,6 @@ def sendLevel1Buyer_sendEmail():
         stats = StatsModelRun(zone_ids, 30)
         print(stats)
         sendLevel1Email(customer, mappng , pricechangepng, forsalehomes, stats)
-        count += 1
-        if count>4:
-            break
         # print(f"Prepared email for {customer.email} with images: {mappng}")
 
     return jsonify({
@@ -157,11 +149,7 @@ def unsubscribe():
     user_email = request.args.get('email')
     if not user_email:
         return "Missing email address", 400
-
     customer = customercontroller.getCustomerByEmail(user_email)
-
     sendunsubscribemeail(customer)
-
-
     # 3. Render or redirect to a simple confirmation page
     return render_template("unsubscribe_confirmed.html", email=user_email)
