@@ -1,0 +1,30 @@
+<div style="    gap: 24px;
+    padding: 20px;">
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="max-width: 500px; font-family: Arial, sans-serif; color: #ffffff;
+                   background-image: url('{{ home.imgSrc }}'); background-size: cover; background-position: center; border-radius: 12px; overflow: hidden;">
+        <tr>
+            <td style="background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0.3) 60%, transparent); padding: 24px;">
+                <div style="font-size: 14px; font-weight: bold; margin-bottom: 12px;">FOR SALE</div>
+                <div style="font-size: 20px;
+      font-weight: bold; line-height: 1.4;">
+                    {{ home.streetAddress }},<br>{{ home.city }}, {{ home.state }} {{ home.zipcode }}</div>
+                <div style="font-size: 26px; font-weight: bold; margin: 12px 0;">${{ "{:,}".format(home.price) }}</div>
+                <div style="font-size: 16px; margin-bottom: 16px;">{{ home.bedrooms }} Beds · {{ home.bathrooms }}
+                    Baths
+                </div>
+
+                <a href="https://www.wayber.ai/contact-us"
+                   style="display: block; background-color: #28a745;
+         color: #ffffff; text-align: center; text-decoration: none;
+         font-weight: bold; font-size: 16px;
+         padding: 12px; border-radius: 6px;">Schedule a Home Tour</a>
+
+                <div style="margin-top: 14px; font-size: 14px;">Wayber can save you
+                    ${{ "{:,.0f}".format(0.02 * home.price) }}</div>
+            </td>
+        </tr>
+    </table>
+
+</div>

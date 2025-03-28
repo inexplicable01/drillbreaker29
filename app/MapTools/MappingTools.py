@@ -300,6 +300,7 @@ def generateMap(brieflistings, neighbourhoods,showneighbounds):
     return map_html
 
 import copy
+from branca.element import Template, MacroElement
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import os
@@ -366,13 +367,15 @@ def create_map(geojson_features, zonenames, map_html_path,map_image_path, soldho
                 for coord in ring:
                     bounds_points.append([coord[1], coord[0]])  # lat, lon
 
+
+
         pgGON = folium.Polygon(
             locations=polygon_coords[0],
             # Reverse coordinates (longitude, latitude -> latitude, longitude)
             color=color,
             fill=True,
             fill_opacity=0.5,
-            popup = folium.Popup(label)
+            popup = folium.Popup(label, max_width=250)
         )
 
         # Create a polygon object
@@ -387,10 +390,11 @@ def create_map(geojson_features, zonenames, map_html_path,map_image_path, soldho
 
         # poly.add_child(folium.Tooltip(label))
         # poly.add_to(m)
-
-        pgGON.add_child(folium.Tooltip(label, permanent=True))
-
-        # Add the polygon to the map
+        if matches_zone:
+            styled_label = f"<div style='font-size:20px; font-weight:bold'>{label}</div>"
+            pgGON.add_child(folium.Tooltip(styled_label, permanent=True))
+        # else:
+        #     styled_label = f"<div style='font-size:20px; font-weight:bold'>{label}</div>"
         pgGON.add_to(m)
 
     # marker_cluster = MarkerCluster().add_to(m)
@@ -402,7 +406,35 @@ def create_map(geojson_features, zonenames, map_html_path,map_image_path, soldho
             icon=folium.Icon(color=color, icon='home', prefix='fa')
         ).add_to(m)
 
+    legend_html = """
+    {% macro html(this, kwargs) %}
+    <div style="
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        width: 340px;
+        height: 250px;
+        z-index:9999;
+        font-size:26px;
+        background-color: white;
+        border:2px solid gray;
+        border-radius:8px;
+        padding: 10px;
+        box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+    ">
+    <b>Legend</b><br>
+        <i style="background:red; width:12px; height:12px; display:inline-block; border-radius:50%; margin-right:6px;"></i> Pending in &lt; 7 days<br>
+        <i style="background:orange; width:12px; height:12px; display:inline-block; border-radius:50%; margin-right:6px;"></i> Pending in 7–14 days<br>
+        <i style="background:green; width:12px; height:12px; display:inline-block; border-radius:50%; margin-right:6px;"></i> Pending in 14-21 days<br>
+        <i style="background:blue; width:12px; height:12px; display:inline-block; border-radius:50%; margin-right:6px;"></i> Pending in &gt; 21 days<br>
+        <i style="background:gray; width:12px; height:12px; display:inline-block; border-radius:50%; margin-right:6px;"></i> Pending date unknown
+    </div>
+    {% endmacro %}
+    """
 
+    legend = MacroElement()
+    legend._template = Template(legend_html)
+    m.get_root().add_child(legend)
     if bounds_points:
         min_lat = min(pt[0] for pt in bounds_points)
         max_lat = max(pt[0] for pt in bounds_points)

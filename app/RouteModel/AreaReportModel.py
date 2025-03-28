@@ -13,8 +13,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
-from app.config import RECENTLYSOLD, FOR_SALE
-
+from app.config import RECENTLYSOLD, FOR_SALE, PENDING
+import statistics
 
 # model = load('linear_regression_model.joblib')
 def AreaReportGatherData(neighbourhoods, doz):
@@ -29,8 +29,44 @@ def ListAllNeighhourhoodsByCities(neighbourhoods, doz):
 
 
 
+def StatsModelRun(zone_ids, daysofconcern):
+    fastest_days=10
+    fast_sales=0
+    under_list=0
+    above_list=0
+    list2penddayslist=[]
+
+    soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, daysofconcern).all()
+    pending = brieflistingcontroller.listingsByZonesandStatus(zone_ids, PENDING, daysofconcern).all()
+    brieflistings = soldhomes+pending
+    print(len(brieflistings))
+    for brieflisting in brieflistings:
+        if brieflisting.list2penddays is not None:
+            if brieflisting.list2penddays<fastest_days:
+                fastest_days=brieflisting.list2penddays
+            if brieflisting.list2penddays<11:
+                fast_sales+=1
+            list2penddayslist.append(brieflisting.list2penddays)
+        if brieflisting.listprice is not None and brieflisting.soldprice is not None:
+            if brieflisting.soldprice<brieflisting.listprice:
+                under_list+=1
+            else:
+                above_list+=1
 
 
+    median_days = (
+        statistics.median(list2penddayslist) if list2penddayslist else None
+    )
+
+    return    {
+        "total_sold": len(soldhomes),
+        "total_pending": len(pending),
+        "fast_sales": fast_sales,
+        "under_list": under_list,
+        "above_list": above_list,
+        "fastest_days": fastest_days,
+        "median_days": median_days
+    }
 from datetime import datetime, timedelta
 def AreaReportModelRun(selected_zones, selectedhometypes,soldlastdays):
     unfiltered_homes = []
@@ -43,9 +79,11 @@ def AreaReportModelRun(selected_zones, selectedhometypes,soldlastdays):
             # for brieflisting in wzone.brief_listings:
             #     print(brieflisting.__str__())
     soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, soldlastdays, selectedhometypes).all()
+    pendings = brieflistingcontroller.listingsByZonesandStatus(zone_ids, PENDING, soldlastdays, selectedhometypes).all()
 
+    transactshomes = soldhomes+pendings
     housesoldpriceaverage={}
-    for brieflisting in soldhomes:
+    for brieflisting in transactshomes:
         try:
             # Create dynamic key based on bedrooms and bathrooms
             bed_bath_key = f"{int(brieflisting.bedrooms)}bed{int(brieflisting.bathrooms)}bath"
@@ -78,7 +116,7 @@ def AreaReportModelRun(selected_zones, selectedhometypes,soldlastdays):
             if brieflisting.price>value['maxprice']:
                 value['maxprice'] = brieflisting.price
 
-    return housesoldpriceaverage, soldhomes
+    return housesoldpriceaverage, transactshomes
 
 def AreaReportModelRunForSale(selected_zones, selectedhometypes,onsaledays):
     unfiltered_brieflistings = []

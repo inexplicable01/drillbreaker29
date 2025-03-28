@@ -476,6 +476,39 @@ class BriefListingController():
         # Execute the query with all filters applied at once
         return BriefListing.query.filter(*filters)
 
+    def get_recent_listings(self, customer, zone_ids, limit=4):
+        filters = []
+
+        # Limit to zones the customer is watching
+        if zone_ids:
+            filters.append(BriefListing.zone_id.in_(zone_ids))
+
+        # Limit by customer property types
+        property_types = [ptype.name for ptype in customer.property_types]
+        if len(property_types) == 0:
+            property_types = ['SINGLE_FAMILY']
+
+        # Apply filters correctly
+        if property_types:  # Only add filter if there's at least one property type
+            filters.append(BriefListing.homeType.in_(property_types))
+
+        # Limit by price
+        if customer.maxprice:
+            filters.append(BriefListing.price <= customer.maxprice)
+        if customer.minprice:
+            filters.append(BriefListing.price >= customer.minprice)
+
+        # Only active or for sale listings (you can change this)
+        filters.append(BriefListing.homeStatus == FOR_SALE)
+
+        # Sort by listtime DESC to get newest first
+        return (
+            BriefListing.query
+            .filter(*filters)
+            .order_by(BriefListing.listtime.desc())
+            .limit(limit)
+            .all()
+        )
     # +++++++++++++++++ZoneEnds
     def getALLlistings(self):
         """
@@ -524,6 +557,8 @@ class BriefListingController():
         # Add optional parameters dynamically
 
         property_types = [ptype.name for ptype in customer.property_types]
+        if len(property_types) == 0:
+            property_types = ['SINGLE_FAMILY']
 
         # Apply filters correctly
         if property_types:  # Only add filter if there's at least one property type
@@ -535,6 +570,7 @@ class BriefListingController():
             filters.append(BriefListing.price >= (customer.minprice - priceleeway))
         # Execute the query with all filters applied at once
         return BriefListing.query.filter(*filters)
+
 
     def getFirstTenListingsWhereMLSisNull(self, X):
         """

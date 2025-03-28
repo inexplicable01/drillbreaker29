@@ -45,6 +45,9 @@ class CustomerController():
     def getCustomerByID(self, id):
         return Customer.query.get(id)
 
+    def getCustomerByEmail(self, email):
+        return Customer.query.filter_by(email=email).first()
+
     def getCustomerZpidInterests(self):
         customers = Customer.query.options(db.joinedload(Customer.customerzpid_array)).all()
         return customers

@@ -256,22 +256,61 @@ def sendAppointmentEmail(name,email,phone,viewing_date,viewing_time,zpid,address
                html_content=html_content,
                recipient =defaultrecipient)
 
-def sendLevel1Email(customer, mappng):
+import random
+def generate_weekly_summary(city_name, stats):
+    options = [
+        {
+            "headline": f"{stats['fast_sales']} homes sold in under a week.",
+            "body": f"{stats['total_pending']} homes went pending in {city_name} this week. The market is moving fast — the quickest went pending in just {stats['fastest_days']} days."
+        },
+        {
+            "headline": f"{stats['under_list']} homes sold under asking.",
+            "body": f"Buyers found some deals this week. In {city_name}, {stats['under_list']} listings went pending below list price. Know where the bargains are — and when to move on them."
+        },
+        {
+            "headline": f"Is {city_name} heating up or cooling down?",
+            "body": f"Your area saw {stats['total_sold']} sales this week, with a median days-on-market of {stats['median_days']} days. Want to know where to jump in? That’s what we're here for."
+        },
+    ]
+    return random.choice(options)
+
+def sendLevel1Email(customer, mappng, pricechangepng, forsalehomes, stats):
     # subject, body, recipient = defaultrecipient, html_content = None
+
+
+    weekly_summary = generate_weekly_summary(customer.maincity.City, stats)
 
     html_content = render_template(
         'email_level1customer.html',  # Your template in app/templates
         customer=customer,
         mappng=mappng,
+        pricechangepng=pricechangepng,
+        weekly_summary=weekly_summary,
+        stats=stats,
+        forsalehomes=forsalehomes,
+        showScheduleButton=True
     )
 
     send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
                html_content=html_content,
                recipient =defaultrecipient)
 
-# def sendEmailofOpenHomes():
-#     # subject, body, recipient = defaultrecipient, html_content = None
-#     map_html, filtered_houses = SearchForOpenHouses()
-#     send_emailforOpenHouse(filtered_houses)
-#     return map_html
+def sendunsubscribemeail(customer):
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
+        <h2 style="color: #c0392b;">Unsubscribe Request</h2>
+        <p><strong>{customer.name}</strong> (<a href="mailto:{customer.email}">{customer.email}</a>) has requested to unsubscribe from Wayber emails.</p>
+
+        <p style="margin-top: 20px;">No automated action has been taken. Please remove them manually from the list.</p>
+
+        <p style="font-size: 12px; color: #888;">Customer ID: {customer.id}</p>
+    </div>
+    """
+
+    send_email(
+        subject=f'{customer.name} wants to unsubscribe',
+        html_content=html_content,
+        recipient=defaultrecipient
+    )
+
 

@@ -1,0 +1,72 @@
+<div style="
+    width: 320px;
+    height:480px;
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background-color: darkgreen;
+    color: #fff;
+    margin: 15px auto;
+    padding: 10px;
+">
+
+    <!-- Background Image -->
+    <div style="background-image: url('{{ home.imgSrc }}'); background-size: cover; background-position: center; height: 180px; position: relative;">
+        <div style="
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: #28a745;
+            color: #fff;
+            font-weight: bold;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        ">
+            {{ home.homeStatus | default('FOR SALE') }}
+        </div>
+    </div>
+
+    <!-- Info Card -->
+    <div style="padding: 15px; background-color: #fff; color: #333;">
+        <p style="font-size: 16px; font-weight: bold; margin: 0;">
+            {{ home.streetAddress }}, {{ home.city }}, {{ home.state }} {{ home.zipcode }}
+        </p>
+        <p style="font-size: 20px; margin: 5px 0;">
+            ${{ "{:,}".format(home.price) }}
+        </p>
+        <p style="font-size: 14px; margin: 2px 0 10px 0;">
+            {{ home.bedrooms }} Beds · {{ home.bathrooms }} Baths
+        </p>
+
+        <a href="https://www.wayber.ai/contact-us" style="
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 10px;
+        ">
+            Schedule a Home Tour
+        </a>
+
+        <p style="margin-top: 8px; font-size: 13px; color: #555;">
+            <strong>Wayber can save you</strong> ${{ "{:,.0f}".format(0.02 * home.price) }}
+        </p>
+
+        <p style="margin-top: 5px;">
+            <a href="https://www.zillow.com/{{ home.hdpUrl }}" target="_blank" style="
+                color: #0073e6;
+                text-decoration: none;
+                font-size: 13px;
+            ">
+                View on Zillow →
+            </a>
+        </p>
+    </div>
+</div>
