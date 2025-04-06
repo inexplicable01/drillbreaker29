@@ -5,315 +5,204 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Area Report</title>
     <style>
-        /* General Reset */
         body, html {
-            height: 100%;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            color: #333; /* Neutral text color */
-            line-height: 1.5;
+            height: 100%; /* Use the full height of the screen */
+            margin: 0; /* Remove default margin */
+            overflow: hidden; /* Disable scrolling */
         }
 
-        /* Main Layout */
         #main-content {
-            display: flex;
-            flex-wrap: wrap; /* Allow wrapping for small screens */
-            height: 100%;
+            display: flex; /* Use flexbox for layout */
+            height: 100%; /* Full height */
         }
 
         #map-container {
-            flex: 2;
+            flex: 2; /* Takes up twice the space compared to each of the side sections */
             height: 100%;
-            background: #f5f5f5; /* Light background for distinction */
         }
 
         #side-section {
             display: flex;
-            flex-direction: column;
-            flex: 1;
-            background: #fafafa;
-            border-left: 1px solid #ddd;
+            flex-direction: column; /* Stack the data and comments sections vertically */
+            flex: 1; /* The side section takes up the remaining space */
+            height: 100%;
         }
 
         #data-section, #comments-section {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            border-bottom: 1px solid #ddd;
+            flex: 1; /* Each section takes up half of the side section */
+            overflow-y: auto; /* Enable scrolling within each section if the content overflows */
         }
 
-        h2 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: #007acc;
-        }
-
-        /* Styling Tables */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: white; /* Solid background to offset the table */
-            margin-bottom: 15px;
-        }
-
-        table th, table td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left; /* Aligning for easy readability */
-        }
-
-        table th {
-            background-color: #007acc; /* Header background */
-            color: white;
-        }
-
-        table tr:nth-child(even) {
-            background-color: #f9f9f9; /* Alternate row color */
-        }
-
-        table tr:hover {
-            background-color: #f1f1f1; /* Highlight row on hover */
-        }
-
-        /* Links */
-        a {
-            color: #007acc;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
+        #areaLinks {
+            display: flex;
         }
 
         #areaLinks a {
-            margin-right: 10px;
-            color: #333;
-            font-size: 14px;
+            margin-right: 10px; /* Adjust the spacing between links */
+            color: blue; /* Makes the link color blue */
+            text-decoration: none; /* Removes the underline from links */
+            font-size: 16px; /* Sets the font size to 16 pixels */
         }
 
-        /* Form Styling */
-        form {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            align-items: flex-start;
-            padding: 15px;
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        form div {
-            flex: 1;
-            margin: 10px;
-            min-width: 150px; /* Ensure space for smaller screens */
-        }
-
-        input[type="checkbox"] {
-            margin-right: 5px;
-        }
-
-        select {
-            width: 100%;
-            padding: 8px;
-            font-size: 1rem;
-            margin-top: 5px;
-        }
-
-        button {
-            display: inline-block;
-            background-color: #007acc;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin-top: 15px;
-            cursor: pointer;
-            border-radius: 3px;
-            font-size: 1rem;
-        }
-
-        button:hover {
-            background-color: #005f99;
-        }
-
-        /* Map Styling */
-        #map {
-            height: calc(100% - 250px); /* Deduct height of form above */
-            border: 1px solid #ddd;
-            margin-top: 15px;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            #main-content {
-                flex-direction: column;
-            }
-
-            #map-container {
-                flex: 1;
-                height: 50%; /* Reduce height for smaller view */
-            }
-
-            #side-section {
-                height: auto;
-            }
-        }
+        /* Add any additional styling you need for data-section and comments-section here */
     </style>
-        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Function to handle the form submission without reloading the page
+        // and to update maps and data based on the selected area.
+        function submitForm(selectedValue) {
+            event.preventDefault(); // Prevent the form from submitting in the traditional way
+
+            // Assuming you have functions like updateMap(selectedValue) and updateData(selectedValue)
+            // that you'd use to update the map and data on the page.
+            updateMap(selectedValue);
+            updateData(selectedValue);
+
+            // Add your AJAX call or fetch API logic here if needed to send the selectedValue
+            // to your server and receive back the data/maps to be updated on the page.
+            console.log("Selected area:", selectedValue); // For demonstration purposes
+        }
+
+        // Example functions for updating the map and data
+        function updateMap(selectedArea) {
+            // Implement your logic to update the map based on the selectedArea
+            console.log("Map updated for:", selectedArea); // Placeholder
+        }
+
+        function updateData(selectedArea) {
+            // Implement your logic to update the data displayed on the page based on the selectedArea
+            console.log("Data updated for:", selectedArea); // Placeholder
+        }
+
+        function updateGraph() {
+            // Example data to send; adjust based on your actual form/data structure
+            const data = new FormData();
+            // For home types
+            document.querySelectorAll('input[name="home_type"]:checked').forEach((checkbox) => {
+                data.append('home_type', checkbox.value);
+            });
+
+            // For locations
+            document.querySelectorAll('input[name="location"]:checked').forEach((checkbox) => {
+                data.append('location', checkbox.value);
+            });
+
+            fetch('{{url_for('zonestats_interesting.update_graph') }}', {
+                method: 'POST',
+                body: data,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Update the image src with the new graph data
+                    document.getElementById('graphImage').src = 'data:image/png;base64,' + data.new_plot_url;
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }
+    </script>
 </head>
 <body>
 
 <div id="main-content">
-    <!-- Map Container -->
     <div id="map-container">
-        <form method="POST">
-            <!-- Filter Form -->
-            <div>
-                <h3>Select Locations:</h3>
-                {% for location in LOCATIONS %}
-                    <label>
-                        <input type="checkbox" name="location" value="{{ location }}"
-                               {% if location in selected_locations %}checked{% endif %}>
-                        {{ location }}
-                    </label><br>
-                {% endfor %}
-            </div>
-
-            <div>
-                <h3>Select Option:</h3>
-                <select name="selected_doz">
-                    {% for doz in doz_options %}
-                        <option value="{{ doz }}" {% if doz == selected_doz %}selected{% endif %}>
-                            {{ doz }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <input type="hidden" id="selectedZonesInput" name="selected_zones" value="">
-            <div>
-                <h3>Select Home Types:</h3>
-                {% for home_type in HOMETYPES %}
-                    <label>
-                        <input type="checkbox" name="home_type" value="{{ home_type }}"
-                               {% if home_type in selectedhometypes %}checked{% endif %}>
-                        {{ home_type }}
-                    </label><br>
-                {% endfor %}
-                <button type="submit">Search</button>
-            </div>
-        </form>
-
-        <div id="map"></div>
+        <!-- Your map will go here -->
 
 
+        <div style="display: flex;flex-grow: 1; height: 200px;overflow-y: auto;">
+            <form method="POST">
+                <div style="display: flex;flex-grow: 1;width:800px;  flex-direction: row;justify-content: space-around;">
+                    <div style="display: flex; flex: 4;flex-direction: column; margin-right: auto;">
+                        <h3>Select Locations:</h3>
+                        {% for location in LOCATIONS %}
+                            <div>
+                                <label>
+                                    <input type="checkbox" name="location" value="{{ location }}"
+                                           {% if location in selected_locations %}checked{% endif %}>
+                                    {{ location }}
+                                </label>
+                            </div>
+                        {% endfor %}
+
+                    </div>
+                    <!-- Dropdown Button Section -->
+                    <div style="display: flex; flex: 1; flex-direction: column; margin: 0 20px;">
+                        <h3>Select Option:</h3>
+                        <select name="selected_doz">
+                            {% for doz in doz_options %}
+                                <option value="{{ doz }}" {% if doz == selected_doz %}selected{% endif %}>
+                                    {{ doz }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div style="display: flex; flex: 1;flex-direction: column; margin-left: auto;">
+                        <h3>Select Home Types:</h3>
+                        {% for home_type in HOMETYPES %}
+                            <div>
+                                <label>
+                                    <input type="checkbox" name="home_type" value="{{ home_type }}"
+                                           {% if home_type in selectedhometypes %}checked{% endif %}>
+                                    {{ home_type }}
+                                </label>
+                            </div>
+                        {% endfor %}
+
+                        <button type="submit">Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {{ m | safe }}
 
     </div>
-
-    <!-- Side Section -->
     <div id="side-section">
-        <!-- Data Section -->
         <div id="data-section">
             <h2>Sold Houses</h2>
             <img id="graphImage" src="data:image/png;base64,{{ plot_url }}" alt="House Price vs. Days to Pending">
+
             <button onclick="updateGraph()">Update Graph</button>
-            <table>
+            <table border="1">
+                <!-- Table headers -->
                 <thead>
                 <tr>
-                    <th>Address</th>
-                    <th>Sqft</th>
-                    <th>Bed</th>
-                    <th>Bath</th>
-                    <th>List Price</th>
+                    <th>address</th>
+                    <th>Living Sqft</th>
+                    <th>bed</th>
+                    <th>bath</th>
+                    <th>Listing Price</th>
                     <th>Sold Price</th>
-                    <th>To Contract</th>
-                    <th>Delta</th>
+                    <th>Days to Contract</th>
+                    <th>Price Delta</th>
+                    {#            <th>unit</th>#}
                 </tr>
                 </thead>
+
+                <!-- Table data -->
                 <tbody>
                 {% for house in soldhouses %}
                     <tr>
-                        <td><a href="https://www.zillow.com{{ house.hdpUrl }}" target="_blank">{{ house.streetAddress }}</a></td>
+                        <td><a href='https://www.zillow.com{{ house.hdpUrl }}' target='_blank'>{{ house.streetAddress }}House
+                            Link</a></td>
                         <td>{{ house.livingArea }}</td>
                         <td>{{ house.bedrooms }}</td>
                         <td>{{ house.bathrooms }}</td>
-                        <td>${{ house.listprice }}</td>
-                        <td>${{ house.price }}</td>
+                        <td>{{ house.listprice }}</td>
+                        <td>{{ house.price }}</td>
                         <td>{{ house.list2penddays }}</td>
-                        <td>${{ house.pricedelta }}</td>
+                        <td>{{ house.pricedelta }}</td>
+                        {#            <td>{{ address.unit }}</td>#}
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
-        </div>
 
-        <!-- Comments Section -->
-        <div id="comments-section">
-            <h2>Summary</h2>
-            <table>
-                <thead>
-                <tr>
-                    <th>Type</th>
-                    <th>Beds</th>
-                    <th>Bath</th>
-                    <th>Count</th>
-                    <th>Min</th>
-                    <th>Average</th>
-                    <th>Max</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for key, housegenre in housesoldpriceaverage.items() %}
-                    <tr>
-                        <td>{{ key }}</td>
-                        <td>{{ housegenre.beds }}</td>
-                        <td>{{ housegenre.baths }}</td>
-                        <td>{{ housegenre.count }}</td>
-                        <td>${{ housegenre.minprice }}</td>
-                        <td>${{ housegenre.aveprice }}</td>
-                        <td>${{ housegenre.maxprice }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+            <img src="data:image/png;base64,{{ plot_url2 }}" alt="House Price vs. Days to Pending">
+
+
         </div>
     </div>
 </div>
 
-<script>
-    // Initialize the map and center on Seattle
-    var map = L.map('map').setView([47.6062, -122.3321], 10);
 
-    // Add OpenStreetMap layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    // Process GeoJSON features
-    var geojson_features = {{ geojson_features | tojson }};
-    geojson_features.forEach(function (feature) {
-        if (feature.geometry.type === "Polygon") {
-            feature.geometry.coordinates = feature.geometry.coordinates.map(ring =>
-                ring.map(coord => [coord[1], coord[0]])
-            );
-        } else if (feature.geometry.type === "MultiPolygon") {
-            feature.geometry.coordinates = feature.geometry.coordinates.map(polygon =>
-                polygon.map(ring =>
-                    ring.map(coord => [coord[1], coord[0]])
-                )
-            );
-        }
-
-        // Create polygons and add tooltips
-        var poly = L.polygon(feature.geometry.coordinates, {color: 'red'}).addTo(map);
-        var zoneName = feature.properties.S_HOOD && feature.properties.S_HOOD.trim() !== ""
-            ? feature.properties.S_HOOD : feature.properties.CityName;
-
-        poly.bindTooltip(zoneName, {permanent: true, direction: "center", className: "zone-label"}).openTooltip();
-        poly.on('click', function () {
-            handleClick(feature.properties.L_HOOD + ',' + feature.properties.S_HOOD);
-        });
-    });
-</script>
 </body>
 </html>

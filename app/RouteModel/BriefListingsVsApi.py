@@ -1,11 +1,11 @@
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBFunc.CustomerZpidController import customerzpidcontroller
-from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID,SearchZillowHomesFSBO, SearchZillowHomesByLocation
+from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID,SearchZillowHomesFSBO
 from datetime import datetime
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing
 from app.RouteModel.EmailModel import sendEmailListingChange
 
-def ZPIDinDBNotInAPI_FORSALE(zpid):
+def ZPIDinDBNotInAPI_FORSALE(zpid, doz, mismanagedcount):
     try:
         brieflist = brieflistingcontroller.get_listing_by_zpid(zpid)
         propertydetail = SearchZillowByZPID(zpid)
@@ -30,14 +30,24 @@ def ZPIDinDBNotInAPI_FORSALE(zpid):
             brieflistingcontroller.UpdateBriefListing(brieflist)
 
         else:
-            print(f" brieflist status {brieflist.homeStatus} , propertydetail status {propertydetail['homeStatus']}")
+
             # print(brieflist)
             if propertydetail['homeStatus'] == 'FOR_SALE':
-                print(propertydetail['zpid'])  # not sure how the ID checks allow us to get here.
-                # this means that the Broad Zillow Search did not yield this guy
-                # but zpid did.  Could be a problem with the board search.
-                # brieflistingcontroller.addBriefListing(brieflist)
-                return
+                days = propertydetail.get('daysOnZillow')
+                if days is not None:
+                    try:
+                        if int(days) > doz:
+                            print(f"Listing {brieflist} has been on the market for {days} days — flag it.")
+                            return mismanagedcount
+                    except (TypeError, ValueError):
+                        print(f"Warning: Could not parse daysOnZillow for listing {brieflist}")
+                print(
+                    f" brieflist status {brieflist.homeStatus} , propertydetail status {propertydetail['homeStatus']}")
+                print(f"Not sure how we got here.  Need to continue to monitor.zpid : {propertydetail['zpid']}")
+                mismanagedcount[brieflist.zpid]=propertydetail
+                brieflist.getPropertyData()
+                brieflistingcontroller.UpdateBriefListing(brieflist)
+                return mismanagedcount
             brieflist.homeStatus = propertydetail['homeStatus']
             brieflistingcontroller.UpdateBriefListing(brieflist)  ###This ONLY updates home status, does not update price
             print(brieflist)
@@ -47,6 +57,7 @@ def ZPIDinDBNotInAPI_FORSALE(zpid):
         print(e,
               f'Error produced when trying to updating the status of {brieflist} for sale unit.  This is for_sale in DB but not '
               'found anymore on api, so likely pending or sold or taken off market')
+    return mismanagedcount
 
 def EmailCustomersIfInterested(api_zpid, apibrieflisting, brieflistdb):
     # brieflistdb = brieflistingcontroller.get_listing_by_zpid(api_zpid)

@@ -242,7 +242,7 @@ class BriefListing(db.Model):
                 continue
             if hasattr(self, attr):
                 existing_value = getattr(self, attr)
-                new_value = getattr(self, attr)
+                new_value = getattr(newBrieflisting, attr)
                 if isinstance(existing_value, decimal.Decimal) and isinstance(new_value, decimal.Decimal):
                     # For float values, use the tolerance-based comparison
                     if not is_equal_with_tolerance(existing_value, new_value):

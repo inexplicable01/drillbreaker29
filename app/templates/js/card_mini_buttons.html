@@ -75,4 +75,31 @@ function trackListing(zpid, customer_id) {
       .catch(error => console.error('Err01or:', error));
     }
 
+    function refreshtracking( customer_id) {
+        const refreshBtn = document.getElementById('refreshBtn');
+        const text = document.getElementById('btnText');
+    refreshBtn.disabled=true;
+    text.textContent = 'Loading...';
+    fetch('/customer_interest/refreshcustomerinterest', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ customer_id: customer_id })
+    }).then(response => response.json())
+      .then(data =>{showMessage(data.message);
+       let customer_interest = document.getElementById('customer_interest');
+       customer_interest.style.display = 'block';
+       customer_interest.innerHTML = data.html;
+       refreshBtn.disabled=false;
+       text.textContent = 'Refresh';
+
+      } )
+      .catch(error => {
+          console.error('Err01or:', error)
+          refreshBtn.disabled=false;
+          text.textContent = 'Refresh';
+      });
+    }
+
 </script>

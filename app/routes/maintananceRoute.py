@@ -128,7 +128,12 @@ def maintainSoldListings():
                         brieflistinginDB.soldprice =brieflisting.price
                         brieflistinginDB.price = brieflisting.price
                         brieflistinginDB.soldtime = brieflisting.soldtime
+                        brieflistinginDB.getPropertyData()
+                        brieflistinginDB.search_neigh = city
 
+                        brieflistingcontroller.setZoneForBriefListing(brieflisting)
+                        if brieflistinginDB.NWMLS_id is None:
+                            print(brieflistinginDB)
                         brieflistingcontroller.updateBriefListing(brieflistinginDB)
                     except Exception as e:
                         print(e, brieflisting,
@@ -159,7 +164,7 @@ def maintainPendingListings():
     if request.method == 'PATCH':
 
         city = request.form.get('city')
-        brieflistingpendingdb = brieflistingcontroller.getallPendings()
+        brieflistingpendingdb = brieflistingcontroller.getallPendings(city)
         zpidofinterest = customerzpidcontroller.getAllCustomerzpids()
         for brieflistingdb in brieflistingpendingdb:
             try:
@@ -176,6 +181,8 @@ def maintainPendingListings():
                         EmailCustomersIfInterested(brieflistingdb.zpid, brieflistingapi,
                                                    brieflistingdb)  ## Create a latestPriceChangeTime column set time, update price
                     brieflistingdb.homeStatus = status
+                    brieflistingdb.getPropertyData()
+                    brieflistingdb.search_neigh = city
                     brieflistingcontroller.updateBriefListing(brieflistingdb)
                     continue
                 elif status == RECENTLYSOLD:
@@ -183,6 +190,8 @@ def maintainPendingListings():
                         EmailCustomersIfInterested(brieflistingdb.zpid, brieflistingapi,
                                                    brieflistingdb)  ## Create a latestPriceChangeTime column set time, update price
                     brieflistingdb.homeStatus = status
+                    brieflistingdb.getPropertyData()
+                    brieflistingdb.search_neigh = city
                     brieflistingdb.soldprice = propertydata['lastSoldPrice']
                     brieflistingdb.soldtime = int(propertydata['dateSold'])/1000
                     brieflistingcontroller.updateBriefListing(brieflistingdb)
@@ -199,7 +208,7 @@ def maintainForSaleListings():
             city = request.form.get('city')
 
             forsalebrieflistingarr = []
-            forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz=doz, timeOnZillow="any")
+            forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz="180", timeOnZillow="any")
             for briefhomedata in forsalerawdata:
                 forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
 
@@ -225,6 +234,8 @@ def maintainForSaleListings():
                         print(f"From {brieflistdb.price} to {brieflisting.price}")### Is zpid under amusement, if so send alert email
                         if api_zpid in zpidofinterest:
                             EmailCustomersIfInterested(api_zpid, brieflisting, brieflistdb)## Create a latestPriceChangeTime column set time, update price
+                        brieflistdb.getPropertyData()
+                        brieflistdb.search_neigh = city
                         brieflistdb.price= brieflisting.price
                         brieflistdb.lpctime = datetime.now().timestamp()
                         brieflistingcontroller.UpdateBriefListing(brieflistdb)
@@ -234,6 +245,7 @@ def maintainForSaleListings():
                 try:
                     ## Brieflisting here is not in DATAbase yet.
                     brieflisting.getPropertyData()
+                    brieflisting.search_neigh = city
                     brieflistingcontroller.setZoneForBriefListing(brieflisting)
                     newsalebriefs.append(brieflisting)
                     if len(newsalebriefs) > 10:
@@ -245,12 +257,13 @@ def maintainForSaleListings():
             brieflistingcontroller.SaveBriefListingArr(newsalebriefs)
 
             # for_sale_DB = brieflistingcontroller.forSaleInSearchNeigh(city)
+            mismanagedcount = {}
             for brieflisting in for_sale_DB:  ##LOOP THROUGH DATABASE
                 if brieflisting.zpid in forsaleAPIbrief_dict.keys():
-                    print(brieflisting.__str__() + ' is still for sale.')
+                    # print(brieflisting.__str__() + ' is still for sale.')
                     continue
                 else:  ### if brieflisting, which is in DB, is not in API, t
-                    ZPIDinDBNotInAPI_FORSALE(brieflisting.zpid)
+                    mismanagedcount = ZPIDinDBNotInAPI_FORSALE(brieflisting.zpid, doz, mismanagedcount)
 
             # If the function successfully completes, return a success message
             return jsonify({'status': 'success', 'message': 'Data gathering complete.'}), 200

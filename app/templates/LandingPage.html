@@ -105,13 +105,13 @@
 {##}
 {#    </tr>#}
 
-{#    <td>FSBO</td>#}
-{#    <td><a href="{{ url_for('fsbo_bp.getfsbo') }}">FSBO</a></td>#}
-{#    </tr>#}
-{#    </tr>#}
-{#    <td>Transaction High Level Summary</td>#}
-{#    <td><a href="{{ url_for('zonestats_interesting.zonestats') }}">Transactions by City</a></td>#}
-{#    </tr>#}
+    <td>FSBO</td>
+    <td><a href="{{ url_for('fsbo_bp.getfsbo') }}">FSBO</a></td>
+    </tr>
+
+    <td>Transaction High Level Summary</td>
+    <td><a href="{{ url_for('zonestats_interesting.monthlytrends') }}">Transactions by City</a></td>
+    </tr>
 {#    </tr>#}
     <td>Customer Interest</td>
     <td><a href="{{ url_for('customer_interest_bp.listCustomers') }}">Custom Analysis</a></td>

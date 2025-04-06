@@ -159,6 +159,27 @@ def save_customer_nwmls_id_interest():
         customerzpid_array=customer.customerzpid_array
                                 )})
 
+@customer_interest_bp.route('/refreshcustomerinterest', methods=['POST'])
+def refreshcustomerinterest():
+    data = request.json
+    customer_id = data.get('customer_id')        # Retrieve ZPID (fallback)
+
+    customerzpids = customerzpidcontroller.getlistingsofCustomerByCustomerID(customer_id)
+
+    for customerzpid in customerzpids:
+        propertydata = SearchZillowByZPID(customerzpid.zpid)
+        propertylistingcontroller.update_property(customerzpid.zpid, propertydata)
+
+    customer = customercontroller.getCustomerByID(customer_id)
+    for customerzpid in customer.customerzpid_array:
+        if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
+            customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data()
+
+    return jsonify({"message": 'Entry succesfully removed',
+        "html": render_template('components/Customer_Interest_Track.html',
+                                customer=customer,
+        customerzpid_array=customer.customerzpid_array
+                                )})
 
 @customer_interest_bp.route('/remove_customer_interest', methods=['POST'])
 def remove_customer_interest():

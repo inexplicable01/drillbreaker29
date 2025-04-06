@@ -1,11 +1,12 @@
 import requests
-# base = "http://127.0.0.1:5000/"
-base = "https://www.drillbreaker29.com/"
+base = "http://127.0.0.1:5000/"
+# base = "https://www.drillbreaker29.com/"
 
 getcitylisturl = base + "maintanance/getCityList"
 url3 = base + "maintanance/listingscheck"
 getsoldlistingsurl = base + "maintanance/maintainSoldListings"
 getforsalelistingsurl = base + "maintanance/maintainFORSALEListings"
+getpendinglistingsurl = base + "maintanance/maintainPendingListings"
 # url3 = f"https://www.drillbreaker29.com/maintanance/listingscheck"
 urlfsbo = f"{base}maintanance/fsbo"
 urlopen = f"{base}maintanance/updateopenhouse"
@@ -19,17 +20,26 @@ response = requests.request("GET", getcitylisturl,  params=params, headers=heade
 
 for i,city in enumerate(response.json()["cities"]):
     print(city)
+    if city!='Seattle':
+        continue
 
-    payload = {'doz': '60',
+    print(city)
+
+    payload = {'doz': '180',
                'city': city}
     files = []
     headers = {}
 
-    res = requests.request("PATCH", getsoldlistingsurl, headers=headers, data=payload, files=files)
-    print(res)
+    # res = requests.request("PATCH", getsoldlistingsurl, headers=headers, data=payload, files=files)
+    # print(res)
     payload = {'doz': '180',
                'city': city}
     res = requests.request("PATCH", getforsalelistingsurl, headers=headers, data=payload, files=files)
+    # resp = requests.request("PATCH", url3, headers=headers, data=payload)
+    print(res)
+    payload = {'doz': '60',
+               'city': city}
+    res = requests.request("PATCH", getpendinglistingsurl, headers=headers, data=payload, files=files)
     # resp = requests.request("PATCH", url3, headers=headers, data=payload)
     print(res)
 

@@ -48,39 +48,7 @@
     {% endfor %}
     </tbody>
 </table>
-<table border="1">
-    <!-- Table headers -->
-    <thead>
-    <tr>
-        {#        <th>zpid</th>#}
-        <th>Neighbourhood</th>
-        <th>Sold</th>
-        <th>Pending (30)</th>
-        <th>Pending (7)</th>
-        <th>Pending (1)</th>
-        <th>For Sale</th>
-        <th>Latest Brief Listing</th>
-    </tr>
-    </thead>
 
-    <!-- Table data -->
-    <tbody>
-    {% for seattledata in seattlesdata %}
-        <tr>
-            {#            <td>{{ listing.zpid }}</td>#}
-            <td>{{ seattledata.name }}</td>
-            <td>{{ seattledata.sold  }}</td>
-            <td>{{ seattledata.pending  }}</td>
-            <td>{{ seattledata.pending7  }}</td>
-            <td>{{ seattledata.pending1  }}</td>
-            <td>{{ seattledata.forsale  }}</td>
-        <td>{{ seattledata.updated  }}</td>
-
-
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
 
 
 </body>

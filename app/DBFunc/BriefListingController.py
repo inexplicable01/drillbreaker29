@@ -2,7 +2,7 @@ from app.DBModels.BriefListing import BriefListing
 from sqlalchemy.sql import func, or_, distinct
 from app.extensions import db
 from app.useful_func import safe_float_conversion, safe_int_conversion, print_and_log
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from app.UsefulAPI.UseFulAPICalls import get_neighborhood
 from app.config import Config, RECENTLYSOLD, FOR_SALE, PENDING, FOR_RENT, OTHER
 import decimal
@@ -624,12 +624,14 @@ class BriefListingController():
             print(f"Error retrieving the first ten listings where zone_id is NULL: {str(e)}")
             return []
 
-    def getallPendings(self):
+    def getallPendings(self,search_neigh):
 
         try:
             # Query for listings where zone_id is NULL and dateSold is greater than 1730400000000
             first_ten_listings = (self.BriefListing.query
                                   .filter(self.BriefListing.homeStatus == PENDING)
+                                  .filter(self.BriefListing.search_neigh == search_neigh)
+
                                   # .limit(X)  # Limit to 10 instead of 100
                                   .all())
             return first_ten_listings
@@ -637,6 +639,32 @@ class BriefListingController():
             # Exception handling with proper error formatting
             print(f"Error retrieving the first ten listings where zone_id is NULL: {str(e)}")
             return []
+
+    def getListingsByMonth(self,zone_ids,selectedhometypes, status=RECENTLYSOLD):
+        # twelve_months_ago = date.today().replace(day=1) - timedelta(days=365)
+
+        today = datetime.now()
+        start_of_month_two_years_ago = datetime(today.year, today.month, 1) - timedelta(days=730)
+        unix_cutoff = int(start_of_month_two_years_ago.timestamp())
+
+        # Query by year + month
+        results = db.session.query(
+            func.year(func.from_unixtime(self.BriefListing.soldtime)).label("year"),
+            func.month(func.from_unixtime(self.BriefListing.soldtime)).label("month"),
+            func.count().label("homes_sold")
+        ).filter(
+            self.BriefListing.homeStatus == status,
+            self.BriefListing.zone_id.in_(zone_ids),
+            self.BriefListing.homeType.in_(selectedhometypes),
+            self.BriefListing.soldtime >= unix_cutoff
+        ).group_by("year", "month").order_by("year", "month").all()
+
+        # Convert to dict: {(year, month): count}
+        # data = {(year, month): count for year, month, count in results}
+
+        return results
+
+
 
 
 brieflistingcontroller = BriefListingController()

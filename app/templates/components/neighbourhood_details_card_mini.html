@@ -30,9 +30,15 @@
             <p style="margin: 2px 0; font-size: 14px;">
                 <strong>Address:</strong> {{ home.streetAddress }}, {{ home.city }}, {{ home.state }}, {{ home.zipcode }}
 
-            <p style="margin: 2px 0; font-size: 20px;">
-                <strong>Price:</strong> ${{ home.price }}
-            </p>
+            {% if home.homeStatus == 'RECENTLY_SOLD' %}
+                <p style="margin: 2px 0; font-size: 20px;">
+                    <strong>Sold Price:</strong> ${{ "{:,.0f}".format(home.soldprice) }}
+                </p>
+            {% else %}
+                <p style="margin: 2px 0; font-size: 20px;">
+                    <strong>Price:</strong> ${{ "{:,.0f}".format(home.price) }}
+                </p>
+            {% endif %}
             <p style="margin: 2px 0; font-size: 14px;">
                 <strong>Bedrooms:</strong> {{ home.bedrooms }}, <strong>Bathrooms:</strong> {{ home.bathrooms }}
             </p>

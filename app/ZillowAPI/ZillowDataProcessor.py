@@ -252,7 +252,7 @@ def savePropertyData(propertydata):
 
 def loadPropertyDataFromBrief(brieflisting):
 
-    print('Load property : ',brieflisting)
+    # print('Load property : ',brieflisting)
     propertydata = SearchZillowByZPID(brieflisting.zpid)
 
     return propertydata

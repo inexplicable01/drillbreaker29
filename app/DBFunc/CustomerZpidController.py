@@ -45,13 +45,10 @@ class CustomerZpidController():
         return CustomerZpid.query.filter_by(customer_id=customer_id, zpid=zpid).first()
 
 
-    def getlistingsofCustomerByCustomerID(self, id):
+    def getlistingsofCustomerByCustomerID(self, customerid):
         try:
-            customerzpids = self.CustomerZpid.query.filter_by(id=id).all()
-            brieflistingsarray = []
-            for customerzpid in customerzpids:
-                brieflistingsarray.append(customerzpid.brieflisting)
-            return
+            customerzpids = self.CustomerZpid.query.filter_by(customer_id=customerid).all()
+            return customerzpids
         except Exception as e:
             print_and_log(f"Error retrieving CustomerZpid by ID: {str(e)}")
             return None

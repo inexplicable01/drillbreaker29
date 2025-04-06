@@ -144,39 +144,36 @@
     {#    </div>#}
     {##}
 
-    {% if Webpage %}
-        {% include "InterestReport/InterestTable.html" with context %}
-        {##}
-        <div id="details-container"></div>
 
-        <div id="customer_interest">
-        {% include "components/Customer_Interest_Track.html" with context %}
+    {% include "InterestReport/InterestTable.html" with context %}
+    {##}
+    <div id="details-container"></div>
+
+    <div id="customer_interest">
+    {% include "components/Customer_Interest_Track.html" with context %}
+    </div>
+
+    <h1>Market Analysis of Sold Properties</h1>
+    <div class="content-wrapper">
+        <div class="map-box">
+
+
+            <div id="map_Sold"></div>
+            {% include "ClickAbleMap/SoldMapScript.html" with context %}
+            {% include "InterestReport/SoldMapLegend.html" with context %}
+
         </div>
+        <div class="forsale-box ">
+            <div style="text-align: center;">
+                <h2>Sold Houses in the last {{ selected_doz }} days</h2>
+                <img id="graphImage" src="data:image/png;base64,{{ plot_url }}"
+                     alt="House Price vs. Days to Pending">
 
-        <h1>Market Analysis of Sold Properties</h1>
-        <div class="content-wrapper">
-            <div class="map-box">
-
-
-                <div id="map_Sold"></div>
-                {% include "ClickAbleMap/SoldMapScript.html" with context %}
-                {% include "InterestReport/SoldMapLegend.html" with context %}
-
-            </div>
-            <div class="forsale-box ">
-                <div style="text-align: center;">
-                    <h2>Sold Houses in the last {{ selected_doz }} days</h2>
-                    <img id="graphImage" src="data:image/png;base64,{{ plot_url }}"
-                         alt="House Price vs. Days to Pending">
-
-                    {#                <img id="graphImage" src="{{ plot_url }}" alt="House Price vs. Days to Pending">#}
-                </div>
+                {#                <img id="graphImage" src="{{ plot_url }}" alt="House Price vs. Days to Pending">#}
             </div>
         </div>
-        {% include 'ClickAbleMap/data_table.html' %}
-    {% else %}
-        <p>Check Out the full area report for your interested Areas!</p>
-    {% endif %}
+    </div>
+    {% include 'ClickAbleMap/data_table.html' %}
 
 
 </div>

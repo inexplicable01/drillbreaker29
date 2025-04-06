@@ -1,5 +1,16 @@
 <div class="customer_interest_track">
     <h2>{{ customer.name }} interests</h2>
+     <button id="refreshBtn" onclick="refreshtracking('{{ customer.id }}')" style="
+        background-color: blue ;
+        color: white; /* Named color */
+        border: none;
+        padding: 8px 12px;
+        margin-top: 5px;
+        border-radius: 5px;
+        font-size: 14px;"
+>
+     <span id="btnText">Refresh</span>
+     </button>
     <table>
         <thead>
         <tr>

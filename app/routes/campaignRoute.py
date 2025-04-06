@@ -16,7 +16,7 @@ from app.RouteModel.EmailModel import sendLevel1Email, sendunsubscribemeail
 from datetime import datetime, timedelta
 import re
 from app.MapTools.MappingTools import create_map , WA_geojson_features
-from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID, SearchZillowHomesFSBO, SearchZillowHomesByLocation
+from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID, SearchZillowHomesFSBO
 from datetime import datetime
 from app.RouteModel.BriefListingsVsApi import ZPIDinDBNotInAPI_FORSALE, EmailCustomersIfInterested
 from app.GraphTools.plt_plots import *
