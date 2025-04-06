@@ -206,8 +206,8 @@ def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, timeOnZ
                 "listing_type": "by_agent",
                 "sqft_min": str(minhomesize),
                 "sqft_max": str(maxhomesize),
-                "doz": doz,
-                # "timeOnZillow": timeOnZillow if status == "forSale" else None,
+                "doz": doz if status == "recentlySold" else doz,
+                "timeOnZillow": timeOnZillow if status == "forSale" else None,
                 "isMultiFamily": "false",
                 "sortSelection":"priorityscore"
             }

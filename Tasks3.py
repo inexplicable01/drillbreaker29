@@ -25,13 +25,13 @@ for i,city in enumerate(response.json()["cities"]):
 
     print(city)
 
-    payload = {'doz': '180',
+    payload = {'doz': '900',
                'city': city}
     files = []
     headers = {}
 
-    # res = requests.request("PATCH", getsoldlistingsurl, headers=headers, data=payload, files=files)
-    # print(res)
+    res = requests.request("PATCH", getsoldlistingsurl, headers=headers, data=payload, files=files)
+    print(res)
     payload = {'doz': '180',
                'city': city}
     res = requests.request("PATCH", getforsalelistingsurl, headers=headers, data=payload, files=files)
