@@ -20,7 +20,7 @@ response = requests.request("GET", getcitylisturl,  params=params, headers=heade
 
 for i,city in enumerate(response.json()["cities"]):
     print(city)
-    if city!='Seattle':
+    if city!='Kirkland':
         continue
 
     print(city)

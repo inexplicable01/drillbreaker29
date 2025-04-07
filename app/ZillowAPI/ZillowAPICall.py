@@ -196,6 +196,7 @@ def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, timeOnZ
         lastpage = 1
         maxpage = 2
         results_in_this_interval = []
+        should_restart = False  # Flag to control outer loop
 
         while maxpage >= lastpage:
             querystring = {
@@ -219,6 +220,7 @@ def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, timeOnZ
 
             if response.status_code == 502:
                 warn(f'502 error on {location}')
+                should_restart = True
                 break
 
             try:
@@ -238,27 +240,32 @@ def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, timeOnZ
                     print("Search too large for interval, reducing...")
                     interval = max(min_interval, interval // 2)
                     maxhomesize = minhomesize + interval
-                    break  # retry this interval
+                    should_restart = True
+                    break  # break inner, continue outer
             except Exception as e:
                 print("Search Zillow failed due to an exception:", e)
                 break
 
-        # Deduplicate
-        for listing in results_in_this_interval:
-            zpid = listing.get('zpid')
-            if zpid and zpid not in seen_ids:
-                seen_ids.add(zpid)
-                houseresult.append(listing)
+        if should_restart:
+            continue  # restart outer loop with adjusted interval
 
         if maxhomesize >= max_sqft:
             print("All intervals processed.")
             break
 
+        for listing in results_in_this_interval:
+            zpid = listing.get('zpid')
+            if zpid and zpid not in seen_ids:
+                seen_ids.add(zpid)
+                houseresult.append(listing)
+        print(f'Found {len(houseresult)} unique results.')
+
         # Move to the next range with small overlap
-        minhomesize = maxhomesize - 50
+        minhomesize = maxhomesize
         maxhomesize = min(minhomesize + interval, max_sqft)
 
-    print(f'Found {len(houseresult)} unique results.')
+
+
     return houseresult
 
 
