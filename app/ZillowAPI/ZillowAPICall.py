@@ -190,7 +190,7 @@ def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, timeOnZ
 
     seen_ids = set()
     max_sqft = 10000
-    min_interval = 50
+    min_interval = 20
 
     while True:
         lastpage = 1
