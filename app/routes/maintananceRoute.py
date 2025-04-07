@@ -169,9 +169,10 @@ def maintainPendingListings():
         for brieflistingdb in brieflistingpendingdb:
             try:
                 propertydata = loadPropertyDataFromBrief(brieflistingdb)
-                brieflistingapi = BriefListing.CreateBriefListingFromPropertyData(propertydata)
+                brieflistingapi = BriefListing.CreateBriefListingFromPropertyData(propertydata, None, None, city)
                 status = propertydata['homeStatus']
                 if status == 'PENDING':
+                    print(brieflistingdb.__str__() + ' still pending.')
                     continue
                     # print(brieflisting.__str__() + ' has changed from Pending to SOLD!!!')
                 elif status == 'FOR_SALE':

@@ -20,7 +20,7 @@ response = requests.request("GET", getcitylisturl,  params=params, headers=heade
 
 for i,city in enumerate(response.json()["cities"]):
     print(city)
-    if city!='Kirkland':
+    if city!='Seattle':
         continue
 
     print(city)
@@ -35,7 +35,7 @@ for i,city in enumerate(response.json()["cities"]):
     payload = {'doz': '180',
                'city': city}
     res = requests.request("PATCH", getforsalelistingsurl, headers=headers, data=payload, files=files)
-    # resp = requests.request("PATCH", url3, headers=headers, data=payload)
+    resp = requests.request("PATCH", url3, headers=headers, data=payload)
     print(res)
     payload = {'doz': '60',
                'city': city}
