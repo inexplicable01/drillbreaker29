@@ -640,7 +640,7 @@ class BriefListingController():
             print(f"Error retrieving the first ten listings where zone_id is NULL: {str(e)}")
             return []
 
-    def getListingsByMonth(self,zone_ids,selectedhometypes, status=RECENTLYSOLD):
+    def getListingsByMonth(self,zone_ids,selectedhometypes, status=RECENTLYSOLD, selected_plotoption='sold'):
         # twelve_months_ago = date.today().replace(day=1) - timedelta(days=365)
 
         today = datetime.now()
@@ -648,16 +648,39 @@ class BriefListingController():
         unix_cutoff = int(start_of_month_two_years_ago.timestamp())
 
         # Query by year + month
-        results = db.session.query(
-            func.year(func.from_unixtime(self.BriefListing.soldtime)).label("year"),
-            func.month(func.from_unixtime(self.BriefListing.soldtime)).label("month"),
-            func.count().label("homes_sold")
-        ).filter(
-            self.BriefListing.homeStatus == status,
-            self.BriefListing.zone_id.in_(zone_ids),
-            self.BriefListing.homeType.in_(selectedhometypes),
-            self.BriefListing.soldtime >= unix_cutoff
-        ).group_by("year", "month").order_by("year", "month").all()
+        if selected_plotoption == 'sold':
+            results = db.session.query(
+                func.year(func.from_unixtime(self.BriefListing.soldtime)).label("year"),
+                func.month(func.from_unixtime(self.BriefListing.soldtime)).label("month"),
+                func.count().label("homes_sold")
+            ).filter(
+                self.BriefListing.homeStatus == status,
+                self.BriefListing.zone_id.in_(zone_ids),
+                self.BriefListing.homeType.in_(selectedhometypes),
+                self.BriefListing.soldtime >= unix_cutoff
+            ).group_by("year", "month").order_by("year", "month").all()
+        elif selected_plotoption == 'listed':
+            results = db.session.query(
+                func.year(func.from_unixtime(self.BriefListing.listtime)).label("year"),
+                func.month(func.from_unixtime(self.BriefListing.listtime)).label("month"),
+                func.count().label("homes_sold")
+            ).filter(
+                self.BriefListing.homeStatus == status,
+                self.BriefListing.zone_id.in_(zone_ids),
+                self.BriefListing.homeType.in_(selectedhometypes),
+                self.BriefListing.soldtime >= unix_cutoff
+            ).group_by("year", "month").order_by("year", "month").all()
+        else:
+            results = db.session.query(
+                func.year(func.from_unixtime(self.BriefListing.soldtime)).label("year"),
+                func.month(func.from_unixtime(self.BriefListing.soldtime)).label("month"),
+                func.count().label("homes_sold")
+            ).filter(
+                self.BriefListing.homeStatus == status,
+                self.BriefListing.zone_id.in_(zone_ids),
+                self.BriefListing.homeType.in_(selectedhometypes),
+                self.BriefListing.soldtime >= unix_cutoff
+            ).group_by("year", "month").order_by("year", "month").all()
 
         # Convert to dict: {(year, month): count}
         # data = {(year, month): count for year, month, count in results}

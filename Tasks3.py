@@ -11,7 +11,7 @@ getpendinglistingsurl = base + "maintanance/maintainPendingListings"
 urlfsbo = f"{base}maintanance/fsbo"
 urlopen = f"{base}maintanance/updateopenhouse"
 
-params = [("county", "King"), ("county", "Snohomish")]
+params = [("county", "King"), ("county", "Snohomish"), ("county", "Skagit")]
 payload = {}
 headers = {}
 
@@ -19,13 +19,15 @@ response = requests.request("GET", getcitylisturl,  params=params, headers=heade
 
 
 for i,city in enumerate(response.json()["cities"]):
+    # print(city)
+    # if city!='Seattle':
+    #     continue
+    # if city not  in ["Arlington", "Auburn", "Bellevue", "Bothell", "Edmonds", "Everett", "Issaquah", "Kent"
+    # , "Lake Stevens", "Lynnwood", "Marysville", "Monroe", "Renton", "Seattle", "Snohomish"]:
+    #     continue
     print(city)
-    if city!='Seattle':
-        continue
 
-    print(city)
-
-    payload = {'doz': '900',
+    payload = {'doz': '180',
                'city': city}
     files = []
     headers = {}
@@ -35,7 +37,6 @@ for i,city in enumerate(response.json()["cities"]):
     payload = {'doz': '180',
                'city': city}
     res = requests.request("PATCH", getforsalelistingsurl, headers=headers, data=payload, files=files)
-    resp = requests.request("PATCH", url3, headers=headers, data=payload)
     print(res)
     payload = {'doz': '60',
                'city': city}

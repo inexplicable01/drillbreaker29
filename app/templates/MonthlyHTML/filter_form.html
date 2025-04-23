@@ -1,0 +1,30 @@
+<form method="POST">
+    <div>
+        <h3>Select Option:</h3>
+        <select name="selected_plotoption">
+            {% for plotoption in plottingoptions %}
+                <option value="{{ plotoption }}" {% if plotoption == selected_plotoption %}selected{% endif %}>
+                    {{ plotoption }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit">Search</button>
+    </div>
+
+    <div>
+        <h3>Select Home Types:</h3>
+        {% for home_type in HOMETYPES %}
+            <label>
+                <input type="checkbox" name="home_type" value="{{ home_type }}"
+                       {% if home_type in selectedhometypes %}checked{% endif %}>
+                {{ home_type }}
+            </label><br>
+        {% endfor %}
+    </div>
+    <input type="hidden" id="selectedZonesInput" name="selected_zones" value="">
+    <div>
+        <p>Currently Displaying Data for {{ selected_zones }}</p>
+        <p>To Show Data for Zones below Hit Search</p>
+        <div id="selectedZones" style="margin-top: 10px; font-size: 14px; color: #333;"></div>
+    </div>
+</form>

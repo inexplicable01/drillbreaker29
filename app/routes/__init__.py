@@ -15,7 +15,7 @@ from .clickablemap import clickablemap_bp
 from .email_monitor import emailmonitorbp
 from .rentalhomes import rental_bp
 from .fsbo import fsbo_bp
-from .statsByZone import zonestats_bp
+from .zonestats import zonestats_bp
 from .customerzoneroute import customer_interest_bp
 from .picturedealingbp import save_image_bp
 from .campaignRoute import campaignRoute_bp

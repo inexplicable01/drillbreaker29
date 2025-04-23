@@ -48,7 +48,7 @@ def sendLevel1Buyer_sendEmail():
     next_thursday = get_next_thursday().strftime('%Y-%m-%d')
     customernames = []
     invalid_emails = []
-    uniquecities = washingtoncitiescontroller.get_city_names_for_level1_customers()
+    uniquecities = washingtoncitiescontroller.get_city_names_for_level1_buyers()
     output_dir = Path("app/static/maps")
     for customer in level1_type.customers:
         print(customer.name)
@@ -66,14 +66,6 @@ def sendLevel1Buyer_sendEmail():
         zone_ids = []
         for result in results:
             zone_ids.append(result.id)
-
-        stats = {
-            "total_sold": 22,
-            "fast_sales": 9,
-            "under_list": 7,
-            "fastest_days": 2,
-            "median_days": 6
-        }
 
         forsalehomes = brieflistingcontroller.get_recent_listings(customer, zone_ids)
         stats = StatsModelRun(zone_ids, 30)
@@ -96,7 +88,7 @@ def sendLevel1Buyer_makepictures():
     next_thursday = get_next_thursday().strftime('%Y-%m-%d')
     customernames = []
     invalid_emails = []
-    uniquecities = washingtoncitiescontroller.get_city_names_for_level1_customers()
+    uniquecities = washingtoncitiescontroller.get_city_names_for_level1_buyers()
     output_dir = Path("app/static/maps")
     for city in uniquecities:
         # getzones....
@@ -138,7 +130,52 @@ def sendLevel1Buyer_makepictures():
         'uniquecities':uniquecities
     }), 200
 
+@campaignRoute_bp.route('/sendLevel1Seller_makepictures', methods=['POST'])
+def sendLevel1Seller_makepictures():
+    next_thursday = get_next_thursday().strftime('%Y-%m-%d')
+    customernames = []
+    invalid_emails = []
+    uniquecities = washingtoncitiescontroller.get_city_names_for_level1_sellers()
+    output_dir = Path("app/static/maps")
+    for city in uniquecities:
+        # getzones....
+        map_html_path = output_dir / f'citymap_{city}_{next_thursday}.html'
+        mapname = output_dir / f'citymap_{city}_{next_thursday}.png'
+        pricechangepng = output_dir / f'pricechange_{city}_{next_thursday}.png'
+        wcity = washingtoncitiescontroller.getCity(city)
+        if wcity:
+            results = washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
+        else:
+            results = washingtonzonescontroller.getzonebyName(city)
 
+        zonenames=[]
+        for result in results:
+            zonenames.append(result.zonename())
+        housesoldpriceaverage, soldhomes = AreaReportModelRun(zonenames,
+                                             [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
+                                                            30)
+
+
+        url = f'{base}useful/upload-map'
+        createPriceChangevsDays2PendingPlot(soldhomes,pricechangepng)
+        with open(pricechangepng, 'rb') as f:
+            files = {'file': (f'pricechange_{city}_{next_thursday}.png', f, 'image/png')}
+            response = requests.post(url, files=files)
+            print(response)
+
+        create_map(WA_geojson_features, zonenames, map_html_path,mapname, soldhomes)
+        with open(mapname, 'rb') as f:
+            files = {'file': (f'citymap_{city}_{next_thursday}.png', f, 'image/png')}
+            response = requests.post(url, files=files)
+            print(response)
+
+    return jsonify({
+        'status': 'success',
+        'customers': customernames,
+        'invalid_emails': invalid_emails,
+        'next_report_date': next_thursday,
+        'uniquecities':uniquecities
+    }), 200
 
 from app.DBFunc.CustomerController import customercontroller
 

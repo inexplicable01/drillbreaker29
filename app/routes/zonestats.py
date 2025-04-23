@@ -56,12 +56,12 @@ import io
 @zonestats_bp.route('/monthlytrends', methods=['GET','POST'])
 def monthlytrends():
     # Fetch precomputed city stats from the cache
-    doz_options = Config.doz_options
+    plottingoptions = Config.plottingoptions
     # AllNeighbourhoods = featureAreas.keys()
     if request.method == 'POST':
         selectedhometypes = request.form.getlist('home_type')
         selectedlocations = request.form.getlist('location')
-        selected_doz = int(request.form.get('selected_doz'))
+        selected_plotoption = request.form.get('selected_plotoption')
 
         selected_zones = request.form.getlist('selected_zones')
         if ',' in selected_zones[0]:
@@ -71,7 +71,7 @@ def monthlytrends():
     elif request.method == 'GET':
         selectedlocations = []
         selectedhometypes = Config.HOMETYPES
-        selected_doz = 30
+        selected_plotoption = plottingoptions[0]
         selected_zones = []
 
     zone_ids=[]
@@ -80,28 +80,31 @@ def monthlytrends():
         if wzone:
             zone_ids.append(wzone.id)
     # soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, soldlastdays, selectedhometypes).all()
-    results = brieflistingcontroller.getListingsByMonth(zone_ids, selectedhometypes, RECENTLYSOLD)
+    results = brieflistingcontroller.getListingsByMonth(zone_ids, selectedhometypes, RECENTLYSOLD, selected_plotoption)
     data = {(year, month): count for year, month, count in results}
     # Unpack data
     today = datetime.now()
     months = [i for i in range(1, 13)]
     year1 = today.year - 2 if today.month < 12 else today.year - 1
     year2 = year1 + 1
+    year3 = year2 + 1
 
     # Y-values for both years
     counts_year1 = [data.get((year1, m), 0) for m in months]
     counts_year2 = [data.get((year2, m), 0) for m in months]
+    counts_year3 = [data.get((year3, m), 0) for m in months]
 
     # Labels: Jan, Feb, ...
     month_labels = [datetime(2000, m, 1).strftime("%b") for m in months]
 
     # Plot using Matplotlib
     x = range(len(months))
-    width = 0.35
+    width = 0.25
 
-    fig, ax = plt.subplots(figsize=(6, 4))
-    ax.bar([i - width/2 for i in x], counts_year1, width=width, label=str(year1), color='skyblue')
-    ax.bar([i + width/2 for i in x], counts_year2, width=width, label=str(year2), color='salmon')
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.bar([i - width for i in x], counts_year1, width=width, label=str(year1), color='skyblue')
+    ax.bar([i for i in x], counts_year2, width=width, label=str(year2), color='salmon')
+    ax.bar([i + width for i in x], counts_year3, width=width, label=str(year3), color='green')
 
     ax.set_xticks(x)
     ax.set_xticklabels(month_labels)
@@ -122,12 +125,12 @@ def monthlytrends():
 
 
     return render_template(
-        'ClickAbleMap/ClickAbleMapMain2.html',
+        'MonthlyHTML/ClickAbleMap_Monthly.html',
         HOMETYPES=Config.HOMETYPES,
         geojson_features=WA_geojson_features,
         housesoldpriceaverage=[],
-        doz_options=doz_options,
-        selected_doz=selected_doz,
+        plottingoptions=plottingoptions,
+        selected_plotoption=selected_plotoption,
         selected_zones=selected_zones,
         selectedhometypes=selectedhometypes,
         LOCATIONS=[],

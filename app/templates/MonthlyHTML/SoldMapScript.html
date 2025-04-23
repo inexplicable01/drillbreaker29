@@ -1,0 +1,166 @@
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    var map_Sold = L.map('map_Sold'); // Centered on Seattle
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map_Sold);
+
+    function handleClick(region) {
+        document.getElementById('label').innerHTML = region;
+
+        $.ajax({
+            url: '/clickablemap/process',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({region: region}),
+            success: function (response) {
+                document.getElementById('result').innerHTML = response.message;
+                // Here you can add code to display graphs or other processed data
+            },
+            error: function (error) {
+                console.log('Error:', error);
+            }
+        });
+    }
+
+    var geojson_features = {{ geojson_features | tojson }};
+
+    var selectionEnabled = false;
+    var selectedZones = {{ selected_zones | tojson }};
+    console.log('Selected Zones:', selectedZones);
+
+    function updateHiddenInput() {
+        document.getElementById('selectedZonesInput').value = selectedZones.join(','); // Convert to comma-separated string
+    }
+
+    var form = document.querySelector('form');
+    form.addEventListener('submit', function () {
+        updateHiddenInput(); // Populate the hidden input with selected zones
+    });
+    {#// Function to handle toggle behavior#}
+    {#// Array to keep track of all polygons#}
+    var polygons = [];
+    var bounds = L.latLngBounds();
+    {#console.log('GeoJSON Features:', geojson_features);#}
+    geojson_features.forEach(function (value) {
+        if (value.geometry.type === "Polygon") {
+            // For Polygon: Swap each coordinate pair in the outer array
+            value.geometry.coordinates = value.geometry.coordinates.map(ring =>
+                ring.map(coord => [coord[1], coord[0]]) // Swap x and y
+            );
+        } else if (value.geometry.type === "MultiPolygon") {
+            // For MultiPolygon: Swap coordinates for each polygon ring
+            value.geometry.coordinates = value.geometry.coordinates.map(polygon =>
+                polygon.map(ring =>
+                    ring.map(coord => [coord[1], coord[0]]) // Swap x and y
+                )
+            );
+        }
+        // Slightly shift the Bellevue polygon's coordinates for each iteration
+        //console.log(`Value from geojson_features: ${value.properties.L_HOOD}`);
+        // Check if S_HOOD exists and is not null/empty, otherwise use CityName
+        var zoneName = value.properties.S_HOOD && value.properties.S_HOOD.trim() !== ""
+            ? value.properties.S_HOOD
+            : value.properties.CityName;
+
+        var isSelected = selectedZones.includes(zoneName);
+        var color = isSelected ? "green" : "red";
+
+        var poly = L.polygon(value.geometry.coordinates, { color: color }).addTo(map_Sold);
+        polygons.push(poly);
+        poly.bindTooltip(zoneName, { permanent: true, direction: "center", className: "zone-label" }).openTooltip();
+
+        // ✅ Extend bounds only if the zone is selected
+        if (isSelected) {
+            poly.getLatLngs().forEach(latlngGroup => {
+                latlngGroup.forEach(latlng => bounds.extend(latlng)); // Extend bounds with polygon points
+            });
+        }
+
+        // Add click event to polygon
+        poly.on('click', function () {
+            if (selectedZones.includes(zoneName)) {
+                // Deselect if already selected
+                selectedZones = selectedZones.filter(zone => zone !== zoneName);
+                poly.setStyle({color: 'red'}); // Reset color
+            } else {
+                // Add to selected zones
+                selectedZones.push(zoneName);
+                poly.setStyle({color: 'green'}); // Highlight selected
+            }
+
+            // Update the selected zones in the HTML
+            document.getElementById('selectedZones').innerText = selectedZones.join(', ');
+
+            // Update the hidden input field
+            document.getElementById('selectedZonesInput').value = selectedZones.join(',');
+
+        });
+    });
+
+    if (bounds.isValid()) {
+        map_Sold.fitBounds(bounds, {padding: [20, 20]});
+    } else {
+        map_Sold.setView([47.6062, -122.3321], 10); // Default to Seattle if no orange areas
+    }
+
+    var brieflistings_SoldHomes_dict = {{ brieflistings_SoldHomes_dict | tojson }};
+
+
+    function getMarkerColor(list2penddays) {
+        if (
+            list2penddays === null ||          // Null Check
+            list2penddays === undefined ||     // Undefined Check
+            isNaN(Number(list2penddays))       // Not a number or doesn't represent a number
+        ) {
+            return "black"; // Default to black for invalid or missing values
+        } else if (+list2penddays < 7) { // Convert to a number before comparison
+            return "red";
+        } else if (+list2penddays < 14) {
+            return "orange";
+        } else if (+list2penddays < 21) {
+            return "green";
+        } else {
+            return "blue";
+        }
+    }
+
+    function getCustomIcon(color) {
+    return L.icon({
+        iconUrl: `https://maps.google.com/mapfiles/ms/icons/${color}-dot.png`, // Google Maps-style marker icons
+        iconSize: [32, 32],  // Adjust the size
+        iconAnchor: [16, 32], // Center the marker at the bottom
+        popupAnchor: [0, -30]  // Adjust popup position
+    });
+}
+    brieflistings_SoldHomes_dict.forEach(function (listing) {
+        // Calculate the marker’s color
+
+        let markerColor=getMarkerColor(listing.list2penddays)
+        {#console.log("listing:", listing);#}
+        // Create a marker using a custom icon with the selected color
+
+        var customIcon = getCustomIcon(markerColor);
+
+    // Create the marker with the custom icon
+        var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map_Sold);
+
+        // Add the marker to the map
+
+        // Bind a popup with details about the listing
+
+                marker.bindPopup(
+            `<a href='https://www.zillow.com${listing.hdpUrl}' target='_blank'>${listing.streetAddress}</a><br>
+            <b>Price:</b> ${listing.price}<br>
+<b>Days on Market:</b> ${listing.list2penddays}<br>
+            ${listing.bedrooms} bed, ${listing.bathrooms} bath, ${listing.livingArea} sqft, ${listing.zone_id}`
+        );
+        // Optional: Add click event for interaction
+        marker.on('click', function () {
+            console.log(`Marker clicked: ${listing.streetAddress}, Days on Market: ${listing.list2penddays}`);
+        });
+    });
+
+</script>

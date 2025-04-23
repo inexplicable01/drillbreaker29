@@ -20,6 +20,7 @@ from jinja2 import Environment, FileSystemLoader
 
 # from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,
 defaultrecipient = 'waichak.luk@gmail.com'
+mo_email = 'mohamedzabuzaid@gmail.com'
 def sendEmailwithNewListing():
     # subject, body, recipient = defaultrecipient, html_content = None
     html_content = NewListingForEmail('Seattle', 1)
@@ -291,9 +292,15 @@ def sendLevel1Email(customer, mappng, pricechangepng, forsalehomes, stats):
         showScheduleButton=True
     )
 
+    # send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
+    #            html_content=html_content,
+    #            recipient =customer.email)
     send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
                html_content=html_content,
-               recipient =customer.email)
+               recipient =defaultrecipient)
+    send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
+               html_content=html_content,
+               recipient =mo_email)
 
 def sendunsubscribemeail(customer):
     html_content = f"""

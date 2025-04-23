@@ -27,7 +27,7 @@ class Config(object):
     ]
     #
     doz_options=[1,7,14,30,90,180,360]
-
+    plottingoptions = ['sold','listed']
     NEIGHBORHOODS = ['Ballard', 'Fremont', 'Crown Hill', 'Green Wood', 'Phinney Ridge', 'Wallingford', 'North Beach',
                      'Blue Ridge', 'Whittier Heights', 'Loyal Heights', 'Sunset Hill', 'Magnolia', 'Queen Anne']
     WRONGNEIGHBORHOODS = ['Maple Leaf', 'South Lake Union', 'Bryant', 'Laurelhurst',

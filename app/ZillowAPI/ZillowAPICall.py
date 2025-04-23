@@ -195,6 +195,7 @@ def SearchZillowHomesByLocation(location, status="recentlySold", doz=14, timeOnZ
     while True:
         lastpage = 1
         maxpage = 2
+        maxpagebackup=2
         results_in_this_interval = []
         should_restart = False  # Flag to control outer loop
 

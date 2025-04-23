@@ -37,12 +37,34 @@ class WashingtonCitiesController():
     def get_cities_by_county(self, counties):
         return [c.City for c in self.WashingtonCities.query.filter(self.WashingtonCities.county.in_(counties)).all()]
 
-    def get_city_names_for_level1_customers(self):
+    # def get_city_names_for_level1_customers(self):
+    #
+    #     result = (
+    #         db.session.query(self.WashingtonCities.City)
+    #         .join(self.WashingtonCities.customers)
+    #         .filter(Customer.customer_type_id == 1)
+    #         .distinct()
+    #         .all()
+    #     )
+    #     return [city[0] for city in result]
+
+    def get_city_names_for_level1_buyers(self):
 
         result = (
             db.session.query(self.WashingtonCities.City)
             .join(self.WashingtonCities.customers)
             .filter(Customer.customer_type_id == 1)
+            .distinct()
+            .all()
+        )
+        return [city[0] for city in result]
+
+    def get_city_names_for_level1_sellers(self):
+
+        result = (
+            db.session.query(self.WashingtonCities.City)
+            .join(self.WashingtonCities.customers)
+            .filter(Customer.customer_type_id == 2)
             .distinct()
             .all()
         )

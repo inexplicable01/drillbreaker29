@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clickable Map with Leaflet</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    {% include 'MonthlyHTML/clickablecss.html' %} <!-- Reference external CSS -->
+</head>
+<body>
+<div id="main-content">
+    <div id="map-container">
+        <div id="topSection">
+            {% include 'MonthlyHTML/filter_form.html' %} <!-- Include filter form -->
+        </div>
+        <div id="map_Sold"></div>
+    </div>
+    <div id="side-section">
+        <div id="data-section">
+            <div style="text-align: center;">
+                <h2>Sold Houses in the last {{ selected_doz }} days</h2>
+                <img id="graphImage" src="data:image/png;base64,{{ plot_url }}" alt="Homes Sold By Month">
+
+{#                <img id="graphImage" src="{{ plot_url }}" alt="House Price vs. Days to Pending">#}
+            </div>
+{#            {% include 'MonthlyHTML/data_table.html' %} <!-- Include data table -->#}
+        </div>
+{#        <div id="comments-section">#}
+{#            {% include 'ClickAbleMap/comments_table.html' %} <!-- Include comments table -->#}
+{#        </div>#}
+    </div>
+</div>
+
+{% include 'MonthlyHTML/SoldMapScript.html' %}
+</body>
+</html>
