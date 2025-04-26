@@ -663,12 +663,23 @@ class BriefListingController():
             results = db.session.query(
                 func.year(func.from_unixtime(self.BriefListing.listtime)).label("year"),
                 func.month(func.from_unixtime(self.BriefListing.listtime)).label("month"),
-                func.count().label("homes_sold")
+                func.count().label("homes_listed")
             ).filter(
                 self.BriefListing.homeStatus == status,
                 self.BriefListing.zone_id.in_(zone_ids),
                 self.BriefListing.homeType.in_(selectedhometypes),
-                self.BriefListing.soldtime >= unix_cutoff
+                self.BriefListing.listtime >= unix_cutoff
+            ).group_by("year", "month").order_by("year", "month").all()
+        elif selected_plotoption == 'pending':
+            results = db.session.query(
+                func.year(func.from_unixtime(self.BriefListing.pendday)).label("year"),
+                func.month(func.from_unixtime(self.BriefListing.pendday)).label("month"),
+                func.count().label("homes_listed")
+            ).filter(
+                self.BriefListing.homeStatus == status,
+                self.BriefListing.zone_id.in_(zone_ids),
+                self.BriefListing.homeType.in_(selectedhometypes),
+                self.BriefListing.pendday >= unix_cutoff
             ).group_by("year", "month").order_by("year", "month").all()
         else:
             results = db.session.query(

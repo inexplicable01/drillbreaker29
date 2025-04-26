@@ -365,7 +365,8 @@ def create_map(geojson_features, zonenames, map_html_path,map_image_path, soldho
         if matches_zone:
             for ring in polygon_coords:
                 for coord in ring:
-                    bounds_points.append([coord[1], coord[0]])  # lat, lon
+                    if isinstance(coord[0], float) and isinstance(coord[1], float):
+                        bounds_points.append([coord[1], coord[0]])  # lat, lon
 
 
 

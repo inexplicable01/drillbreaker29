@@ -27,7 +27,7 @@ for i,city in enumerate(response.json()["cities"]):
     #     continue
     print(city)
 
-    payload = {'doz': '180',
+    payload = {'doz': '90',
                'city': city}
     files = []
     headers = {}

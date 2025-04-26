@@ -11,7 +11,7 @@ getpendinglistingsurl = base + "maintanance/maintainPendingListings"
 urlfsbo = f"{base}maintanance/fsbo"
 urlopen = f"{base}maintanance/updateopenhouse"
 
-params = [("county", "King"), ("county", "Pierce")]
+params = []
 payload = {}
 headers = {}
 

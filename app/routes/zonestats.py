@@ -52,7 +52,7 @@ def update_zone_stats():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-import io
+
 @zonestats_bp.route('/monthlytrends', methods=['GET','POST'])
 def monthlytrends():
     # Fetch precomputed city stats from the cache
@@ -81,47 +81,10 @@ def monthlytrends():
             zone_ids.append(wzone.id)
     # soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, soldlastdays, selectedhometypes).all()
     results = brieflistingcontroller.getListingsByMonth(zone_ids, selectedhometypes, RECENTLYSOLD, selected_plotoption)
-    data = {(year, month): count for year, month, count in results}
-    # Unpack data
-    today = datetime.now()
-    months = [i for i in range(1, 13)]
-    year1 = today.year - 2 if today.month < 12 else today.year - 1
-    year2 = year1 + 1
-    year3 = year2 + 1
+    chart_data = createBarGraph(results, f"Homes {selected_plotoption}", f"Homes {selected_plotoption} by Month (Zones {', '.join(map(str, zone_ids))})")
 
-    # Y-values for both years
-    counts_year1 = [data.get((year1, m), 0) for m in months]
-    counts_year2 = [data.get((year2, m), 0) for m in months]
-    counts_year3 = [data.get((year3, m), 0) for m in months]
-
-    # Labels: Jan, Feb, ...
-    month_labels = [datetime(2000, m, 1).strftime("%b") for m in months]
-
-    # Plot using Matplotlib
-    x = range(len(months))
-    width = 0.25
-
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.bar([i - width for i in x], counts_year1, width=width, label=str(year1), color='skyblue')
-    ax.bar([i for i in x], counts_year2, width=width, label=str(year2), color='salmon')
-    ax.bar([i + width for i in x], counts_year3, width=width, label=str(year3), color='green')
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(month_labels)
-    ax.set_xlabel("Month")
-    ax.set_ylabel("Homes Sold")
-    ax.set_title(f"Homes Sold by Month (Zones {', '.join(map(str, zone_ids))})")
-    ax.legend()
-
-    plt.tight_layout()
-
-    # Convert to base64 image
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png')
-    buf.seek(0)
-    chart_data = base64.b64encode(buf.getvalue()).decode()
-    buf.close()
-    plt.close(fig)
+    results2 = brieflistingcontroller.getListingsByMonth(zone_ids, selectedhometypes, RECENTLYSOLD, "listed")
+    chart_data2 = createBarGraph(results2, "Homes Listed", f"Homes Listed by Month (Zones {', '.join(map(str, zone_ids))})")
 
 
     return render_template(
@@ -136,6 +99,7 @@ def monthlytrends():
         LOCATIONS=[],
         selected_locations=selectedlocations,
         plot_url=chart_data,
+        plot_url2=chart_data2,
         # plot_url2=plot_url2,
         soldhouses=[],
         brieflistings_SoldHomes_dict=[]

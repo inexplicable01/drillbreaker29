@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 from io import BytesIO
+import io
+from datetime import datetime
 import base64
 
 def createPriceChangevsDays2PendingPlot(soldhomes, savefilepath=None):
@@ -94,3 +96,48 @@ def createPricevsDays2PendingPlot(soldhomes, savefig=False):
     buf2.seek(0)
 
     return base64.b64encode(buf2.read()).decode('utf-8')
+
+def createBarGraph(results, ylabel, title):
+    data = {(year, month): count for year, month, count in results}
+    # Unpack data
+    today = datetime.now()
+    months = [i for i in range(1, 13)]
+    year1 = today.year - 2 if today.month < 12 else today.year - 1
+    year2 = year1 + 1
+    year3 = year2 + 1
+
+    # Y-values for both years
+    counts_year1 = [data.get((year1, m), 0) for m in months]
+    counts_year2 = [data.get((year2, m), 0) for m in months]
+    counts_year3 = [data.get((year3, m), 0) for m in months]
+
+    # Labels: Jan, Feb, ...
+    month_labels = [datetime(2000, m, 1).strftime("%b") for m in months]
+
+    # Plot using Matplotlib
+    x = range(len(months))
+    width = 0.25
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.bar([i - width for i in x], counts_year1, width=width, label=str(year1), color='skyblue')
+    ax.bar([i for i in x], counts_year2, width=width, label=str(year2), color='salmon')
+    ax.bar([i + width for i in x], counts_year3, width=width, label=str(year3), color='green')
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(month_labels)
+    ax.set_xlabel("Month")
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.legend()
+    # Add grid lines
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
+    plt.tight_layout()
+
+    # Convert to base64 image
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    chart_data = base64.b64encode(buf.getvalue()).decode()
+    buf.close()
+    plt.close(fig)
+    return chart_data
