@@ -155,7 +155,6 @@ def sendLevel1Seller_makepictures():
                                              [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
                                                             30)
 
-
         url = f'{base}useful/upload-map'
         createPriceChangevsDays2PendingPlot(soldhomes,pricechangepng)
         with open(pricechangepng, 'rb') as f:
@@ -176,6 +175,9 @@ def sendLevel1Seller_makepictures():
         'next_report_date': next_thursday,
         'uniquecities':uniquecities
     }), 200
+
+
+
 
 from app.DBFunc.CustomerController import customercontroller
 

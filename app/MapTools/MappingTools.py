@@ -323,7 +323,6 @@ from pathlib import Path
 def create_map(geojson_features, zonenames, map_html_path,map_image_path, soldhomes):
     # Create a base map
     m = folium.Map(location=[47.6815, -122.2087],
-                   tiles=None,  # Light static style
                    zoom_start=13)
 
     geojson_features_clone = copy.deepcopy(geojson_features)
@@ -363,20 +362,29 @@ def create_map(geojson_features, zonenames, map_html_path,map_image_path, soldho
             label = city_name
 
         if matches_zone:
-            for ring in polygon_coords:
-                for coord in ring:
-                    if isinstance(coord[0], float) and isinstance(coord[1], float):
-                        bounds_points.append([coord[1], coord[0]])  # lat, lon
+            if feature["geometry"]["type"] == "Polygon":
+                for ring in polygon_coords:
+                    for coord in ring:
+                        if isinstance(coord[0], float) and isinstance(coord[1], float):
+                            bounds_points.append([coord[1], coord[0]])  # lat, lon
+            elif feature["geometry"]["type"] == "MultiPolygon":
+                for polygon in polygon_coords:
+                    for ring in polygon:
+                        for coord in ring:
+                            if isinstance(coord[0], float) and isinstance(coord[1], float):
+                                bounds_points.append([coord[1], coord[0]])  # lat, lon
 
-
+        if feature["geometry"]["type"] == "Polygon":
+            location_for_folium = polygon_coords[0]
+        elif feature["geometry"]["type"] == "MultiPolygon":
+            location_for_folium = polygon_coords[0][0]
 
         pgGON = folium.Polygon(
-            locations=polygon_coords[0],
-            # Reverse coordinates (longitude, latitude -> latitude, longitude)
+            locations=location_for_folium,
             color=color,
             fill=True,
             fill_opacity=0.5,
-            popup = folium.Popup(label, max_width=250)
+            popup=folium.Popup(label, max_width=250)
         )
 
         # Create a polygon object
@@ -392,7 +400,7 @@ def create_map(geojson_features, zonenames, map_html_path,map_image_path, soldho
         # poly.add_child(folium.Tooltip(label))
         # poly.add_to(m)
         if matches_zone:
-            styled_label = f"<div style='font-size:20px; font-weight:bold'>{label}</div>"
+            styled_label = f"<div style='font-size:12px; font-weight:bold; opacity:0.50'>{label}</div>"
             pgGON.add_child(folium.Tooltip(styled_label, permanent=True))
         # else:
         #     styled_label = f"<div style='font-size:20px; font-weight:bold'>{label}</div>"
