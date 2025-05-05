@@ -13,12 +13,12 @@ getpendinglistingsurl = base + "maintanance/maintainPendingListings"
 urlfsbo = f"{base}maintanance/fsbo"
 urlopen = f"{base}maintanance/updateopenhouse"
 
-params = [("county", "King"), ("county", "Snohomish"), ("county", "Skagit")]
+params = []
 payload = {}
 headers = {}
 
 # Exit early if not Monday or Thursday
-if datetime.today().weekday() not in [0, 3]:
+if datetime.today().weekday() not in [0]:
     print("Not Monday or Thursday. Exiting script.")
     sys.exit()
 
@@ -33,8 +33,7 @@ for i,city in enumerate(response.json()["cities"]):
     # , "Lake Stevens", "Lynnwood", "Marysville", "Monroe", "Renton", "Seattle", "Snohomish"]:
     #     continue
     print(city)
-
-    payload = {'doz': '90',
+    payload = {'doz': '180',
                'city': city}
     files = []
     headers = {}
@@ -54,25 +53,5 @@ for i,city in enumerate(response.json()["cities"]):
 payload = {}
 response = requests.request("POST", base+"zonestats/update", headers=headers, data=payload)
 
-url = f"{base}listingalerts/activeCustomers"
 
-payload = {}
-headers = {}
-# print(url)
-response = requests.request("GET", url, headers=headers, data=payload)
-
-activeCustomers = response.json()['activeCustomers']
-
-for customer in activeCustomers:
-    print(customer)
-
-    url = f"{base}maintanance/clients_listing_Recommendation?customer_id={customer['id']}"
-    response = requests.request("PATCH", url, headers=headers, data=payload)
-
-    url = f"{base}customer_interest/send_email/{customer['id']}"
-    response = requests.request("POST", url, headers=headers, data=payload)
-
-url_health = f"{base}email/email_healthcheck"
-payload = {'message': "completed listing maintenance"}
-response = requests.request("GET", url_health, headers=headers, data=payload)
 
