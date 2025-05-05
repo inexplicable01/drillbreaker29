@@ -1,6 +1,8 @@
 import requests
-base = "http://127.0.0.1:5000/"
-# base = "https://www.drillbreaker29.com/"
+from datetime import datetime
+import sys
+# base = "http://127.0.0.1:5000/"
+base = "https://www.drillbreaker29.com/"
 
 getcitylisturl = base + "maintanance/getCityList"
 url3 = base + "maintanance/listingscheck"
@@ -14,6 +16,11 @@ urlopen = f"{base}maintanance/updateopenhouse"
 params = [("county", "King"), ("county", "Snohomish"), ("county", "Skagit")]
 payload = {}
 headers = {}
+
+# Exit early if not Monday or Thursday
+if datetime.today().weekday() not in [0, 3]:
+    print("Not Monday or Thursday. Exiting script.")
+    sys.exit()
 
 response = requests.request("GET", getcitylisturl,  params=params, headers=headers, data=payload)
 
