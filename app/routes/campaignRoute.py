@@ -41,8 +41,10 @@ import os
 
 base = os.getenv("BASE")
 base = "https://www.drillbreaker29.com/"
+
 @campaignRoute_bp.route('/sendLevel1Buyer_sendEmail', methods=['GET'])
 def sendLevel1Buyer_sendEmail():
+    forreal =  request.json.get("forreal", False)
     level1_type = customertypecontroller.get_customer_type_by_id(1)
 
     next_thursday = get_next_thursday().strftime('%Y-%m-%d')
@@ -70,7 +72,7 @@ def sendLevel1Buyer_sendEmail():
         forsalehomes = brieflistingcontroller.get_recent_listings(customer, zone_ids)
         stats = StatsModelRun(zone_ids, 30)
         print(stats)
-        sendLevel1Email(customer, mappng , pricechangepng, forsalehomes, stats)
+        sendLevel1Email(customer, mappng , pricechangepng, forsalehomes, stats, forreal)
         # print(f"Prepared email for {customer.email} with images: {mappng}")
 
     return jsonify({

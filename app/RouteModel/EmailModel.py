@@ -261,7 +261,7 @@ import random
 def generate_weekly_summary(city_name, stats):
     options = [
         {
-            "headline": f"{stats['fast_sales']} homes sold in under a week.",
+            "headline": f"Out of {stats['total_pending']} that went under contract this week, {stats['fast_sales']} homes sold in under a week.",
             "body": f"{stats['total_pending']} homes went pending in {city_name} this week. The market is moving fast — the quickest went pending in just {stats['fastest_days']} days."
         },
         {
@@ -275,7 +275,7 @@ def generate_weekly_summary(city_name, stats):
     ]
     return random.choice(options)
 
-def sendLevel1Email(customer, mappng, pricechangepng, forsalehomes, stats):
+def sendLevel1Email(customer, mappng, pricechangepng, forsalehomes, stats, forreal=False):
     # subject, body, recipient = defaultrecipient, html_content = None
 
 
@@ -292,12 +292,14 @@ def sendLevel1Email(customer, mappng, pricechangepng, forsalehomes, stats):
         showScheduleButton=True
     )
 
-    # send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
-    #            html_content=html_content,
-    #            recipient =customer.email)
-    send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
-               html_content=html_content,
-               recipient =defaultrecipient)
+    if forreal:
+        send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
+                   html_content=html_content,
+                   recipient =customer.email)
+    else:
+        send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
+                   html_content=html_content,
+                   recipient =defaultrecipient)
     # send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
     #            html_content=html_content,
     #            recipient =mo_email)

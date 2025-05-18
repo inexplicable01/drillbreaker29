@@ -9,7 +9,7 @@ from flask import flash,Blueprint, render_template, redirect, url_for, request,j
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,AreaReportModelRunForSale
 from app.config import Config, SW, RECENTLYSOLD, FOR_SALE, PENDING
-
+from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 customer_interest_bp = Blueprint('customer_interest_bp', __name__, url_prefix='/customer_interest')
 from app.DBFunc.CustomerZoneController import customerzonecontroller
 from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
@@ -287,15 +287,27 @@ def gatherCustomerData(customer_id, selected_doz):
     # Loop through neighborhoods to extract data when city is 'Seattle'
     customerzpidcontroller
 
-    for customerzone in customer.zones:
-        city_name = customerzone.zone.City
+    #Main City Function this is for customers that we don't have a lot of info on yet.
+    ## if zone len is zero that means we only know their main city but not the details.
+    zones=[]
+    if len(customer.zones) ==0:
+        wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
+        if wcity:
+            zones= washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
+        else:
+            zones = washingtonzonescontroller.getzonebyName(customer.maincity.City)
+    else:
+        for customerzone in customer.zones:
+            zones.append(washingtonzonescontroller.getZonebyID(customerzone.zone_id))
+
+    for zone in zones:
         # city_name = area["city"]  # Assuming `city` is in the returned dictionary
-        print(customerzone.zone.__str__())
+        print(zone.__str__())
         area={}
-        zonestats = zonestatscachecontroller.get_zone_stats_by_zone(customerzone.zone)
-        locationzonenames.append(customerzone.zone.zonename())
-        area["zone"]=customerzone.zone.zonename()
-        area["zone_id"] = customerzone.zone.id
+        zonestats = zonestatscachecontroller.get_zone_stats_by_zone(zone)
+        locationzonenames.append(zone.zonename())
+        area["zone"]=zone.zonename()
+        area["zone_id"] = zone.id
         # if city_name == "Seattle":
         #     # Query the database to fetch the full row for this neighborhood
         #
@@ -326,6 +338,8 @@ def gatherCustomerData(customer_id, selected_doz):
         #         area["forsaleadded7_SFH"] = city_row.forsaleadded7_SFH
         #         area["forsaleadded7_TCA"] = city_row.forsaleadded7_TCA
         #         area["sold"] = city_row.sold
+
+
     # neighbourhoods_subs = []
     # cities = []
     # for n in locations:

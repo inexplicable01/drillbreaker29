@@ -8,6 +8,7 @@ class Customer(db.Model):
     __tablename__ = 'Customer'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
+    lastname = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), nullable=False, unique=True)
     phone = db.Column(db.String(20), nullable=True)
     minprice = db.Column(db.Integer, nullable=True)
@@ -28,7 +29,7 @@ class Customer(db.Model):
 
     def __str__(self):
         return (
-            f"Customer(ID: {self.id}, Name: {self.name}, Email: {self.email}, "
+            f"Customer(ID: {self.id}, Name: {self.name} {self.lastname}, Email: {self.email}, "
             f"Phone: {self.phone}, Price Range: {self.minprice}-{self.maxprice} (Ideal: {self.idealprice}), "
             f"Square Footage: {self.minsqft}-{self.maxsqft} (Ideal: {self.idealsqft}))"
         )
@@ -68,6 +69,7 @@ class CustomerController():
                 {
                     "id": customer.id,
                     "name": customer.name,
+                    "lastname": customer.name,
                     "email": customer.email,
                     "phone": customer.phone,
                     "price_range": f"{customer.minprice}-{customer.maxprice} (Ideal: {customer.idealprice})",
