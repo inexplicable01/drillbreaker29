@@ -476,7 +476,8 @@ class BriefListingController():
         # Execute the query with all filters applied at once
         return BriefListing.query.filter(*filters)
 
-    def get_recent_listings(self, customer, zone_ids, limit=4):
+
+    def get_recent_listings(self, customer, zone_ids, limit=4, homestatus=FOR_SALE):
         filters = []
 
         # Limit to zones the customer is watching
@@ -499,7 +500,7 @@ class BriefListingController():
             filters.append(BriefListing.price >= customer.minprice)
 
         # Only active or for sale listings (you can change this)
-        filters.append(BriefListing.homeStatus == FOR_SALE)
+        filters.append(BriefListing.homeStatus == homestatus)
 
         # Sort by listtime DESC to get newest first
         return (

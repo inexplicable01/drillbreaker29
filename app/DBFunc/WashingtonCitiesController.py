@@ -1,7 +1,7 @@
 # from app.DBModels.WashingtonCities import WashingtonCities
 from app.DBFunc.CustomerController import Customer
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, Double,Float, String, Text, BigInteger, DateTime, Numeric
+from sqlalchemy import Column, Integer, Double,Float, String, Text, BigInteger, DateTime, Numeric, or_
 
 # Base = declarative_base()
 from app.extensions import db
@@ -48,23 +48,33 @@ class WashingtonCitiesController():
     #     )
     #     return [city[0] for city in result]
 
-    def get_city_names_for_level1_buyers(self):
+    def get_city_names_for_level1or2_buyers(self):
 
         result = (
             db.session.query(self.WashingtonCities.City)
             .join(self.WashingtonCities.customers)
-            .filter(Customer.customer_type_id == 1)
+            .filter(
+                or_(
+                    Customer.customer_type_id == 1,
+                    Customer.customer_type_id == 3
+                )
+            )
             .distinct()
             .all()
         )
         return [city[0] for city in result]
 
-    def get_city_names_for_level1_sellers(self):
+    def get_city_names_for_level1or2_sellers(self):
 
         result = (
             db.session.query(self.WashingtonCities.City)
             .join(self.WashingtonCities.customers)
-            .filter(Customer.customer_type_id == 2)
+            .filter(
+                or_(
+                    Customer.customer_type_id == 2,
+                    Customer.customer_type_id == 4
+                )
+            )
             .distinct()
             .all()
         )

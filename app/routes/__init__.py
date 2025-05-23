@@ -16,7 +16,7 @@ from .email_monitor import emailmonitorbp
 from .rentalhomes import rental_bp
 from .fsbo import fsbo_bp
 from .zonestats import zonestats_bp
-from .customerzoneroute import customer_interest_bp
+from .customerzoneRoute import customer_interest_bp
 from .picturedealingbp import save_image_bp
 from .campaignRoute import campaignRoute_bp
 from .usefulRoute import useful_bp

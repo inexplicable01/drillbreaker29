@@ -11,11 +11,11 @@
     <script src="https://unpkg.com/leaflet-image/leaflet-image.js"></script>
     <script>
         function fetchZoneDetails(zone_id, customer_id) {
-            console.log("Sending Data:", { zone_id: zone_id, customer_id: customer_id });
+            console.log("Sending Data:", {zone_id: zone_id, customer_id: customer_id});
             fetch(`/customer_interest/get_zone_details`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({zone_id: zone_id, customer_id:customer_id})
+                body: JSON.stringify({zone_id: zone_id, customer_id: customer_id})
             })
                 .then(response => response.json())
                 .then(data => {
@@ -50,31 +50,84 @@
                 `<h3>Likelihood Score: ${data.likelihood_score}%</h3><h3>Reason: ${data.reason}%</h3>`;
         }
     </script>
+    <style>
+        .tab {
+            cursor: pointer;
+            padding: 10px 20px;
+            display: inline-block;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            margin-right: 5px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .tab.active {
+            background-color: #fff;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 0 0 8px 8px;
+            background-color: #fff;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
     {% include "js/card_mini_buttons.html" with context %}
 </head>
 <body>
 <div class="container">
-    {% if Webpage %}
-        <div class="content-wrapper">
-            <div class="topleft-box">
-                <button onclick="window.location.href='{{ url_for('customer_interest_bp.listCustomers') }}'">
-                    Back to Customers
-                </button>
-            </div>
-            <div class="topmiddle-box">
-                <h1>Customer Neighborhood Interests</h1>
-            </div>
-            <div class="topright-box">
-                <form action="{{ url_for('customer_interest_bp.send_email', customer_id=customer.id) }}" method="POST"
-                      style="margin-top: 20px;">
-                    <button type="submit">Send Neighborhood Interests to Email</button>
-                </form>
-                {#                <button id="capture-map">Capture Map</button>#}
-            </div>
 
 
+    <script>
+        function showTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(div => div.classList.remove('active'));
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            // Activate the clicked tab
+            event.target.classList.add('active');
+
+            setTimeout(() => {
+                if (tabId === 'available' && window.map_forsale) {
+                    map_forsale.invalidateSize();
+                } else if (tabId === 'hotness' && window.map_Sold) {
+                    map_Sold.invalidateSize();
+                }
+            }, 200);
+        }
+    </script>
+
+    <div class="content-wrapper">
+        <div class="topleft-box">
+            {#            <button onclick="window.location.href='{{ url_for('customer_interest_bp.listCustomers') }}'">#}
+            {#                Back to Customers#}
+            {#            </button>#}
         </div>
-        <div id="message-box" style="
+        <div class="topmiddle-box">
+            <h1>Customer Neighborhood Interests for {{ customer.name }}</h1>
+        </div>
+        <div class="topright-box">
+            <form action="{{ url_for('customer_interest_bp.send_email', customer_id=customer.id) }}" method="POST"
+                  style="margin-top: 20px;">
+                <button type="submit">Send Neighborhood Interests to Email</button>
+            </form>
+            {#                <button id="capture-map">Capture Map</button>#}
+        </div>
+
+
+    </div>
+    <div id="message-box" style="
     display: none;
     position: fixed;
     top: 10px;
@@ -89,32 +142,34 @@
     font-weight: bold;
     text-align: center;
     z-index: 1000;">
-        </div>
-        <div>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <ul>
-                        {% for category, message in messages %}
-                            <li class="{{ category }}">{{ message }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            {% endwith %}
-        </div>
+    </div>
+    <div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul>
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
 
 
+<div>
+    <div class="tab {% if active_tab == 'available' %}active{% endif %}" onclick="showTab('available')">Available Homes</div>
+    <div class="tab {% if active_tab == 'hotness' %}active{% endif %}" onclick="showTab('hotness')">Market Hotness</div>
+</div>
 
-    {% endif %}
-
-    <h1>How Are Houses in this region selling?</h1>
-    {% if Webpage %}
+    <!-- Tab Content -->
+    <div id="available" class="tab-content {% if active_tab == 'available' %}active{% endif %}">
+        <h1>How Are Houses in this region selling?</h1>
         <div class="content-wrapper">
             <div class="map-box">
                 For Sale
                 <div id="map_forsale"></div>
                 {% include "InterestReport/ForSaleMapScript.html" with context %}
             </div>
-
             <div class="forsale-box ">
                 {% include "components/AddMLSDiv.html" with context %}
                 {% for (aicomment,home) in selectedaicomments %}
@@ -122,58 +177,32 @@
                         {% include "components/neighbourhood_details_card_mini.html" %}
                     {% endwith %}
                 {% endfor %}
-
-            </div>
-
-
-        </div>
-
-
-
-    {% else %}
-        <div id="map-container">
-            <img src="{{ url_image_path }}" alt="Map Image">
-        </div>
-    {% endif %}
-
-    {##}
-    {#    <div>#}
-    {#        {% for home, aicomments in homes_with_comments %}#}
-    {#            {% include "components/neighbourhood_details_card_mini.html" with context %}#}
-    {#        {% endfor %}#}
-    {#    </div>#}
-    {##}
-
-
-    {% include "InterestReport/InterestTable.html" with context %}
-    {##}
-    <div id="details-container"></div>
-
-    <div id="customer_interest">
-    {% include "components/Customer_Interest_Track.html" with context %}
-    </div>
-
-    <h1>Market Analysis of Sold Properties</h1>
-    <div class="content-wrapper">
-        <div class="map-box">
-
-
-            <div id="map_Sold"></div>
-            {% include "ClickAbleMap/SoldMapScript.html" with context %}
-            {% include "InterestReport/SoldMapLegend.html" with context %}
-
-        </div>
-        <div class="forsale-box ">
-            <div style="text-align: center;">
-                <h2>Sold Houses in the last {{ selected_doz }} days</h2>
-                <img id="graphImage" src="data:image/png;base64,{{ plot_url }}"
-                     alt="House Price vs. Days to Pending">
-
-                {#                <img id="graphImage" src="{{ plot_url }}" alt="House Price vs. Days to Pending">#}
             </div>
         </div>
+        {% include "InterestReport/InterestTable.html" with context %}
     </div>
-    {% include 'ClickAbleMap/data_table.html' %}
+    <div id="hotness" class="tab-content {% if active_tab == 'hotness' %}active{% endif %}">
+        <h1>Market Analysis of Sold Properties</h1>
+        <div class="content-wrapper">
+            <div class="map-box">
+                <div id="map_Sold"></div>
+                {% include "ClickAbleMap/SoldMapScript.html" with context %}
+                {% include "InterestReport/SoldMapLegend.html" with context %}
+            </div>
+            <div class="forsale-box ">
+                <div style="text-align: center;">
+                    <h2>Sold Houses in the last {{ selected_doz }} days</h2>
+                    <img id="graphImage" src="data:image/png;base64,{{ plot_url }}"
+                         alt="House Price vs. Days to Pending">
+                </div>
+            </div>
+        </div>
+        {% include 'ClickAbleMap/data_table.html' %}
+        <div id="details-container"></div>
+        <div id="customer_interest">
+            {% include "components/Customer_Interest_Track.html" with context %}
+        </div>
+    </div>
 
 
 </div>

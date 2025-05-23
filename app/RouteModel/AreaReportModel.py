@@ -15,57 +15,60 @@ from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.config import RECENTLYSOLD, FOR_SALE, PENDING
 import statistics
-
+from app.DBFunc.CustomerZoneController import customerzonecontroller
+from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
+from app.DBFunc.AIListingController import ailistingcontroller
+from app.config import Config, SW, RECENTLYSOLD, FOR_SALE, PENDING
 # model = load('linear_regression_model.joblib')
-def AreaReportGatherData(neighbourhoods, doz):
-    # soldbriefarr=[]
-    # forsalebriefarr=[]
-    count =0
-
-
-
 def ListAllNeighhourhoodsByCities(neighbourhoods, doz):
     return brieflistingcontroller.ListingsByCities(neighbourhoods, doz)
 
-
-
-def StatsModelRun(zone_ids, daysofconcern):
-    fastest_days=10
-    fast_sales=0
-    under_list=0
-    above_list=0
-    list2penddayslist=[]
+def StatsModelRun(zone_ids, daysofconcern, daysofconcernforlistings=7):
+    fastest_days = 10
+    fast_sales = 0
+    under_list = 0
+    above_list = 0
+    sold_prices = []
+    list2penddayslist = []
 
     soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, daysofconcern).all()
     pending = brieflistingcontroller.listingsByZonesandStatus(zone_ids, PENDING, daysofconcern).all()
-    brieflistings = soldhomes+pending
+    new_listings = brieflistingcontroller.listingsByZonesandStatus(zone_ids, FOR_SALE, daysofconcernforlistings).all()  # Assumes NEW status constant
+
+    brieflistings = soldhomes + pending
     print(len(brieflistings))
     for brieflisting in brieflistings:
         if brieflisting.list2penddays is not None:
-            if brieflisting.list2penddays<fastest_days:
-                fastest_days=brieflisting.list2penddays
-            if brieflisting.list2penddays<11:
-                fast_sales+=1
+            if brieflisting.list2penddays < fastest_days:
+                fastest_days = brieflisting.list2penddays
+            if brieflisting.list2penddays < 11:
+                fast_sales += 1
             list2penddayslist.append(brieflisting.list2penddays)
+
         if brieflisting.listprice is not None and brieflisting.soldprice is not None:
-            if brieflisting.soldprice<brieflisting.listprice:
-                under_list+=1
+            if brieflisting.soldprice < brieflisting.listprice:
+                under_list += 1
             else:
-                above_list+=1
+                above_list += 1
+            sold_prices.append(brieflisting.soldprice)
 
 
-    median_days = (
-        statistics.median(list2penddayslist) if list2penddayslist else None
-    )
+    median_days = statistics.median(list2penddayslist) if list2penddayslist else None
+    avg_days_on_market = statistics.mean(list2penddayslist) if list2penddayslist else None
+    avg_sold_price = statistics.mean(sold_prices) if sold_prices else None
 
-    return    {
+
+    return {
         "total_sold": len(soldhomes),
         "total_pending": len(pending),
+        "new_listings": len(new_listings),
         "fast_sales": fast_sales,
         "under_list": under_list,
         "above_list": above_list,
         "fastest_days": fastest_days,
-        "median_days": median_days
+        "median_days": median_days,
+        "avg_days_on_market": avg_days_on_market,
+        "avg_sold_price": avg_sold_price
     }
 from datetime import datetime, timedelta
 def AreaReportModelRun(selected_zones, selectedhometypes,soldlastdays):
@@ -226,3 +229,118 @@ def displayModel(neighbourhoods, selectedhometypes):
     buf2.seek(0)
 
     return base64.b64encode(buf2.read()).decode('utf-8')
+
+
+def gatherCustomerData(customer_id, selected_doz):
+    customer = customerzonecontroller.get_customer_zone(customer_id)
+    # customer = customerzonecontroller.get_customer(customer_id)
+
+    if not customer:
+        return None, None, None
+    homeType=None
+    forsalehomes=[]#SW.SINGLE_FAMILY
+    locations=[]
+    locationzonenames=[]
+    # Loop through neighborhoods to extract data when city is 'Seattle'
+    # customerzpidcontroller
+
+    #Main City Function this is for customers that we don't have a lot of info on yet.
+    ## if zone len is zero that means we only know their main city but not the details.
+    zones=[]
+    if len(customer.zones) ==0:
+        wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
+        if wcity:
+            zones= washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
+        else:
+            zones = washingtonzonescontroller.getzonebyName(customer.maincity.City)
+    else:
+        for customerzone in customer.zones:
+            zones.append(washingtonzonescontroller.getZonebyID(customerzone.zone_id))
+
+    for zone in zones:
+        # city_name = area["city"]  # Assuming `city` is in the returned dictionary
+        print(zone.__str__())
+        area={}
+        zonestats = zonestatscachecontroller.get_zone_stats_by_zone(zone)
+        locationzonenames.append(zone.zonename())
+        area["zone"]=zone.zonename()
+        area["zone_id"] = zone.id
+        # if city_name == "Seattle":
+        #     # Query the database to fetch the full row for this neighborhood
+        #
+        #
+        #     forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType,
+        #                                                                      neighbourhood_sub=area["neighbourhood_sub"]).all()
+        if zonestats:
+            area["forsale"]=zonestats.forsale
+            area["pending7_SFH"] = zonestats.pending7_SFH
+            area["pending7_TCA"] = zonestats.pending7_TCA
+            area["sold7_SFH"] = zonestats.sold7_SFH
+            area["sold7_TCA"] = zonestats.sold7_TCA
+            area["forsaleadded7_SFH"] = zonestats.forsaleadded7_SFH
+            area["forsaleadded7_TCA"] = zonestats.forsaleadded7_TCA
+            area["sold"] = zonestats.sold
+            locations.append(area)
+        # else:
+        #     city_row = zonestatscachecontroller.get_zone_stats_by_zone(city_name)
+        #     forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType
+        #                                                                       ).all()
+        #     print(f"{city_name}")
+        #     if city_row:
+        #         area["forsale"]=city_row.forsale
+        #         area["pending7_SFH"] = city_row.pending7_SFH
+        #         area["pending7_TCA"] = city_row.pending7_TCA
+        #         area["sold7_SFH"] = city_row.sold7_SFH
+        #         area["sold7_TCA"] = city_row.sold7_TCA
+        #         area["forsaleadded7_SFH"] = city_row.forsaleadded7_SFH
+        #         area["forsaleadded7_TCA"] = city_row.forsaleadded7_TCA
+        #         area["sold"] = city_row.sold
+
+
+    # neighbourhoods_subs = []
+    # cities = []
+    # for n in locations:
+    #     neighbourhoods_subs.append(n["neighbourhood_sub"])
+    #     cities.append(n["city"])
+    # customerlistings = brieflistingcontroller.getListingByCustomerPreference(customer, FOR_SALE, 90)
+    aicomments = ailistingcontroller.retrieve_ai_evaluation(customer_id)
+    customerlistings=[]
+    selectedaicomments=[]
+    ai_comment_zpid=[]
+    for aicomment in aicomments:
+        print(aicomment.listing.homeStatus)
+        if aicomment.listing.homeStatus !=FOR_SALE:
+            continue
+        selectedaicomments.append((aicomment,aicomment.listing))
+        customerlistings.append(aicomment.listing )
+        ai_comment_zpid.append(aicomment.listing.zpid)
+        if selectedaicomments.__len__()>10:
+            break
+
+
+    housesoldpriceaverage, soldhomes = AreaReportModelRun(locationzonenames,
+                                                                               [SW.TOWNHOUSE, SW.SINGLE_FAMILY], selected_doz)
+
+    plot_url = createPriceChangevsDays2PendingPlot(soldhomes)
+    plot_url2= createPricevsDays2PendingPlot(soldhomes)
+
+
+    asdf, forsalebrieflistings = AreaReportModelRunForSale(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
+                                                                            365)
+    forsalehomes_dict=[]
+    for brieflisting in forsalebrieflistings:
+        if brieflisting.fsbo_status is None:
+            forsalehomes_dict.append(brieflisting.to_dict())
+
+    brieflistings_SoldHomes_dict=[]
+    for brieflisting in soldhomes:
+        if brieflisting.fsbo_status is None: # don't want to include fsbos cause it causes an error
+            # hard code out for now.
+            brieflistings_SoldHomes_dict.append(
+               brieflisting.to_dict()
+            )
+
+
+    return (customer, locations , locationzonenames , customerlistings , housesoldpriceaverage,
+            plot_url, plot_url2, soldhomes , forsalehomes_dict, brieflistings_SoldHomes_dict ,
+            selectedaicomments,ai_comment_zpid)

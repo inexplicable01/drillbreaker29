@@ -18,9 +18,11 @@ from app.DBFunc.CustomerController import customercontroller
 from app.DBFunc.PropertyListingController import propertylistingcontroller
 from app.MapTools.MappingTools import WA_geojson_features, create_map
 from app.RouteModel.AIModel import AIModel
-from app.RouteModel.EmailModel import sendCustomerEmail, sendemailforcustomerhometour
+from app.RouteModel.EmailModel import sendemailforcustomerhometour
 from app.DBFunc.CustomerZpidController import customerzpidcontroller
 from app.ZillowAPI.ZillowAPICall import SearchZilowByMLSID, SearchZillowByZPID
+
+from app.RouteModel.AreaReportModel import gatherCustomerData
 from app.GraphTools.plt_plots import *
 
 @customer_interest_bp.route('/customers', methods=['GET'])
@@ -28,10 +30,24 @@ def listCustomers():
     # Fetch all customers from the database (pseudo-code function)
     customers = customercontroller.getAllCustomer()
 
+    def customer_type_sort_key(customer):
+        type_order = {
+            'Level 1 Buyer': 1,
+            'Level 2 Buyer': 2,
+            'Level 3 Buyer': 3,
+            'Level 1 Seller': 4,
+            'Level 2 Seller': 5,
+            'Level 3 Seller': 6,
+            'Past Buyer':7,
+            'Past Seller':8,
+        }
+        return type_order.get(customer.customertype.type_name, 999)
+
+    customers_sorted = sorted(customers, key=customer_type_sort_key)
     if not customers:
         return "No customers found", 404
 
-    return render_template('CustomerList.html', customers=customers)
+    return render_template('CustomerList.html', customers=customers_sorted)
 
 
 @customer_interest_bp.route('/listCustomersforAlerts', methods=['GET'])
@@ -270,144 +286,6 @@ def retire_zpid():
         return "ZPID not found or unable to retire", 404
     # Query the specific ZPID for the customer and mark it as retired
 
-
-
-
-
-def gatherCustomerData(customer_id, selected_doz):
-    customer = customerzonecontroller.get_customer_zone(customer_id)
-    # customer = customerzonecontroller.get_customer(customer_id)
-
-    if not customer:
-        return None, None, None
-    homeType=None
-    forsalehomes=[]#SW.SINGLE_FAMILY
-    locations=[]
-    locationzonenames=[]
-    # Loop through neighborhoods to extract data when city is 'Seattle'
-    customerzpidcontroller
-
-    #Main City Function this is for customers that we don't have a lot of info on yet.
-    ## if zone len is zero that means we only know their main city but not the details.
-    zones=[]
-    if len(customer.zones) ==0:
-        wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
-        if wcity:
-            zones= washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
-        else:
-            zones = washingtonzonescontroller.getzonebyName(customer.maincity.City)
-    else:
-        for customerzone in customer.zones:
-            zones.append(washingtonzonescontroller.getZonebyID(customerzone.zone_id))
-
-    for zone in zones:
-        # city_name = area["city"]  # Assuming `city` is in the returned dictionary
-        print(zone.__str__())
-        area={}
-        zonestats = zonestatscachecontroller.get_zone_stats_by_zone(zone)
-        locationzonenames.append(zone.zonename())
-        area["zone"]=zone.zonename()
-        area["zone_id"] = zone.id
-        # if city_name == "Seattle":
-        #     # Query the database to fetch the full row for this neighborhood
-        #
-        #
-        #     forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType,
-        #                                                                      neighbourhood_sub=area["neighbourhood_sub"]).all()
-        if zonestats:
-            area["forsale"]=zonestats.forsale
-            area["pending7_SFH"] = zonestats.pending7_SFH
-            area["pending7_TCA"] = zonestats.pending7_TCA
-            area["sold7_SFH"] = zonestats.sold7_SFH
-            area["sold7_TCA"] = zonestats.sold7_TCA
-            area["forsaleadded7_SFH"] = zonestats.forsaleadded7_SFH
-            area["forsaleadded7_TCA"] = zonestats.forsaleadded7_TCA
-            area["sold"] = zonestats.sold
-            locations.append(area)
-        # else:
-        #     city_row = zonestatscachecontroller.get_zone_stats_by_zone(city_name)
-        #     forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType
-        #                                                                       ).all()
-        #     print(f"{city_name}")
-        #     if city_row:
-        #         area["forsale"]=city_row.forsale
-        #         area["pending7_SFH"] = city_row.pending7_SFH
-        #         area["pending7_TCA"] = city_row.pending7_TCA
-        #         area["sold7_SFH"] = city_row.sold7_SFH
-        #         area["sold7_TCA"] = city_row.sold7_TCA
-        #         area["forsaleadded7_SFH"] = city_row.forsaleadded7_SFH
-        #         area["forsaleadded7_TCA"] = city_row.forsaleadded7_TCA
-        #         area["sold"] = city_row.sold
-
-
-    # neighbourhoods_subs = []
-    # cities = []
-    # for n in locations:
-    #     neighbourhoods_subs.append(n["neighbourhood_sub"])
-    #     cities.append(n["city"])
-    # customerlistings = brieflistingcontroller.getListingByCustomerPreference(customer, FOR_SALE, 90)
-    aicomments = ailistingcontroller.retrieve_ai_evaluation(customer_id)
-    customerlistings=[]
-    selectedaicomments=[]
-    ai_comment_zpid=[]
-    for aicomment in aicomments:
-        print(aicomment.listing.homeStatus)
-        if aicomment.listing.homeStatus !=FOR_SALE:
-            continue
-        selectedaicomments.append((aicomment,aicomment.listing))
-        customerlistings.append(aicomment.listing )
-        ai_comment_zpid.append(aicomment.listing.zpid)
-        if selectedaicomments.__len__()>10:
-            break
-
-
-    housesoldpriceaverage, soldhomes = AreaReportModelRun(locationzonenames,
-                                                                               [SW.TOWNHOUSE, SW.SINGLE_FAMILY], selected_doz)
-
-    plot_url = createPriceChangevsDays2PendingPlot(soldhomes)
-    plot_url2= createPricevsDays2PendingPlot(soldhomes)
-
-
-    asdf, forsalebrieflistings = AreaReportModelRunForSale(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
-                                                                            365)
-    forsalehomes_dict=[]
-    for brieflisting in forsalebrieflistings:
-        if brieflisting.fsbo_status is None:
-            forsalehomes_dict.append(brieflisting.to_dict())
-
-    brieflistings_SoldHomes_dict=[]
-    for brieflisting in soldhomes:
-        if brieflisting.fsbo_status is None: # don't want to include fsbos cause it causes an error
-            # hard code out for now.
-            brieflistings_SoldHomes_dict.append(
-               brieflisting.to_dict()
-            )
-
-
-    return (customer, locations , locationzonenames , customerlistings , housesoldpriceaverage,
-            plot_url, plot_url2, soldhomes , forsalehomes_dict, brieflistings_SoldHomes_dict ,
-            selectedaicomments,ai_comment_zpid)
-    # return customer, locations, cities, neighbourhoods_subs, forsalehomes
-
-
-
-@customer_interest_bp.route('/send_email/<int:customer_id>', methods=['POST'])
-def send_email(customer_id):
-    # Query the customer and their interests
-    # customer = Customer.query.get(customer_id)
-
-    (customer, locations, locationzonenames, customerlistings,
-     housesoldpriceaverage, plot_url, plot_url2,
-     soldhomes, forsalehomes_dict,
-     brieflistings_SoldHomes_dict, selectedaicomments, ai_comment_zpid)  = gatherCustomerData(customer_id, 30)
-
-    if not customer:
-        return "No customers found", 404
-    sendCustomerEmail(customer,locations, plot_url, soldhomes, selectedaicomments)
-
-    # Redirect back to the same interests page after sending email
-    return redirect(url_for('customer_interest_bp.displayCustomerInterest', customer_id=customer_id))
-
 from pathlib import Path
 import os
 @customer_interest_bp.route('/all', methods=['GET','POST'])
@@ -446,6 +324,11 @@ def displayCustomerInterest():
         if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
             customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data()
 
+    if len(zpidlist)>0:
+        active_tab='available'
+    else:
+        active_tab='hotness'
+
     return render_template('InterestReport/NeighbourhoodInterest.html',
                            customer=customer,
                            Webpage=True,
@@ -464,7 +347,8 @@ def displayCustomerInterest():
                             selectedaicomments=selectedaicomments,
                            ai_comment_zpid=ai_comment_zpid,
                            customerzpid_array=customer.customerzpid_array,
-                           zpidlist=zpidlist
+                           zpidlist=zpidlist,
+                           active_tab=active_tab
                            )
 
 

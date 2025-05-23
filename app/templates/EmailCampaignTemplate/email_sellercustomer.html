@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Weekly Market Update</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; background-color: #f4f4f4; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background-color: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <p>Hi {{ customer.name }},</p>
+
+        <p>Thinking about selling, but not sure if now’s the right time?</p>
+
+        <p>Here’s a quick snapshot of what’s happening this week in your neighborhood:</p>
+
+        <ul>
+            <li>📈 {{ stats.new_listings }} homes listed in the past 7 days in {{ customer.maincity.City }}</li>
+            <li>💰 Average sold price: ${{ stats.avg_sold_price | int  }}</li>
+            <li>⏳ Homes are selling in just {{ stats.avg_days_on_market }} days on average</li>
+        </ul>
+
+        <p>If you're even <em>thinking</em> about selling in the next few months, it’s worth chatting. I can give you a data-backed price estimate + strategy to sell fast — <strong>without paying 3% listing commissions</strong>.</p>
+
+        <p>At <strong>Wayber</strong>, we help sellers keep more of their equity while still providing the full marketing, staging, negotiation, and paperwork support you'd expect from a top-tier agent — just without the bloated fees.</p>
+
+        <p>➡️ <strong>Reply to this email</strong> if you'd like a quick, no-pressure walkthrough of how much you could walk away with in today’s market.</p>
+
+        <p>Talk soon,<br>
+        Waichak Luk<br>
+        CEO | Wayber<br>
+        📞 206-880-0760<br>
+        🌐 <a href="{{ website }}">{{ website }}</a><br>
+        📍 Serving King & Snohomish Counties</p>
+    </div>
+</body>
+</html>

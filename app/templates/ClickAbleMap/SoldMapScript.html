@@ -1,7 +1,11 @@
+
+
+<!-- Include Leaflet and jQuery -->
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://unpkg.com/leaflet-image/leaflet-image.js"></script>
 <script>
-    var map_Sold = L.map('map_Sold'); // Centered on Seattle
+    var map_Sold = L.map('map_Sold', { scrollWheelZoom: false }); // Centered on Seattle
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

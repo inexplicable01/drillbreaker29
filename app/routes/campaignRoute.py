@@ -7,13 +7,15 @@ from app.DBModels.BriefListing import BriefListing
 from app.config import Config, SW, RECENTLYSOLD, FOR_SALE
 from app.DBFunc.CustomerTypeController import customertypecontroller
 from app.RouteModel.AreaReportModel import AreaReportModelRun,AreaReportModelRunForSale, StatsModelRun
-from app.RouteModel.EmailModel import sendLevel1Email, sendunsubscribemeail
+from app.RouteModel.EmailModel import sendLevel1BuyerEmail, sendunsubscribemeail,sendLevel3BuyerEmail , sendLevel1_2SellerEmail
+from app.RouteModel.AreaReportModel import gatherCustomerData
 # from app.RouteModel.AIModel import AIModel
 # from app.DBFunc.AIListingController import ailistingcontroller
 # from app.ZillowAPI.ZillowAPICall import SearchZillowHomesByZone
 # from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
 #     loadPropertyDataFromBrief, ListingStatus
 from datetime import datetime, timedelta
+from app.DBFunc.CustomerController import customercontroller
 import re
 from app.MapTools.MappingTools import create_map , WA_geojson_features
 from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID, SearchZillowHomesFSBO
@@ -50,7 +52,7 @@ def sendLevel1Buyer_sendEmail():
     next_thursday = get_next_thursday().strftime('%Y-%m-%d')
     customernames = []
     invalid_emails = []
-    uniquecities = washingtoncitiescontroller.get_city_names_for_level1_buyers()
+    uniquecities = washingtoncitiescontroller.get_city_names_for_level1or2_buyers()
     output_dir = Path("app/static/maps")
     for customer in level1_type.customers:
         print(customer.name)
@@ -72,7 +74,7 @@ def sendLevel1Buyer_sendEmail():
         forsalehomes = brieflistingcontroller.get_recent_listings(customer, zone_ids)
         stats = StatsModelRun(zone_ids, 30)
         print(stats)
-        sendLevel1Email(customer, mappng , pricechangepng, forsalehomes, stats, forreal)
+        sendLevel1BuyerEmail(customer, mappng , pricechangepng, forsalehomes, stats, forreal)
         # print(f"Prepared email for {customer.email} with images: {mappng}")
 
     return jsonify({
@@ -90,7 +92,7 @@ def sendLevel1Buyer_makepictures():
     next_thursday = get_next_thursday().strftime('%Y-%m-%d')
     customernames = []
     invalid_emails = []
-    uniquecities = washingtoncitiescontroller.get_city_names_for_level1_buyers()
+    uniquecities = washingtoncitiescontroller.get_city_names_for_level1or2_buyers()
     output_dir = Path("app/static/maps")
     for city in uniquecities:
         # getzones....
@@ -132,43 +134,40 @@ def sendLevel1Buyer_makepictures():
         'uniquecities':uniquecities
     }), 200
 
-@campaignRoute_bp.route('/sendLevel1Seller_makepictures', methods=['POST'])
-def sendLevel1Seller_makepictures():
+
+@campaignRoute_bp.route('/sendLevel1_2_Seller_sendEmail', methods=['GET'])
+def sendLevel1_2_Seller_sendEmail():
+    forreal =  request.json.get("forreal", False)
+    level1_seller = customertypecontroller.get_customer_type_by_id(2)
+    level2_seller = customertypecontroller.get_customer_type_by_id(4)
+    level1_2_seller_customers = level1_seller.customers+level2_seller.customers
     next_thursday = get_next_thursday().strftime('%Y-%m-%d')
     customernames = []
     invalid_emails = []
-    uniquecities = washingtoncitiescontroller.get_city_names_for_level1_sellers()
+    uniquecities = washingtoncitiescontroller.get_city_names_for_level1or2_sellers()
     output_dir = Path("app/static/maps")
-    for city in uniquecities:
-        # getzones....
-        map_html_path = output_dir / f'citymap_{city}_{next_thursday}.html'
-        mapname = output_dir / f'citymap_{city}_{next_thursday}.png'
-        pricechangepng = output_dir / f'pricechange_{city}_{next_thursday}.png'
-        wcity = washingtoncitiescontroller.getCity(city)
+    for customer in level1_2_seller_customers:
+        print(customer.name)
+        customernames.append(customer.name)
+        # mappng = f"{base}static/maps/citymap_{customer.maincity.City}_{next_thursday}.png"
+        # pricechangepng = f"{base}static/maps/pricechange_{customer.maincity.City}_{next_thursday}.png"
+        if not is_valid_email(customer.email):
+            invalid_emails.append({'name': customer.name, 'email': customer.email})
+            continue
+        wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
         if wcity:
             results = washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
         else:
-            results = washingtonzonescontroller.getzonebyName(city)
-
-        zonenames=[]
+            results = washingtonzonescontroller.getzonebyName(customer.maincity.City)
+        zone_ids = []
         for result in results:
-            zonenames.append(result.zonename())
-        housesoldpriceaverage, soldhomes = AreaReportModelRun(zonenames,
-                                             [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
-                                                            30)
+            zone_ids.append(result.id)
 
-        url = f'{base}useful/upload-map'
-        createPriceChangevsDays2PendingPlot(soldhomes,pricechangepng)
-        with open(pricechangepng, 'rb') as f:
-            files = {'file': (f'pricechange_{city}_{next_thursday}.png', f, 'image/png')}
-            response = requests.post(url, files=files)
-            print(response)
-
-        create_map(WA_geojson_features, zonenames, map_html_path,mapname, soldhomes)
-        with open(mapname, 'rb') as f:
-            files = {'file': (f'citymap_{city}_{next_thursday}.png', f, 'image/png')}
-            response = requests.post(url, files=files)
-            print(response)
+        soldhomes = brieflistingcontroller.get_recent_listings(customer, zone_ids, homestatus=RECENTLYSOLD)
+        stats = StatsModelRun(zone_ids, 30 , 7)
+        print(stats)
+        sendLevel1_2SellerEmail(customer,  soldhomes, stats, forreal)
+        # print(f"Prepared email for {customer.email} with images: {mappng}")
 
     return jsonify({
         'status': 'success',
@@ -178,10 +177,26 @@ def sendLevel1Seller_makepictures():
         'uniquecities':uniquecities
     }), 200
 
+@campaignRoute_bp.route('/send_email/<int:customer_id>', methods=['POST'])
+def send_email(customer_id):
+    # Query the customer and their interests
+    # customer = Customer.query.get(customer_id)
+
+    (customer, locations, locationzonenames, customerlistings,
+     housesoldpriceaverage, plot_url, plot_url2,
+     soldhomes, forsalehomes_dict,
+     brieflistings_SoldHomes_dict, selectedaicomments, ai_comment_zpid)  = gatherCustomerData(customer_id, 30)
+
+    if not customer:
+        return "No customers found", 404
+    sendLevel3BuyerEmail(customer,locations, plot_url, soldhomes, selectedaicomments)
+
+    # Redirect back to the same interests page after sending email
+    return redirect(url_for('customer_interest_bp.displayCustomerInterest', customer_id=customer_id))
 
 
 
-from app.DBFunc.CustomerController import customercontroller
+
 
 
 @campaignRoute_bp.route('/unsubscribe')

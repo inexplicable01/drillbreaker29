@@ -130,29 +130,7 @@ def sendemailforcustomerhometour(customer:Customer,brieflisting):
         print(f"Error sending email: {e}")
         flash("An error occurred while sending the email.", "danger")
 
-def sendCustomerEmail(customer:Customer,locations,
-                      plot_url, soldhomes, selectedaicomments):
 
-    email_subject = f"{customer.name} Neighborhood Interests"
-    email_html_content = render_template(
-        'InterestReport/NeighbourhoodListingEmail.html',
-        customer=customer,
-        locations=locations,
-        geojson_features=WA_geojson_features,
-        soldhouses=soldhomes,
-        selectedaicomments=selectedaicomments
-    )
-
-    try:
-        send_email(
-            subject=email_subject,
-            recipient='waichak.luk@gmail.com',#customer.email,  # Email address of the customer
-            html_content=email_html_content
-        )
-        flash("The email was sent successfully!", "success")
-    except Exception as e:
-        print(f"Error sending email: {e}")
-        flash("An error occurred while sending the email.", "danger")
 
 
 def sendEmailpending():
@@ -275,7 +253,7 @@ def generate_weekly_summary(city_name, stats):
     ]
     return random.choice(options)
 
-def sendLevel1Email(customer, mappng, pricechangepng, forsalehomes, stats, forreal=False):
+def sendLevel1BuyerEmail(customer, mappng, pricechangepng, forsalehomes, stats, forreal=False):
     # subject, body, recipient = defaultrecipient, html_content = None
 
 
@@ -303,6 +281,72 @@ def sendLevel1Email(customer, mappng, pricechangepng, forsalehomes, stats, forre
     # send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
     #            html_content=html_content,
     #            recipient =mo_email)
+
+def sendLevel3BuyerEmail(customer:Customer,locations,
+                      plot_url, soldhomes, selectedaicomments,forreal=False):
+
+    email_subject = f"{customer.name} Neighborhood Interests"
+    email_html_content = render_template(
+        'InterestReport/NeighbourhoodListingEmail.html',
+        customer=customer,
+        locations=locations,
+        geojson_features=WA_geojson_features,
+        soldhouses=soldhomes,
+        selectedaicomments=selectedaicomments
+    )
+
+    try:
+        if forreal:
+            send_email(
+                subject=email_subject,
+                recipient=customer.email,  # Email address of the customer
+                html_content=email_html_content
+            )
+        else:
+            send_email(
+                subject=email_subject,
+                recipient='waichak.luk@gmail.com',#customer.email,  # Email address of the customer
+                html_content=email_html_content
+            )
+        flash("The email was sent successfully!", "success")
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        flash("An error occurred while sending the email.", "danger")
+
+def sendLevel1_2SellerEmail(customer, soldhomes, stats,
+                            forreal=False):
+
+    email_subject = f'Wayber Real Estate Analytics : {customer.maincity.City}'
+    weekly_summary = generate_weekly_summary(customer.maincity.City, stats)
+
+    html_content = render_template(
+        'EmailCampaignTemplate/email_sellercustomer.html',  # Your template in app/templates
+        customer=customer,
+        weekly_summary=weekly_summary,
+        stats=stats,
+        soldhomes=soldhomes,
+        showScheduleButton=True,
+        website='https://www.wayber.net/'
+    )
+
+    try:
+        if forreal:
+            send_email(
+                subject=email_subject,
+                recipient=customer.email,  # Email address of the customer
+                html_content=html_content
+            )
+        else:
+            send_email(
+                subject=email_subject,
+                recipient='waichak.luk@gmail.com',#customer.email,  # Email address of the customer
+                html_content=html_content
+            )
+        flash("The email was sent successfully!", "success")
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        flash("An error occurred while sending the email.", "danger")
+
 
 def sendunsubscribemeail(customer):
     html_content = f"""
