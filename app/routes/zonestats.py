@@ -88,7 +88,7 @@ def monthlytrends():
 
 
     return render_template(
-        'MonthlyHTML/ClickAbleMap_Monthly.html',
+        'monthlyhtml/clickablemap_monthly.html',
         HOMETYPES=Config.HOMETYPES,
         geojson_features=WA_geojson_features,
         housesoldpriceaverage=[],
