@@ -5,13 +5,13 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
-    {% include 'MonthlyHTML/clickablecss.html' %} <!-- Reference external CSS -->
+    {% include 'monthlyhtml/clickablecss.html' %} <!-- Reference external CSS -->
 </head>
 <body>
 <div id="main-content">
     <div id="map-container">
         <div id="topSection">
-            {% include 'MonthlyHTML/filter_form.html' %} <!-- Include filter form -->
+            {% include 'monthlyhtml/filter_form.html' %} <!-- Include filter form -->
         </div>
         <div id="map_Sold"></div>
     </div>
@@ -23,7 +23,7 @@
 
 {#                <img id="graphImage" src="{{ plot_url }}" alt="House Price vs. Days to Pending">#}
             </div>
-{#            {% include 'MonthlyHTML/data_table.html' %} <!-- Include data table -->#}
+{#            {% include 'monthlyhtml/data_table.html' %} <!-- Include data table -->#}
         </div>
         <div id="data-section">
             <img id="graphImage" src="data:image/png;base64,{{ plot_url2 }}" alt="Homes Sold By Month">
@@ -32,6 +32,6 @@
     </div>
 </div>
 
-{% include 'MonthlyHTML/SoldMapScript.html' %}
+{% include 'monthlyhtml/SoldMapScript.html' %}
 </body>
 </html>
