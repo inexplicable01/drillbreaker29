@@ -177,8 +177,10 @@ def sendLevel1_2_Seller_sendEmail():
         'uniquecities':uniquecities
     }), 200
 
-@campaignRoute_bp.route('/send_email/<int:customer_id>', methods=['POST'])
-def send_email(customer_id):
+
+
+@campaignRoute_bp.route('/sendLevel3Buyer_sendEmail/<int:customer_id>', methods=['POST'])
+def sendLevel3Buyer_sendEmail(customer_id):
     # Query the customer and their interests
     # customer = Customer.query.get(customer_id)
 
@@ -193,8 +195,6 @@ def send_email(customer_id):
 
     # Redirect back to the same interests page after sending email
     return redirect(url_for('customer_interest_bp.displayCustomerInterest', customer_id=customer_id))
-
-
 
 
 

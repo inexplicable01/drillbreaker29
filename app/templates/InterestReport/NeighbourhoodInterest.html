@@ -118,7 +118,7 @@
             <h1>Customer Neighborhood Interests for {{ customer.name }}</h1>
         </div>
         <div class="topright-box">
-            <form action="{{ url_for('customer_interest_bp.send_email', customer_id=customer.id) }}" method="POST"
+            <form action="{{ url_for('campaignRoute_bp.sendLevel3Buyer_sendEmail', customer_id=customer.id) }}" method="POST"
                   style="margin-top: 20px;">
                 <button type="submit">Send Neighborhood Interests to Email</button>
             </form>

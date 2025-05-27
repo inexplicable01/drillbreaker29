@@ -31,8 +31,8 @@ def StatsModelRun(zone_ids, daysofconcern, daysofconcernforlistings=7):
     sold_prices = []
     list2penddayslist = []
 
-    soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, daysofconcern).all()
-    pending = brieflistingcontroller.listingsByZonesandStatus(zone_ids, PENDING, daysofconcern).all()
+    soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, daysofconcernforlistings).all()
+    pending = brieflistingcontroller.listingsByZonesandStatus(zone_ids, PENDING, daysofconcernforlistings).all()
     new_listings = brieflistingcontroller.listingsByZonesandStatus(zone_ids, FOR_SALE, daysofconcernforlistings).all()  # Assumes NEW status constant
 
     brieflistings = soldhomes + pending
@@ -41,7 +41,7 @@ def StatsModelRun(zone_ids, daysofconcern, daysofconcernforlistings=7):
         if brieflisting.list2penddays is not None:
             if brieflisting.list2penddays < fastest_days:
                 fastest_days = brieflisting.list2penddays
-            if brieflisting.list2penddays < 11:
+            if brieflisting.list2penddays < 8:
                 fast_sales += 1
             list2penddayslist.append(brieflisting.list2penddays)
 
