@@ -23,6 +23,7 @@ class Customer(db.Model):
     parkingspaceneeded = db.Column(db.Integer, nullable=True)
     customer_type_id = db.Column(db.Integer, db.ForeignKey('CustomerType.id'))
     maincity_id = db.Column(db.Integer, db.ForeignKey('WashingtonCities.city_id'))
+    dontemail = db.Column(db.Boolean, nullable=True)
 
     # interests = db.relationship('CustomerZone', back_populates='customer')
 

@@ -15,10 +15,30 @@
         <ul>
             <li>📈 {{ stats.new_listings }} homes listed in the past 7 days in {{ customer.maincity.City }}</li>
             <li>💰 Average sold price: ${{ stats.avg_sold_price | int  }}</li>
-            <li>⏳ Homes are selling in just {{ stats.avg_days_on_market }} days on average</li>
+            <li>⏳ Homes are selling in just {{ stats.avg_days_on_market  | round }} days on average</li>
         </ul>
 
-        <p>If you're even <em>thinking</em> about selling in the next few months, it’s worth chatting. I can give you a data-backed price estimate + strategy to sell fast — <strong>without paying 3% listing commissions</strong>.</p>
+                <div style="text-align: center; margin: 30px 0;">
+  <p style="font-size: 18px; font-weight: bold; color: #000; margin-bottom: 10px;">
+    Click below link to your tailored Wayber Page.<br>
+    Explore your options! Educate yourself on the trends.
+  </p>
+  <div style="margin-top: 10px;">
+    <a href="https://www.drillbreaker29.com/customer_interest/all?customer_id={{ customer.id }}"
+       target="_blank"
+       style="font-size: 18px; font-weight: bold; color: #1a73e8; text-decoration: underline;">
+      👉 Click here to view
+    </a>
+  </div>
+</div>
+
+        <p>If you're even <em>thinking</em> about selling in the next few months, it’s worth chatting. I can give you a data-backed price estimate + strategy to sell fast — <strong>without paying 2.5% listing commissions!</strong>.</p>
+
+        <p>
+            <strong>Our FULL SERVICE package price is $4995 (Includes photography!)</strong>
+        </p>
+
+
 
         <p>At <strong>Wayber</strong>, we help sellers keep more of their equity while still providing the full marketing, staging, negotiation, and paperwork support you'd expect from a top-tier agent — just without the bloated fees.</p>
 

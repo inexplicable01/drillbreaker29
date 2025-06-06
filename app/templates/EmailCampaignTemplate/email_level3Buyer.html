@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Neighborhood Interests</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    {% include "InterestReport/ReportCSS.html" with context %}
+</head>
+<body>
+<div class="container">
+
+    <h1 style="color: #2c3e50;">Hey {{ customer.name }},</h1>
+
+    <p style="font-size: 20px;">This past week in the areas you are interested in:</p>
+
+    <h2 style="color: #27ae60;">{{ weekly_summary.headline }}</h2>
+
+    <p style="margin: 20px 0;font-size: 20px;">{{ weekly_summary.body }}</p>
+
+    <!-- Stats Table -->
+    <table style="width: 100%; border-collapse: collapse; margin: 30px 0; font-size: 15px;">
+        <thead>
+        <tr style="background-color: #f2f2f2;">
+            <th style="text-align: left; padding: 10px;">Metric</th>
+            <th style="text-align: right; padding: 10px;">This Week</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td style="padding: 10px;">Homes Sold</td>
+            <td style="padding: 10px; text-align: right;">{{ stats.total_sold }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px;">Median Days on Market</td>
+            <td style="padding: 10px; text-align: right;">{{ stats.median_days }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px;">Sold Under Listing</td>
+            <td style="padding: 10px; text-align: right;">{{ stats.under_list }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px;">Sold Above Listing</td>
+            <td style="padding: 10px; text-align: right;">{{ stats.above_list }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px;">Fastest Sale</td>
+            <td style="padding: 10px; text-align: right;">{{ stats.fastest_days }} days</td>
+        </tr>
+        </tbody>
+    </table>
+<div style="text-align: center; margin: 30px 0;">
+  <p style="font-size: 18px; font-weight: bold; color: #000; margin-bottom: 10px;">
+    Click below link to your tailored Wayber Page.<br>
+    Explore your options! Educate yourself on the trends.
+  </p>
+  <div style="margin-top: 10px;">
+    <a href="https://www.drillbreaker29.com/customer_interest/all?customer_id={{ customer.id }}"
+       target="_blank"
+       style="font-size: 18px; font-weight: bold; color: #1a73e8; text-decoration: underline;">
+      👉 Click here to view
+    </a>
+  </div>
+</div>
+    <div class="forsale-box ">
+        {% for (aicomment,home) in selectedaicomments %}
+            {% with showScheduleButton=True , showTrackButton = True %}
+                {% include "components/neighbourhood_details_card_mini.html" %}
+            {% endwith %}
+        {% endfor %}
+
+    </div>
+
+
+</div>
+</body>
+</html>

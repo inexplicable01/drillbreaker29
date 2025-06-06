@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from io import BytesIO
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 import base64
 
 def createPriceChangevsDays2PendingPlot(soldhomes, savefilepath=None):
@@ -141,3 +141,42 @@ def createBarGraph(results, ylabel, title):
     buf.close()
     plt.close(fig)
     return chart_data
+
+def createBarGraphWeekly(results, ylabel, title):
+    # Get current year
+    current_year = datetime.now().year
+
+    # Filter results to only include current year
+    filtered_data = [(year, week, count) for year, week, count in results if year == current_year]
+
+    # Convert to dict
+    data = {(year, week): count for year, week, count in filtered_data}
+
+    # Sort weeks
+    sorted_keys = sorted(data.keys())  # (year, week)
+    x_labels = [f"W{week:02d}" for _, week in sorted_keys]
+    y_values = [data[(year, week)] for year, week in sorted_keys]
+
+    # Plot using Matplotlib
+    fig, ax = plt.subplots(figsize=(max(10, len(x_labels) * 0.3), 4))
+    ax.bar(range(len(x_labels)), y_values, width=0.6, color='skyblue')
+
+    # Axis labels and title
+    ax.set_xticks(range(len(x_labels)))
+    ax.set_xticklabels(x_labels, rotation=90, fontsize=8)
+    ax.set_xlabel(f"Weeks of {current_year}")
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
+
+    plt.tight_layout()
+
+    # Convert to base64 image
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    chart_data = base64.b64encode(buf.getvalue()).decode()
+    buf.close()
+    plt.close(fig)
+    return chart_data
+

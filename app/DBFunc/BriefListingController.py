@@ -699,6 +699,33 @@ class BriefListingController():
 
         return results
 
+    def getListingsByWeek(self, zone_ids, selectedhometypes, status=RECENTLYSOLD, selected_plotoption='sold'):
+        today = datetime.now()
+        start_of_week_two_years_ago = today - timedelta(weeks=104)
+        unix_cutoff = int(start_of_week_two_years_ago.timestamp())
+
+        # Determine which timestamp field to use
+        if selected_plotoption == 'sold':
+            time_field = self.BriefListing.soldtime
+        elif selected_plotoption == 'listed':
+            time_field = self.BriefListing.listtime
+        elif selected_plotoption == 'pending':
+            time_field = self.BriefListing.pendday
+        else:
+            time_field = self.BriefListing.soldtime
+
+        results = db.session.query(
+            func.year(func.from_unixtime(time_field)).label("year"),
+            func.week(func.from_unixtime(time_field), 1).label("week"),  # Mode 1: weeks start on Monday, ISO-8601
+            func.count().label("home_count")
+        ).filter(
+            self.BriefListing.homeStatus == status,
+            self.BriefListing.zone_id.in_(zone_ids),
+            self.BriefListing.homeType.in_(selectedhometypes),
+            time_field >= unix_cutoff
+        ).group_by("year", "week").order_by("year", "week").all()
+
+        return results
 
 
 

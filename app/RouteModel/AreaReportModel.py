@@ -317,14 +317,14 @@ def gatherCustomerData(customer_id, selected_doz):
         if selectedaicomments.__len__()>10:
             break
 
-
+    print("Running Area Sold Report")
     housesoldpriceaverage, soldhomes = AreaReportModelRun(locationzonenames,
                                                                                [SW.TOWNHOUSE, SW.SINGLE_FAMILY], selected_doz)
 
     plot_url = createPriceChangevsDays2PendingPlot(soldhomes)
     plot_url2= createPricevsDays2PendingPlot(soldhomes)
 
-
+    print("Running Area Sale Report")
     asdf, forsalebrieflistings = AreaReportModelRunForSale(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
                                                                             365)
     forsalehomes_dict=[]

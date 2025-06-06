@@ -80,11 +80,21 @@ def monthlytrends():
         if wzone:
             zone_ids.append(wzone.id)
     # soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, soldlastdays, selectedhometypes).all()
+    zonenames=[]
+    for id in zone_ids:
+        zone = washingtonzonescontroller.getZonebyID(id)
+        zonenames.append(zone.zonename())
+
     results = brieflistingcontroller.getListingsByMonth(zone_ids, selectedhometypes, RECENTLYSOLD, selected_plotoption)
     chart_data = createBarGraph(results, f"Homes {selected_plotoption}", f"Homes {selected_plotoption} by Month (Zones {', '.join(map(str, zone_ids))})")
 
     results2 = brieflistingcontroller.getListingsByMonth(zone_ids, selectedhometypes, RECENTLYSOLD, "listed")
     chart_data2 = createBarGraph(results2, "Homes Listed", f"Homes Listed by Month (Zones {', '.join(map(str, zone_ids))})")
+
+
+    results3 = brieflistingcontroller.getListingsByWeek(zone_ids, selectedhometypes, PENDING, "pending")
+
+    chart_data3 = createBarGraphWeekly(results3, "Homes Pending", f"Homes Pending by Week (Zones {', '.join(map(str, zonenames))})")
 
 
     return render_template(
@@ -100,6 +110,7 @@ def monthlytrends():
         selected_locations=selectedlocations,
         plot_url=chart_data,
         plot_url2=chart_data2,
+        plot_url3=  chart_data3,
         # plot_url2=plot_url2,
         soldhouses=[],
         brieflistings_SoldHomes_dict=[]

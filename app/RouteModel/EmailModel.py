@@ -260,7 +260,7 @@ def sendLevel1BuyerEmail(customer, mappng, pricechangepng, forsalehomes, stats, 
     weekly_summary = generate_weekly_summary(customer.maincity.City, stats)
 
     html_content = render_template(
-        'email_level1customer.html',  # Your template in app/templates
+        'EmailCampaignTemplate/email_level1Buyer.html',  # Your template in app/templates
         customer=customer,
         mappng=mappng,
         pricechangepng=pricechangepng,
@@ -283,12 +283,16 @@ def sendLevel1BuyerEmail(customer, mappng, pricechangepng, forsalehomes, stats, 
     #            recipient =mo_email)
 
 def sendLevel3BuyerEmail(customer:Customer,locations,
-                      plot_url, soldhomes, selectedaicomments,forreal=False):
+                      plot_url, soldhomes, selectedaicomments,stats, forreal=False):
 
+
+    weekly_summary = generate_weekly_summary(customer.maincity.City, stats)
     email_subject = f"{customer.name} Neighborhood Interests"
     email_html_content = render_template(
-        'InterestReport/NeighbourhoodListingEmail.html',
+        'EmailCampaignTemplate/email_level3Buyer.html',
+        weekly_summary=weekly_summary,
         customer=customer,
+        stats=stats,
         locations=locations,
         geojson_features=WA_geojson_features,
         soldhouses=soldhomes,
@@ -341,6 +345,36 @@ def sendLevel1_2SellerEmail(customer, soldhomes, stats,
                 subject=email_subject,
                 recipient='waichak.luk@gmail.com',#customer.email,  # Email address of the customer
                 html_content=html_content
+            )
+        flash("The email was sent successfully!", "success")
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        flash("An error occurred while sending the email.", "danger")
+
+def sendpastcustomerEmail(customer:Customer, forreal=False):
+
+
+    # weekly_summary = generate_weekly_summary(customer.maincity.City, stats)
+    email_subject = f"{customer.name} Neighborhood Interests"
+    email_html_content = render_template(
+        'EmailCampaignTemplate/email_pastcustomer.html',
+        customer = customer,
+        website='https://www.wayber.net/'
+
+    )
+
+    try:
+        if forreal:
+            send_email(
+                subject=email_subject,
+                recipient=customer.email,  # Email address of the customer
+                html_content=email_html_content
+            )
+        else:
+            send_email(
+                subject=email_subject,
+                recipient='waichak.luk@gmail.com',#customer.email,  # Email address of the customer
+                html_content=email_html_content
             )
         flash("The email was sent successfully!", "success")
     except Exception as e:
