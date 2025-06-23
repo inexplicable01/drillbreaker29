@@ -20,6 +20,8 @@ from .customerzoneRoute import customer_interest_bp
 from .picturedealingbp import save_image_bp
 from .campaignRoute import campaignRoute_bp
 from .usefulRoute import useful_bp
+from .dirtyscoop import dirty_scoop_bp
+
 
 def register_blueprints(app: Flask):
     app.register_blueprint(alert_bp)
@@ -41,3 +43,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(investmentclients_bp)
     app.register_blueprint(campaignRoute_bp)
     app.register_blueprint(useful_bp)
+    app.register_blueprint(dirty_scoop_bp)

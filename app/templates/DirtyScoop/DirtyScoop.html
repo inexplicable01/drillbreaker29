@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sex Offender Lookup</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 60%;
+            padding: 10px;
+            font-size: 1em;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .offender-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px auto;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 20px;
+        }
+        .offender-card img {
+            width: 120px;
+            height: auto;
+            border-radius: 6px;
+        }
+        .offender-details {
+            flex: 1;
+        }
+        #map {
+            height: 500px;
+            margin: 30px auto;
+            width: 90%;
+            max-width: 1000px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Sex Offender Lookup</h1>
+
+    <form method="POST">
+        <input type="text" name="address" placeholder="Enter address or zip code" required>
+        <button type="submit">Search</button>
+    </form>
+
+    {% if error %}
+        <p style="color:red; text-align:center;">{{ error }}</p>
+    {% endif %}
+
+    {% if offenders %}
+        <h2 style="text-align:center;">Found {{ offenders|length }} offender(s)</h2>
+
+        <div id="map"></div>
+
+        {% for o in offenders %}
+            <div class="offender-card">
+                <img src="{{ o.offenderImageUrl or '' }}" alt="Offender image">
+                <div class="offender-details">
+                    <h3>{{ o.firstName }} {{ o.lastName }}</h3>
+                    <p><strong>Crime:</strong> {{ o.crime }}</p>
+                    <p><strong>Sex:</strong> {{ o.sex }} | <strong>Age:</strong> {{ o.age }}</p>
+                    <p><strong>Height:</strong> {{ o.height }} | <strong>Weight:</strong> {{ o.weight }}</p>
+                    <p><strong>Race:</strong> {{ o.race }} | <strong>Hair:</strong> {{ o.hairColor }} | <strong>Eyes:</strong> {{ o.eyeColor }}</p>
+                    <p><strong>Address:</strong> {{ o.address }}, {{ o.city }}, {{ o.state }} {{ o.zipcode }}</p>
+                    <p><a href="{{ o.offenderUrl }}" target="_blank">View Official Profile</a></p>
+                </div>
+            </div>
+        {% endfor %}
+    {% elif offenders is not none %}
+        <p style="text-align:center;">No offenders found near this location.</p>
+    {% endif %}
+
+    {% if offenders %}
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([{{ offenders[0].lat }}, {{ offenders[0].lng }}], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18
+        }).addTo(map);
+
+        {% for o in offenders %}
+            L.marker([{{ o.lat }}, {{ o.lng }}])
+                .addTo(map)
+                .bindPopup(`<strong>{{ o.firstName }} {{ o.lastName }}</strong><br>{{ o.address }}<br>{{ o.city }}, {{ o.state }}<br><em>{{ o.crime }}</em>`);
+        {% endfor %}
+    </script>
+    {% endif %}
+
+</body>
+</html>
