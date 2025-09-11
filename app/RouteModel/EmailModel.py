@@ -183,7 +183,7 @@ def sendEmailpending():
         recipient=defaultrecipient
     )
 
-def EmailOutToLeads():
+def EmailOutToLeads(customerdict):
     ##  So lets try doing this with one of each type Level 1 Buyer
     # LEvel 2 buyer
     # Level 3 seller
@@ -192,7 +192,7 @@ def EmailOutToLeads():
     html_content = f"""
     <html>
         <body>
-            <p>testing</p>
+            <p>{customerdict['name']}</p>
         </body>
     </html>
     """

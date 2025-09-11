@@ -1,8 +1,8 @@
 import requests
 from datetime import datetime
 import sys
-# base = "http://127.0.0.1:5000/"
-base = "https://www.drillbreaker29.com/"
+base = "http://127.0.0.1:5000/"
+# base = "https://www.drillbreaker29.com/"
 
 getcitylisturl = base + "maintanance/getCityList"
 url3 = base + "maintanance/listingscheck"
@@ -32,9 +32,17 @@ activeCustomers = response.json()['activeCustomers']
 message = ''
 for customer in activeCustomers:
     print(customer)
+    url = f"{base}email/sendEmailOutToLeads"
+    payload = customer
+    headers = {
+        # DON'T set application/json here
+        "Content-Type": "application/x-www-form-urlencoded",
+        # include your auth headers, if any
+    }
+    response = requests.request("POST", url, headers=headers, data=payload)
+    break
 
-url = f"{base}email/sendEmailOutToLeads"
-response = requests.request("POST", url, headers=headers, data=payload)
+
 
 
 

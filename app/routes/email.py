@@ -41,7 +41,12 @@ def sendEmailPending():
 @email_bp.route('/sendEmailOutToLeads', methods=['GET','POST'])
 def sendEmailOutToLeads():
     # Assuming sendEmailwithNewListing() is a function that sends an email with new listings.
-    EmailOutToLeads()
+    customer = request.form.to_dict(flat=True)
+
+    # Log the incoming data to verify it
+    print("Received Data:", customer)  # Or use logging for production
+
+    EmailOutToLeads(customer)
     return jsonify({"message": "sendEmailOutToLeads submitted successfully!"}), 200
 
 
