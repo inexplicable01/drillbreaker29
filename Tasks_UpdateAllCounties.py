@@ -18,8 +18,8 @@ payload = {}
 headers = {}
 
 # Exit early if not Monday or Thursday
-if datetime.today().weekday() not in [0]:
-    print("Not Monday or Thursday. Exiting script.")
+if datetime.today().weekday() not in [3]:
+    print("Not Thursday. Exiting script.")
     sys.exit()
 
 response = requests.request("GET", getcitylisturl,  params=params, headers=headers, data=payload)

@@ -1,6 +1,6 @@
 # email_bp.py
 from flask import Blueprint, redirect, url_for, jsonify, request
-from app.RouteModel.EmailModel import sendEmailwithNewListing,sendAppointmentEmail,sendEmailtimecheck, sendEmailpending
+from app.RouteModel.EmailModel import sendEmailwithNewListing,sendAppointmentEmail,sendEmailtimecheck, sendEmailpending, EmailOutToLeads
 
 email_bp = Blueprint('email', __name__, url_prefix='/email')
 
@@ -37,6 +37,14 @@ def sendEmailPending():
     # Assuming sendEmailwithNewListing() is a function that sends an email with new listings.
     sendEmailpending()
     return jsonify({"message": "Viewing request submitted successfully!"}), 200
+
+@email_bp.route('/sendEmailOutToLeads', methods=['GET','POST'])
+def sendEmailOutToLeads():
+    # Assuming sendEmailwithNewListing() is a function that sends an email with new listings.
+    EmailOutToLeads()
+    return jsonify({"message": "sendEmailOutToLeads submitted successfully!"}), 200
+
+
 
 @email_bp.route('/scheduleviewing', methods=['POST'])
 def schedulingemail():

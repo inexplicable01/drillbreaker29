@@ -183,6 +183,25 @@ def sendEmailpending():
         recipient=defaultrecipient
     )
 
+def EmailOutToLeads():
+    ##  So lets try doing this with one of each type Level 1 Buyer
+    # LEvel 2 buyer
+    # Level 3 seller
+    ## Start with level 3 Buyers""  Start with a cadence
+    ## add an interval for
+    html_content = f"""
+    <html>
+        <body>
+            <p>testing</p>
+        </body>
+    </html>
+    """
+    send_email(
+        subject='Testing',
+        html_content=html_content,
+        recipient=defaultrecipient
+    )
+
 
 def SendEmailOfListings(changebrieflistingarr,oldbrieflistingarr):
     # subject, body, recipient = defaultrecipient, html_content = None
@@ -278,9 +297,9 @@ def sendLevel1BuyerEmail(customer, mappng, pricechangepng, forsalehomes, stats, 
         send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
                    html_content=html_content,
                    recipient =defaultrecipient)
-    # send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
-    #            html_content=html_content,
-    #            recipient =mo_email)
+        send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
+                   html_content=html_content,
+                   recipient =mo_email)
 
 def sendLevel3BuyerEmail(customer:Customer,locations,
                       plot_url, soldhomes, selectedaicomments,stats, forreal=False):
@@ -310,6 +329,11 @@ def sendLevel3BuyerEmail(customer:Customer,locations,
             send_email(
                 subject=email_subject,
                 recipient='waichak.luk@gmail.com',#customer.email,  # Email address of the customer
+                html_content=email_html_content
+            )
+            send_email(
+                subject=email_subject,
+                recipient=mo_email,#customer.email,  # Email address of the customer
                 html_content=email_html_content
             )
         flash("The email was sent successfully!", "success")
@@ -344,6 +368,11 @@ def sendLevel1_2SellerEmail(customer, soldhomes, stats,
             send_email(
                 subject=email_subject,
                 recipient='waichak.luk@gmail.com',#customer.email,  # Email address of the customer
+                html_content=html_content
+            )
+            send_email(
+                subject=email_subject,
+                recipient=mo_email,#customer.email,  # Email address of the customer
                 html_content=html_content
             )
         flash("The email was sent successfully!", "success")
