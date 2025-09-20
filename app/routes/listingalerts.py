@@ -11,7 +11,17 @@ alert_bp = Blueprint('alerts', __name__, url_prefix='/listingalerts')
 
 @alert_bp.route('/activeCustomers', methods=['GET'])
 def activeCustomers():
-    return {'activeCustomers':customercontroller.get_active_customers(as_dict=True)},200
+    level1buyer = customercontroller.getCustomerByIDType(1,as_dict=True)
+    level2buyer = customercontroller.getCustomerByIDType(3,as_dict=True)
+    level1seller = customercontroller.getCustomerByIDType(2,as_dict=True)
+    level2seller = customercontroller.getCustomerByIDType(4,as_dict=True)
+    level3buyer = customercontroller.getCustomerByIDType(6,as_dict=True)
+
+
+    return {'activeCustomers':customercontroller.get_active_customers(as_dict=True),
+            'level1_2seller':level1seller+level2seller,
+            'level1_2buyer':level1buyer+level2buyer,
+            'level3_buyer':level3buyer},200
 
 # @alert_bp.route('/clientalerts', methods=['GET'])
 # def sendalerts():

@@ -24,7 +24,8 @@ from app.RouteModel.BriefListingsVsApi import ZPIDinDBNotInAPI_FORSALE, EmailCus
 from app.GraphTools.plt_plots import *
 
 campaignRoute_bp = Blueprint('campaignRoute_bp', __name__, url_prefix='/campaign')
-
+defaultrecipient = 'waichak.luk@gmail.com'
+mo_email = 'mohamedzabuzaid@gmail.com'
 
 def get_next_thursday():
     today = datetime.today()
@@ -47,17 +48,18 @@ base = "https://www.drillbreaker29.com/"
 @campaignRoute_bp.route('/sendLevel1Buyer_sendEmail', methods=['GET'])
 def sendLevel1Buyer_sendEmail():
     forreal =  request.json.get("forreal", False)
+    test = request.json.get("test", False)
     level1_type = customertypecontroller.get_customer_type_by_id(1)
     level2_type = customertypecontroller.get_customer_type_by_id(3)
 
-    level1_2_seller_customers = level1_type.customers+level2_type.customers
+    level1_2buyer_customers = level1_type.customers+level2_type.customers
 
     next_thursday = get_next_thursday().strftime('%Y-%m-%d')
     customernames = []
     invalid_emails = []
     uniquecities = washingtoncitiescontroller.get_city_names_for_level1or2_buyers()
     output_dir = Path("app/static/maps")
-    for customer in level1_2_seller_customers:
+    for customer in level1_2buyer_customers:
         if customer.dontemail:
             continue
         print(customer.name)
@@ -67,19 +69,54 @@ def sendLevel1Buyer_sendEmail():
         if not is_valid_email(customer.email):
             invalid_emails.append({'name': customer.name, 'email': customer.email})
             continue
-        wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
-        if wcity:
-            results = washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
-        else:
-            results = washingtonzonescontroller.getzonebyName(customer.maincity.City)
-        zone_ids = []
-        for result in results:
-            zone_ids.append(result.id)
 
-        forsalehomes = brieflistingcontroller.get_recent_listings(customer, zone_ids)
-        stats = StatsModelRun(zone_ids, 30)
-        print(stats)
-        sendLevel1BuyerEmail(customer, mappng , pricechangepng, forsalehomes, stats, forreal)
+        if customercontroller.shouldsendEmail(customer) or test:
+
+            wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
+            if wcity:
+                results = washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
+            else:
+                results = washingtonzonescontroller.getzonebyName(customer.maincity.City)
+            zone_ids = []
+            for result in results:
+                zone_ids.append(result.id)
+
+            forsalehomes = brieflistingcontroller.get_recent_listings(customer, zone_ids)
+
+            history = customercontroller.last_comments(customer.id, limit=3)
+            # metrics = get_dummy_metrics(group)
+            stats = StatsModelRun(zone_ids, 30)
+            print(stats)
+            # subject, html_content = build_email_content(customer, group, history, metrics)
+
+            # html_content = bareboneshtmlcontent(customer)
+            # emailsentsuccessfull = send_email(
+            #     subject=subject,
+            #     html_content=html_content,
+            #     recipient=defaultrecipient
+            # )
+
+            emailsentsuccessfull = sendLevel1BuyerEmail(customer, mappng, pricechangepng, forsalehomes, stats, forreal)
+
+
+            if emailsentsuccessfull and not test:
+                customercontroller.update_last_email_sent_at(customer)
+                print(f"Email sent to {customer.email}; next due {customer.next_email_due_at:%Y-%m-%d %H:%M:%S}")
+            elif emailsentsuccessfull and test:
+                print(f"[TEST] Email sent to {defaultrecipient} (customer {customer.id} / {customer.email})")
+            else:
+                print(f"[FAIL] Email not sent for customer {customer.id} / {customer.email}")
+
+
+        else:
+            printoutEmailsThatWerentSent(customer)
+
+        if test:
+            break
+
+
+
+
         # print(f"Prepared email for {customer.email} with images: {mappng}")
 
     return jsonify({
@@ -90,6 +127,57 @@ def sendLevel1Buyer_sendEmail():
         'uniquecities':uniquecities
     }), 200
 import requests
+
+def printoutEmailsThatWerentSent(customer):
+    print("Not time to send email yet")  # Verbose skip diagnostics
+    now = datetime.utcnow()
+    cadence = int(customer.email_cadence_days or 14)
+    last = customer.last_email_sent_at
+    expected = (last + timedelta(days=cadence)) if last else customer.next_email_due_at
+    next_due = customer.next_email_due_at or expected
+    remaining = (next_due - now) if next_due else None
+
+    def fmt_dt(dt):
+        return dt.strftime("%Y-%m-%d %H:%M:%S UTC") if dt else "—"
+
+    def fmt_td(td):
+        if td is None:
+            return "—"
+        secs = max(int(td.total_seconds()), 0)
+        d, rem = divmod(secs, 86400)
+        h, rem = divmod(rem, 3600)
+        m, _ = divmod(rem, 60)
+        return f"{d}d {h}h {m}m"
+
+    print(
+        f"""
+            [SKIP] Not time to send email yet.
+
+            Customer
+              ID: {customer.id}
+              Name: {customer.name} {customer.lastname}
+              Email: {customer.email}
+              Phone: {customer.phone or '—'}
+              Active: {bool(customer.active)}
+              Paused: {bool(customer.paused)}
+              Do-Not-Email: {bool(customer.dontemail)}
+              Type ID: {customer.customer_type_id or '—'}
+              Main City ID: {customer.maincity_id or '—'}
+
+            Preferences
+              Price Range: {customer.minprice}-{customer.maxprice} (Ideal: {customer.idealprice})
+              Square Footage: {customer.minsqft}-{customer.maxsqft} (Ideal: {customer.idealsqft})
+              Lot Size: {customer.lot_size or '—'}
+              Parking Spaces Needed: {customer.parkingspaceneeded or '—'}
+
+            Cadence / Timing
+              Cadence (days): {cadence}
+              Last Email Sent At: {fmt_dt(last)}
+              Next Email Due At: {fmt_dt(next_due)}
+              Time Until Next Send: {fmt_td(remaining)}
+            """
+    )
+
 
 
 @campaignRoute_bp.route('/sendLevel1Buyer_makepictures', methods=['POST'])
@@ -239,6 +327,38 @@ def pastcustomer_sendEmail():
         'status': 'success',
     }), 200
 
+
+def get_dummy_metrics(group: int) -> dict:
+    # group: 1=cold buyers, 2=hot buyers, 3=sellers
+    base = {
+        "market_snapshot": {
+            "median_price": "$725,000",
+            "price_per_sqft": "$525",
+            "days_on_market": 18,
+            "inventory_mom": "+3%",
+        },
+        "rates": {"30yr_fixed": "6.6%", "5/6 ARM": "5.9%"},
+    }
+    if group == 1:  # cold buyers
+        base["handpicked"] = [
+            {"addr": "Tacoma – Lincoln Dist.", "price": "$489k", "beds": 3, "baths": 1.75, "link": "#"},
+            {"addr": "Burien – Lakeview",      "price": "$615k", "beds": 3, "baths": 2.0,  "link": "#"},
+        ]
+        base["protip"] = "Reply with 'update my prefs' and your ideal price/area; I’ll re-target listings within 24h."
+    elif group == 2:  # hot buyers
+        base["handpicked"] = [
+            {"addr": "West Seattle – Gatewood", "price": "$799k", "beds": 3, "baths": 2.25, "link": "#"},
+            {"addr": "Shoreline – Meridian Pk", "price": "$735k", "beds": 4, "baths": 2.0,  "link": "#"},
+        ]
+        base["protip"] = "We can beat similar offers with a seller-paid buydown; ask me for a 1-page scenario."
+    else:  # sellers
+        base["seller_stats"] = {
+            "buyer_traffic_wow": "+4%",
+            "avg_list_to_sale": "98.5%",
+            "new_listings_in_zip": 12,
+        }
+        base["protip"] = "Two low-lift wins: front entry refresh + scent-neutral clean. Converts more showings to offers."
+    return base
 
 @campaignRoute_bp.route('/unsubscribe')
 def unsubscribe():

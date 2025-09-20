@@ -4,7 +4,7 @@ from .investmentclients import investmentclients_bp
 # from .auth import auth_bp
 from .openhouse import openhouse_bp
 from .soldhomes import soldhomes_bp
-from .email import email_bp
+from .emailRoute import email_bp
 from .listingalerts import alert_bp
 from .main import main
 # from .hothomes import hothomes_bp

@@ -1,29 +1,33 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header
 # from run import app
 import os
 # from app.NewListing import NewListing,NewListingForEmail
-fromemail = os.getenv('FROMEMAIL')
+FROMEMAIL = os.getenv('FROMEMAIL')
 defaultrecipient='waichak.luk@gmail.com'
-def send_email( subject, recipient,html_content=None,):
-    msg = MIMEMultipart()
-    msg['From'] = fromemail
-    msg['To'] = recipient
-    msg['Subject'] = subject
+def send_email(subject, recipient, html_content=None) -> bool:
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = FROMEMAIL
+        msg["To"] = recipient
+        msg["Subject"] = str(Header(subject, "utf-8"))  # handle non-ASCII
 
-    # msg.attach(MIMEText(body, 'plain', 'utf-8'))
+        if html_content:
+            msg.attach(MIMEText(html_content, "html", "utf-8"))
 
-    if html_content:
-        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
-        # msg.attach(MIMEText(html_content, 'html'))
-
-    with smtplib.SMTP('smtppro.zoho.com', 587) as server:
-        server.starttls()
-        server.login(fromemail, os.getenv('EMAILCODE'))
-        text = msg.as_string().encode('utf-8')
-        server.sendmail(fromemail, recipient, text)
-    print('email sent')
+        with smtplib.SMTP("smtppro.zoho.com", 587, timeout=30) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(FROMEMAIL, os.getenv("EMAILCODE") or "")
+            # send bytes, not str
+            server.sendmail(FROMEMAIL, [recipient], msg.as_bytes())
+        return True
+    except Exception as e:
+        print(f"email send failed: {e}")
+        return False
 
 
 def send_emailforOpenHouse( houses, app=None):
@@ -37,7 +41,7 @@ def send_emailforOpenHouse( houses, app=None):
 
 def send_emailofopenhomes(houses):
     msg = MIMEMultipart()
-    msg['From'] = fromemail
+    msg['From'] = FROMEMAIL
     msg['To'] = defaultrecipient
     msg['Subject'] = 'Static Daily'
 
@@ -49,9 +53,9 @@ def send_emailofopenhomes(houses):
 
     with smtplib.SMTP('smtp.gmail.com', 587) as server:
         server.starttls()
-        server.login(fromemail, os.getenv('EMAILCODE'))
+        server.login(FROMEMAIL, os.getenv('EMAILCODE'))
         text = msg.as_string().encode('utf-8')
-        server.sendmail(fromemail, defaultrecipient, text)
+        server.sendmail(FROMEMAIL, defaultrecipient, text)
 
 # def send_email(listings):
 #     # Placeholder for your email sending logic

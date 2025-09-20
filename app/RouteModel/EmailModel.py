@@ -11,7 +11,8 @@ from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
 from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.DBModels.BriefListing import BriefListing
-from app.DBFunc.CustomerController import Customer
+from app.DBFunc.CustomerController import Customer, customercontroller
+from app.DBFunc.CadenceCommentController import commentcontroller as CC
 import pytz
 from datetime import datetime, timedelta
 from app.MapTools.MappingTools import WA_geojson_features
@@ -183,24 +184,123 @@ def sendEmailpending():
         recipient=defaultrecipient
     )
 
-def EmailOutToLeads(customerdict):
-    ##  So lets try doing this with one of each type Level 1 Buyer
-    # LEvel 2 buyer
-    # Level 3 seller
-    ## Start with level 3 Buyers""  Start with a cadence
-    ## add an interval for
+def bareboneshtmlcontent(customer):
     html_content = f"""
     <html>
         <body>
-            <p>{customerdict['name']}</p>
+            <p>{customer.name}</p>
         </body>
     </html>
     """
-    send_email(
-        subject='Testing',
-        html_content=html_content,
-        recipient=defaultrecipient
+    return html_content
+from typing import List, Dict, Any, Tuple
+def _history_html(history: List[Dict[str, Any]]) -> str:
+    if not history:
+        return "<p><em>No prior notes—this may be your first touch.</em></p>"
+    items = "".join(
+        f"<li><strong>{h.get('when','')}</strong> [{h.get('tag','')}] – {h.get('text','')}</li>"
+        for h in history
     )
+    return f"<ul>{items}</ul>"
+
+def build_email_content(
+    customer,
+    group: int,
+    history: List[Dict[str, Any]],
+    data: Dict[str, Any],
+) -> Tuple[str, str]:
+
+    name = customer.name or "there"
+    snap = data.get("market_snapshot", {})
+    rates = data.get("rates", {})
+    hist = _history_html(history)
+
+    if group == 1:  # cold buyers
+        cards = "".join([f"<li>{x['addr']} — {x['price']} • {x['beds']}bd/{x['baths']}ba <a href='{x['link']}'>View</a></li>"
+                         for x in data.get("handpicked", [])])
+        subject = f"{name}, quick picks & market snapshot"
+        html = f"""
+        <h3>Hi {name}, here are two quick picks</h3>
+        <ul>{cards}</ul>
+        <p><strong>Market snapshot:</strong> Median {snap.get('median_price')}, {snap.get('price_per_sqft')} /sqft, DOM {snap.get('days_on_market')}.</p>
+        <p><strong>Rates:</strong> 30y {rates.get('30yr_fixed')}, 5/6 ARM {rates.get('5/6 ARM')}.</p>
+        <p><em>Pro tip:</em> {data.get('protip','')}</p>
+        <hr><h4>Your recent history</h4>{hist}
+        """
+    elif group == 2:  # hot buyers
+        cards = "".join([f"<li>{x['addr']} — {x['price']} • {x['beds']}bd/{x['baths']}ba <a href='{x['link']}'>Tour?</a></li>"
+                         for x in data.get("handpicked", [])])
+        subject = f"{name}, new tour options & offer edge"
+        html = f"""
+        <h3>Tour-ready homes</h3>
+        <ul>{cards}</ul>
+        <p><strong>Tactical edge:</strong> Seller-paid buydown can cut payment ~$250–$450/mo—ask for your 1-pager.</p>
+        <p><strong>Market:</strong> DOM {snap.get('days_on_market')}, inv MoM {snap.get('inventory_mom')}.</p>
+        <hr><h4>Your recent history</h4>{hist}
+        """
+    else:  # sellers
+        s = data.get("seller_stats", {})
+        subject = f"{name}, this week’s prep & pricing signals"
+        html = f"""
+        <h3>Seller signals</h3>
+        <ul>
+          <li>Buyer traffic WoW: {s.get('buyer_traffic_wow')}</li>
+          <li>Avg list-to-sale: {s.get('avg_list_to_sale')}</li>
+          <li>New listings in ZIP: {s.get('new_listings_in_zip')}</li>
+        </ul>
+        <p><strong>Market snapshot:</strong> Median {snap.get('median_price')}, {snap.get('price_per_sqft')} /sqft.</p>
+        <p><em>Prep tip:</em> {data.get('protip','')}</p>
+        <hr><h4>Your recent history</h4>{hist}
+        """
+    return subject, html
+
+def get_dummy_metrics(group: int) -> dict:
+    # group: 1=cold buyers, 2=hot buyers, 3=sellers
+    base = {
+        "market_snapshot": {
+            "median_price": "$725,000",
+            "price_per_sqft": "$525",
+            "days_on_market": 18,
+            "inventory_mom": "+3%",
+        },
+        "rates": {"30yr_fixed": "6.6%", "5/6 ARM": "5.9%"},
+    }
+    if group == 1:  # cold buyers
+        base["handpicked"] = [
+            {"addr": "Tacoma – Lincoln Dist.", "price": "$489k", "beds": 3, "baths": 1.75, "link": "#"},
+            {"addr": "Burien – Lakeview",      "price": "$615k", "beds": 3, "baths": 2.0,  "link": "#"},
+        ]
+        base["protip"] = "Reply with 'update my prefs' and your ideal price/area; I’ll re-target listings within 24h."
+    elif group == 2:  # hot buyers
+        base["handpicked"] = [
+            {"addr": "West Seattle – Gatewood", "price": "$799k", "beds": 3, "baths": 2.25, "link": "#"},
+            {"addr": "Shoreline – Meridian Pk", "price": "$735k", "beds": 4, "baths": 2.0,  "link": "#"},
+        ]
+        base["protip"] = "We can beat similar offers with a seller-paid buydown; ask me for a 1-page scenario."
+    else:  # sellers
+        base["seller_stats"] = {
+            "buyer_traffic_wow": "+4%",
+            "avg_list_to_sale": "98.5%",
+            "new_listings_in_zip": 12,
+        }
+        base["protip"] = "Two low-lift wins: front entry refresh + scent-neutral clean. Converts more showings to offers."
+    return base
+
+from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
+from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
+
+def EmailOutToLeads(data , test, group):
+    ##  So lets try doing this with one of each type Level 1 Buyer
+    # LEvel 2 buyer
+    # Level 3 seller
+    ## Start with level 3 Buyers Start with a cadence
+
+    customer = customercontroller.getCustomerByID(data["id"])
+
+
+
+
+
 
 
 def SendEmailOfListings(changebrieflistingarr,oldbrieflistingarr):
@@ -272,11 +372,54 @@ def generate_weekly_summary(city_name, stats):
     ]
     return random.choice(options)
 
+from datetime import date
+
+def classify_market(m):
+    dom = m["dom"]; sale_to_list = m["sale_to_list"]; over_ask = m["pct_over_ask"]
+    if dom < 10 and (sale_to_list >= 100 or over_ask >= 30):
+        return {"label": "HOT", "badge_bg": "#e74c3c"}       # red
+    if 10 <= dom <= 20 and 99 <= sale_to_list <= 100:
+        return {"label": "BALANCED", "badge_bg": "#f39c12"}  # amber
+    return {"label": "COOL", "badge_bg": "#27ae60"}          # green
+
+def _dir(curr, prev, thresh=0.02):
+    d = (curr - prev)
+    if d > thresh:  return "up"
+    if d < -thresh: return "down"
+    return "neutral"
+
+def dummy_metrics():
+    m = {
+        "as_of": date.today().isoformat(),
+        "rate": 6.60,      "rate_prev": 6.55,
+        "dom": 14,         "dom_prev": 16,
+        "sale_to_list": 101.2, "sale_to_list_prev": 100.8,
+        "pct_under_7d": 42, "pct_price_cuts": 28, "pct_over_ask": 36,
+        "arrow": "→",  # keep if you still use it elsewhere
+    }
+    m["rate_dir"] = _dir(m["rate"], m["rate_prev"])            # ↑ if rate rose
+    m["dom_dir"]  = _dir(m["dom"], m["dom_prev"])              # ↑ if DOM rose
+    m["comp_dir"] = _dir(m["sale_to_list"], m["sale_to_list_prev"])  # ↑ if sale→list rose
+    return m
+
+
+
 def sendLevel1BuyerEmail(customer, mappng, pricechangepng, forsalehomes, stats, forreal=False):
     # subject, body, recipient = defaultrecipient, html_content = None
-
+    history = customercontroller.last_comments(customer.id, limit=3)
+    group = 1
+    subject, html_content2 = build_email_content(customer, 1, history, get_dummy_metrics(group))
+    customercontroller.add_comment(customer.id, f"Emailed (group {group}): {subject}", tag="email")
 
     weekly_summary = generate_weekly_summary(customer.maincity.City, stats)
+    data = get_dummy_metrics(group)
+    snap = data.get("market_snapshot", {})
+    rates = data.get("rates", {})
+    hist = _history_html(history)
+    metrics = dummy_metrics()
+
+    CC.add_email_digest(customer.id, metrics)  # store today’s digest in CadenceComment
+    ai_text = CC.generate_ai_explainer(customer, segment=customer.customer_type_id, current_metrics=metrics)
 
     html_content = render_template(
         'EmailCampaignTemplate/email_level1Buyer.html',  # Your template in app/templates
@@ -284,22 +427,34 @@ def sendLevel1BuyerEmail(customer, mappng, pricechangepng, forsalehomes, stats, 
         mappng=mappng,
         pricechangepng=pricechangepng,
         weekly_summary=weekly_summary,
+        snap=snap,
+        rates=rates,
+        hist=hist,
+        data=data,
+        ai_text= ai_text,
         stats=stats,
         forsalehomes=forsalehomes,
+        metrics=metrics,
         showScheduleButton=True
     )
 
     if forreal:
-        send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
+        return send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
                    html_content=html_content,
                    recipient =customer.email)
     else:
-        send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
+        return send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
                    html_content=html_content,
                    recipient =defaultrecipient)
-        send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
-                   html_content=html_content,
-                   recipient =mo_email)
+        # return send_email(subject=subject,
+        #            html_content=html_content2,
+        #            recipient =defaultrecipient)
+
+
+
+        # send_email(subject=f'Wayber Real Estate Analytics : {customer.maincity.City}',
+        #            html_content=html_content,
+        #            recipient =mo_email)
 
 def sendLevel3BuyerEmail(customer:Customer,locations,
                       plot_url, soldhomes, selectedaicomments,stats, forreal=False):
@@ -430,3 +585,67 @@ def sendunsubscribemeail(customer):
     )
 
 
+from typing import Any, Dict, List, Tuple
+from flask import Blueprint, request, jsonify, current_app
+from werkzeug.exceptions import BadRequest
+REQUIRED_FIELDS = {"email"}
+
+def _normalize_payload_from_request() -> Dict[str, Any]:
+    """
+    Accept JSON or form and normalize to a flat dict[str, str].
+    Prefer JSON in clients. This keeps legacy form posts working.
+    """
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        if not isinstance(data, dict):
+            raise BadRequest("JSON body must be an object")
+        flat = {k: "" if v is None else str(v) for k, v in data.items()}
+    else:
+        flat = request.form.to_dict(flat=True)
+
+    missing = [k for k in REQUIRED_FIELDS if k not in flat or flat[k] == ""]
+    if missing:
+        raise BadRequest(f"Missing required fields: {', '.join(missing)}")
+    return flat
+
+
+def _normalize_batch_from_request() -> List[Dict[str, Any]]:
+    """
+    Expect JSON: { "customers": [ {...}, {...} ] }
+    Also tolerates form with a single 'customers' JSON string.
+    """
+    body = {}
+    if request.is_json:
+        body = request.get_json(silent=True) or {}
+    else:
+        # allow form clients to send a JSON string under 'customers'
+        import json
+        if "customers" in request.form:
+            try:
+                body = {"customers": json.loads(request.form["customers"])}
+            except Exception:
+                raise BadRequest("Form field 'customers' must be JSON")
+
+    customers = body.get("customers")
+    if not isinstance(customers, list) or not customers:
+        raise BadRequest("Body must include non-empty array 'customers'")
+
+    normalized: List[Dict[str, Any]] = []
+    for c in customers:
+        if not isinstance(c, dict):
+            raise BadRequest("Each customer must be an object")
+        normalized.append({k: "" if v is None else str(v) for k, v in c.items()})
+    return normalized
+
+
+def _send_one(payload: Dict[str, Any]) -> Tuple[bool, str]:
+    """
+    Calls your existing email logic. Return (ok, message).
+    """
+    try:
+        # Replace with your import if needed to avoid circulars
+        EmailOutToLeads(payload)
+        return True, "sent"
+    except Exception as e:
+        current_app.logger.exception(f"Email send failed: {e}")
+        return False, f"failed: {e}"
