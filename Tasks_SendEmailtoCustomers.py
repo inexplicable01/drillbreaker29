@@ -3,6 +3,14 @@ from datetime import datetime
 import sys
 import json
 import os
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--test", action="store_true", help="send test emails (don’t update customer send-times)")
+parser.add_argument("--admin", action="store_true", help="render admin-only sections in the email")
+parser.add_argument("--forreal", action="store_true", help="actually send to real recipients")
+args = parser.parse_args()
+
 # base = os.getenv("BASE")
 # base = "http://127.0.0.1:5000/"
 base = "https://www.drillbreaker29.com/"
@@ -20,8 +28,6 @@ params = []
 payload = {}
 headers = {}
 
-
-
 url = f"{base}listingalerts/activeCustomers"
 
 payload = {}
@@ -34,24 +40,13 @@ level1_2seller = response.json()['level1_2seller']
 level1_2buyer = response.json()['level1_2buyer']
 level3_buyer = response.json()['level3_buyer']
 
-
 message = ''
-test = True
 
-# for customer in level1_2seller:
-#     url = f"{base}email/sendEmailOutToLeads"
-#     payload = {**customer, "test":test, "group":"3"}  # or "true"
-#     headers = {
-#         # DON'T set application/json here
-#         "Content-Type": "application/x-www-form-urlencoded",
-#         # include your auth headers, if any
-#     }
-#     response = requests.request("POST", url, headers=headers, data=payload)
-#     break
-
-admin = False
+test = str(args.test).lower()
+admin = str(args.admin).lower()
+forreal = str(args.forreal).lower()
 payload = json.dumps({
-  "forreal": False,
+  "forreal": forreal,
   "test": test,
   "admin":admin
 })

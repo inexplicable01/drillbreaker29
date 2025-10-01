@@ -7,7 +7,8 @@ from app.DBModels.BriefListing import BriefListing
 from app.config import Config, SW, RECENTLYSOLD, FOR_SALE
 from app.DBFunc.CustomerTypeController import customertypecontroller
 from app.RouteModel.AreaReportModel import AreaReportModelRun,AreaReportModelRunForSale, StatsModelRun
-from app.RouteModel.EmailModel import sendLevel1BuyerEmail, sendunsubscribemeail,sendLevel3BuyerEmail , sendLevel1_2SellerEmail , sendpastcustomerEmail
+from app.RouteModel.EmailModel import (sendLevel1BuyerEmail, sendEmailtimecheck,
+                                       sendunsubscribemeail,sendLevel3BuyerEmail , sendLevel1_2SellerEmail , sendpastcustomerEmail)
 from app.RouteModel.AreaReportModel import gatherCustomerData
 # from app.RouteModel.AIModel import AIModel
 # from app.DBFunc.AIListingController import ailistingcontroller
@@ -45,6 +46,14 @@ import os
 
 base = os.getenv("BASE")
 base = "https://www.drillbreaker29.com/"
+
+@campaignRoute_bp.route('/ping', methods=['GET'])
+def ping_email():
+    sendEmailtimecheck()
+    return jsonify({
+        'status': 'pinged',
+    }), 200
+
 
 @campaignRoute_bp.route('/sendLevel1Buyer_sendEmail', methods=['GET'])
 def sendLevel1Buyer_sendEmail():
@@ -86,11 +95,7 @@ def sendLevel1Buyer_sendEmail():
 
             forsalehomes = brieflistingcontroller.get_recent_listings(customer, zone_ids)
 
-
-
-
             stats = StatsModelRun(zone_ids, 30)
-            # print(stats)
 
             emailsentsuccessfull = sendLevel1BuyerEmail(customer, pricechangepng, forsalehomes, stats, forreal, admin)
 
@@ -112,11 +117,6 @@ def sendLevel1Buyer_sendEmail():
             if emailtest >2:
                 break
             emailtest+=1
-
-
-
-
-        # print(f"Prepared email for {customer.email} with images: {mappng}")
 
     return jsonify({
         'status': 'success',
@@ -179,52 +179,7 @@ def printoutEmailsThatWerentSent(customer):
 
 
 
-@campaignRoute_bp.route('/sendLevel1Buyer_makepictures', methods=['POST'])
-def sendLevel1Buyer_makepictures():
-    next_thursday = get_next_thursday().strftime('%Y-%m-%d')
-    customernames = []
-    invalid_emails = []
-    uniquecities = washingtoncitiescontroller.get_city_names_for_level1or2_buyers()
-    output_dir = Path("app/static/maps")
-    for city in uniquecities:
-        # getzones....
-        map_html_path = output_dir / f'citymap_{city}_{next_thursday}.html'
-        mapname = output_dir / f'citymap_{city}_{next_thursday}.png'
-        pricechangepng = output_dir / f'pricechange_{city}_{next_thursday}.png'
-        wcity = washingtoncitiescontroller.getCity(city)
-        if wcity:
-            results = washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
-        else:
-            results = washingtonzonescontroller.getzonebyName(city)
 
-        zonenames=[]
-        for result in results:
-            zonenames.append(result.zonename())
-        housesoldpriceaverage, soldhomes = AreaReportModelRun(zonenames,
-                                             [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
-                                                            30)
-
-
-        url = f'{base}useful/upload-map'
-        createPriceChangevsDays2PendingPlot(soldhomes,pricechangepng)
-        with open(pricechangepng, 'rb') as f:
-            files = {'file': (f'pricechange_{city}_{next_thursday}.png', f, 'image/png')}
-            response = requests.post(url, files=files)
-            print(response)
-
-        create_map(WA_geojson_features, zonenames, map_html_path,mapname, soldhomes)
-        with open(mapname, 'rb') as f:
-            files = {'file': (f'citymap_{city}_{next_thursday}.png', f, 'image/png')}
-            response = requests.post(url, files=files)
-            print(response)
-
-    return jsonify({
-        'status': 'success',
-        'customers': customernames,
-        'invalid_emails': invalid_emails,
-        'next_report_date': next_thursday,
-        'uniquecities':uniquecities
-    }), 200
 
 
 @campaignRoute_bp.route('/sendLevel1_2_Seller_sendEmail', methods=['GET'])
@@ -369,3 +324,51 @@ def unsubscribe():
     sendunsubscribemeail(customer)
     # 3. Render or redirect to a simple confirmation page
     return render_template("unsubscribe_confirmed.html", email=user_email)
+
+
+# @campaignRoute_bp.route('/sendLevel1Buyer_makepictures', methods=['POST'])
+# def sendLevel1Buyer_makepictures():
+#     next_thursday = get_next_thursday().strftime('%Y-%m-%d')
+#     customernames = []
+#     invalid_emails = []
+#     uniquecities = washingtoncitiescontroller.get_city_names_for_level1or2_buyers()
+#     output_dir = Path("app/static/maps")
+#     for city in uniquecities:
+#         # getzones....
+#         map_html_path = output_dir / f'citymap_{city}_{next_thursday}.html'
+#         mapname = output_dir / f'citymap_{city}_{next_thursday}.png'
+#         pricechangepng = output_dir / f'pricechange_{city}_{next_thursday}.png'
+#         wcity = washingtoncitiescontroller.getCity(city)
+#         if wcity:
+#             results = washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
+#         else:
+#             results = washingtonzonescontroller.getzonebyName(city)
+#
+#         zonenames=[]
+#         for result in results:
+#             zonenames.append(result.zonename())
+#         housesoldpriceaverage, soldhomes = AreaReportModelRun(zonenames,
+#                                              [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
+#                                                             30)
+#
+#
+#         url = f'{base}useful/upload-map'
+#         createPriceChangevsDays2PendingPlot(soldhomes,pricechangepng)
+#         with open(pricechangepng, 'rb') as f:
+#             files = {'file': (f'pricechange_{city}_{next_thursday}.png', f, 'image/png')}
+#             response = requests.post(url, files=files)
+#             print(response)
+#
+#         create_map(WA_geojson_features, zonenames, map_html_path,mapname, soldhomes)
+#         with open(mapname, 'rb') as f:
+#             files = {'file': (f'citymap_{city}_{next_thursday}.png', f, 'image/png')}
+#             response = requests.post(url, files=files)
+#             print(response)
+#
+#     return jsonify({
+#         'status': 'success',
+#         'customers': customernames,
+#         'invalid_emails': invalid_emails,
+#         'next_report_date': next_thursday,
+#         'uniquecities':uniquecities
+#     }), 200
