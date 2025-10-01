@@ -49,9 +49,11 @@ test = True
 #     response = requests.request("POST", url, headers=headers, data=payload)
 #     break
 
+admin = False
 payload = json.dumps({
   "forreal": False,
-  "test": test
+  "test": test,
+  "admin":admin
 })
 headers = {
   'Content-Type': 'application/json'

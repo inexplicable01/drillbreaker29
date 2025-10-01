@@ -19,46 +19,158 @@ from app.DBFunc.CustomerZoneController import customerzonecontroller
 from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from app.DBFunc.AIListingController import ailistingcontroller
 from app.config import Config, SW, RECENTLYSOLD, FOR_SALE, PENDING
+from datetime import datetime, timedelta, date
+
 # model = load('linear_regression_model.joblib')
 def ListAllNeighhourhoodsByCities(neighbourhoods, doz):
     return brieflistingcontroller.ListingsByCities(neighbourhoods, doz)
 
+def _as_date(x):
+    if x is None:
+        return None
+    if isinstance(x, date):
+        return x
+    if isinstance(x, datetime):
+        return x.date()
+    # try ISO string
+    try:
+        return datetime.fromisoformat(str(x)).date()
+    except Exception:
+        return None
+
+def _sold_date_for(br):
+    # Adjust these names if your model uses different fields
+    for name in ("sold_date", "solddate", "close_date", "closedate", "soldon", "closing_date"):
+        d = getattr(br, name, None)
+        d = _as_date(d)
+        if d:
+            return d
+    return None
+
+def _week_start(d: date) -> date:
+    # Monday anchor
+    return d - timedelta(days=d.weekday())
+
 def StatsModelRun(zone_ids, daysofconcern, daysofconcernforlistings=7):
+    # --- helpers (local to keep the function self-contained) ---
+    def _as_date(x):
+        if x is None:
+            return None
+        if isinstance(x, date):
+            return x
+        if isinstance(x, datetime):
+            return x.date()
+        # try ISO string
+        try:
+            return datetime.fromisoformat(str(x)).date()
+        except Exception:
+            return None
+
+    def _sold_date_for(br):
+        """
+        Convert br.soldtime (Unix epoch) -> date.
+        Accepts int/float/str; tolerates milliseconds.
+        Returns a datetime.date or None.
+        """
+        ts = getattr(br, "soldtime", None)
+        if ts is None:
+            return None
+        try:
+            ts = float(ts)
+            # if it's in milliseconds (13 digits), normalize to seconds
+            if ts > 1e12:
+                ts /= 1000.0
+            return datetime.utcfromtimestamp(ts).date()
+        except Exception:
+            return None
+
+    def _week_start(d: date) -> date:
+        # Monday anchor
+        return d - timedelta(days=d.weekday())
+
+    # --- existing aggregations (unchanged) ---
     fastest_days = 10
     fast_sales = 0
     under_list = 0
     above_list = 0
     sold_prices = []
+    sale_to_list_ratios = []
     list2penddayslist = []
 
-    soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, daysofconcernforlistings).all()
+    # Pull enough sold inventory to cover 16 weeks (112 days)
+    sold_window_days = max(daysofconcernforlistings, 112)
+
+    soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, sold_window_days).all()
     pending = brieflistingcontroller.listingsByZonesandStatus(zone_ids, PENDING, daysofconcernforlistings).all()
-    new_listings = brieflistingcontroller.listingsByZonesandStatus(zone_ids, FOR_SALE, daysofconcernforlistings).all()  # Assumes NEW status constant
+    new_listings = brieflistingcontroller.listingsByZonesandStatus(zone_ids, FOR_SALE, daysofconcernforlistings).all()
 
     brieflistings = soldhomes + pending
-    print(len(brieflistings))
-    for brieflisting in brieflistings:
-        if brieflisting.list2penddays is not None:
-            if brieflisting.list2penddays < fastest_days:
-                fastest_days = brieflisting.list2penddays
-            if brieflisting.list2penddays < 8:
+    for br in brieflistings:
+        if br.list2penddays is not None:
+            d = br.list2penddays
+            if d < fastest_days:
+                fastest_days = d
+            if d < 8:
                 fast_sales += 1
-            list2penddayslist.append(brieflisting.list2penddays)
+            list2penddayslist.append(d)
 
-        if brieflisting.listprice is not None and brieflisting.soldprice is not None:
-            if brieflisting.soldprice < brieflisting.listprice:
+        if br.listprice is not None and br.soldprice is not None and br.listprice > 0:
+            if br.soldprice < br.listprice:
                 under_list += 1
             else:
                 above_list += 1
-            sold_prices.append(brieflisting.soldprice)
+            sold_prices.append(br.soldprice)
+            sale_to_list_ratios.append(100.0 * (br.soldprice / br.listprice))
 
-
-    median_days = statistics.median(list2penddayslist) if list2penddayslist else None
-    avg_days_on_market = statistics.mean(list2penddayslist) if list2penddayslist else None
+    total_with_days = len(list2penddayslist)
+    median_days = statistics.median(list2penddayslist) if total_with_days else None
+    avg_days_on_market = statistics.mean(list2penddayslist) if total_with_days else None
     avg_sold_price = statistics.mean(sold_prices) if sold_prices else None
+    median_sold_price = statistics.median(sold_prices) if sold_prices else None
 
+    basis_comp = (under_list + above_list) or 0
+    pct_over_ask = (100.0 * above_list / basis_comp) if basis_comp else 0.0
+    sale_to_list_avg_pct = statistics.mean(sale_to_list_ratios) if sale_to_list_ratios else None
+    pct_under_7d = (100.0 * fast_sales / total_with_days) if total_with_days else 0.0
+    pct_price_cuts = under_list/len(brieflistings)# TODO: set if you track cuts
+
+    # --- new: 16-week (weekly) median price time series ---
+    today = datetime.utcnow().date()
+    this_monday = _week_start(today)
+    # Build week starts oldest→newest (16 weeks including this week)
+    week_starts = [this_monday - timedelta(weeks=i) for i in range(15, -1, -1)]
+    buckets = {ws: [] for ws in week_starts}
+
+    for br in soldhomes:  # only look at sold homes for the price series
+        sd = _sold_date_for(br)
+        if not sd:
+            continue
+        # Only include if within our 16-week window
+        if sd < week_starts[0] or sd > (week_starts[-1] + timedelta(days=6)):
+            continue
+        ws = _week_start(sd)
+        if ws in buckets:
+            sp = getattr(br, "soldprice", None)
+            if sp is not None:
+                buckets[ws].append(sp)
+
+    median_price_16w = []
+    for ws in week_starts:
+        values = buckets.get(ws, [])
+        if values:
+            mp = int(round(statistics.median(values)))
+            cnt = len(values)
+        else:
+            mp = None
+            cnt = 0
+        median_price_16w.append({
+            "week_start": ws.isoformat(),
+            "median_price": mp,  # raw number; format later in Jinja if needed
+            "count": cnt
+        })
 
     return {
+        # existing
         "total_sold": len(soldhomes),
         "total_pending": len(pending),
         "new_listings": len(new_listings),
@@ -68,8 +180,18 @@ def StatsModelRun(zone_ids, daysofconcern, daysofconcernforlistings=7):
         "fastest_days": fastest_days,
         "median_days": median_days,
         "avg_days_on_market": avg_days_on_market,
-        "avg_sold_price": avg_sold_price
+        "avg_sold_price": avg_sold_price,
+        "median_sold_price": median_sold_price,
+        "pct_over_ask": pct_over_ask,
+        "sale_to_list_avg_pct": sale_to_list_avg_pct,
+        "pct_under_7d": pct_under_7d,
+        "pct_price_cuts": pct_price_cuts,
+
+        # new series
+        "median_price_16w": median_price_16w,  # ← list of {week_start, median_price, count}
     }
+
+
 from datetime import datetime, timedelta
 def AreaReportModelRun(selected_zones, selectedhometypes,soldlastdays):
     unfiltered_homes = []

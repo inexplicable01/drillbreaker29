@@ -53,18 +53,7 @@ class Customer(db.Model):
             f"Square Footage: {self.minsqft}-{self.maxsqft} (Ideal: {self.idealsqft}))"
         )
 
-class WeeklyComment(db.Model):
-    __tablename__ = "WeeklyComment"
-    id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('Customer.id'), index=True, nullable=False)
-    week_start = db.Column(db.Date, nullable=False)  # Monday of the ISO week
-    tag = db.Column(db.String(32))                  # e.g., 'email','note','tour','seller'
-    comment = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    __table_args__ = (
-        db.Index("idx_wc_customer_week", "customer_id", "week_start"),
-    )
 
 def _monday_of(dt: datetime) -> date:
     d = dt.date()
@@ -296,27 +285,5 @@ class CustomerController:
     def rollback(self) -> None:
         db.session.rollback()
 
-    def add_comment(self, customer_id: int, comment: str, tag: str = "email", when: Optional[datetime] = None) -> None:
-        when = when or datetime.utcnow()
-        rec = WeeklyComment(
-            customer_id=customer_id,
-            week_start=_monday_of(when),
-            tag=tag,
-            comment=comment,
-            created_at=when
-        )
-        db.session.add(rec)
-        db.session.commit()
-
-    def last_comments(self, customer_id: int, limit: int = 3) -> List[Dict]:
-        rows = (WeeklyComment.query
-                .filter_by(customer_id=customer_id)
-                .order_by(WeeklyComment.created_at.desc())
-                .limit(limit)
-                .all())
-        return [
-            {"when": r.created_at.strftime("%Y-%m-%d"), "tag": r.tag, "text": r.comment}
-            for r in rows
-        ]
 # Module-level singleton for easy import in routes
 customercontroller = CustomerController()

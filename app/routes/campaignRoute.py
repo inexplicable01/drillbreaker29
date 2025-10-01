@@ -16,6 +16,7 @@ from app.RouteModel.AreaReportModel import gatherCustomerData
 #     loadPropertyDataFromBrief, ListingStatus
 from datetime import datetime, timedelta
 from app.DBFunc.CustomerController import customercontroller
+from app.DBFunc.CadenceCommentController import commentcontroller
 import re
 from app.MapTools.MappingTools import create_map , WA_geojson_features
 from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID, SearchZillowHomesFSBO
@@ -47,8 +48,10 @@ base = "https://www.drillbreaker29.com/"
 
 @campaignRoute_bp.route('/sendLevel1Buyer_sendEmail', methods=['GET'])
 def sendLevel1Buyer_sendEmail():
+    emailtest=0
     forreal =  request.json.get("forreal", False)
     test = request.json.get("test", False)
+    admin = request.json.get("admin", False)
     level1_type = customertypecontroller.get_customer_type_by_id(1)
     level2_type = customertypecontroller.get_customer_type_by_id(3)
 
@@ -83,20 +86,13 @@ def sendLevel1Buyer_sendEmail():
 
             forsalehomes = brieflistingcontroller.get_recent_listings(customer, zone_ids)
 
-            history = customercontroller.last_comments(customer.id, limit=3)
-            # metrics = get_dummy_metrics(group)
+
+
+
             stats = StatsModelRun(zone_ids, 30)
-            print(stats)
-            # subject, html_content = build_email_content(customer, group, history, metrics)
+            # print(stats)
 
-            # html_content = bareboneshtmlcontent(customer)
-            # emailsentsuccessfull = send_email(
-            #     subject=subject,
-            #     html_content=html_content,
-            #     recipient=defaultrecipient
-            # )
-
-            emailsentsuccessfull = sendLevel1BuyerEmail(customer, mappng, pricechangepng, forsalehomes, stats, forreal)
+            emailsentsuccessfull = sendLevel1BuyerEmail(customer, pricechangepng, forsalehomes, stats, forreal, admin)
 
 
             if emailsentsuccessfull and not test:
@@ -109,10 +105,13 @@ def sendLevel1Buyer_sendEmail():
 
 
         else:
+
             printoutEmailsThatWerentSent(customer)
 
         if test:
-            break
+            if emailtest >2:
+                break
+            emailtest+=1
 
 
 

@@ -1,10 +1,7 @@
 # email_bp.py
 from flask import Blueprint, redirect, url_for, jsonify, request, current_app
 from app.RouteModel.EmailModel import (sendEmailwithNewListing,sendAppointmentEmail,sendEmailtimecheck,
-                                       sendEmailpending, EmailOutToLeads,
-                                       _normalize_payload_from_request,
-                                       _send_one,
-                                       _normalize_batch_from_request)
+                                       sendEmailpending)
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Tuple
 
@@ -56,19 +53,6 @@ def sendEmailPending():
     sendEmailpending()
     return jsonify({"message": "Viewing request submitted successfully!"}), 200
 
-@email_bp.route('/sendEmailOutToLeads', methods=['GET','POST'])
-def sendEmailOutToLeads():
-    # Assuming sendEmailwithNewListing() is a function that sends an email with new listings.
-    data = request.form.to_dict(flat=True)
-    test = int(data["test"])
-    group = int(data["group"])
-
-
-    # Log the incoming data to verify it
-    print("Received Data:", data)  # Or use logging for production
-
-    EmailOutToLeads(data, test, group)
-    return jsonify({"message": "sendEmailOutToLeads submitted successfully!"}), 200
 
 
 
@@ -104,32 +88,6 @@ def schedulingemail():
 
 
 # Single send (keeps legacy flow; now accepts JSON or form)
-@email_bp.route("/send", methods=["POST"])
-def send_single():
-    payload = _normalize_payload_from_request()
-    ok, msg = _send_one(payload)
-    code = 200 if ok else 500
-    return jsonify({"ok": ok, "message": msg, "received": payload}), code
-
-
-# Batch send (optimal for your loops)
-@email_bp.route("/send-batch", methods=["POST"])
-def send_batch():
-    customers = _normalize_batch_from_request()
-
-    # Optional: small cap per request to avoid giant posts
-    MAX_PER = 500
-    if len(customers) > MAX_PER:
-        raise BadRequest(f"Too many customers in one batch (max {MAX_PER})")
-
-    results = []
-    sent = 0
-    for c in customers:
-        ok, msg = _send_one(c)
-        sent += int(ok)
-        results.append({"email": c.get("email"), "ok": ok, "message": msg})
-
-    return jsonify({"requested": len(customers), "sent": sent, "results": results})
 
 
 # Cron/Task: send everyone who is due (cadence)

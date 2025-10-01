@@ -61,7 +61,7 @@
             text-decoration: none;
             padding: 10px 14px;
             border-radius: 8px;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         @media (max-width: 640px) {
@@ -74,192 +74,236 @@
                 margin-bottom: 4px;
             }
         }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 8px 10px;
+            text-align: left;
+        }
+
+        thead tr {
+            background: #f3f4f6;
+        }
     </style>
 </head>
 
+{# -------- Macros -------- #}
+{# arrow + color for up/down/same/unknown #}
 {% macro trend_icon(dir) -%}
-    {# colors: up=red, down=green, neutral=gray #}
-    {% set bg = '#e74c3c' if dir=='up' else '#27ae60' if dir=='down' else '#9ca3af' %}
-    {% set arrow = '↑' if dir=='up' else '↓' if dir=='down' else '→' %}
-    <span aria-label="{{ dir }}" title="{{ dir }}" style="
-            display:inline-block; width:20px; height:20px; line-height:20px; text-align:center;
-            border-radius:50%; background: {{ bg }}; color:#fff; font-size:12px; font-weight:700;
-            vertical-align:middle; margin-right:6px;">
+  {% set d = (dir or 'unknown')|lower %}
+  {% if d == 'up' %}
+    {% set bg = '#e74c3c' %}{% set arrow = '↑' %}
+  {% elif d == 'down' %}
+    {% set bg = '#27ae60' %}{% set arrow = '↓' %}
+  {% else %}
+    {# same/unknown -> neutral gray #}
+    {% set bg = '#9ca3af' %}{% set arrow = '→' %}
+  {% endif %}
+  <span aria-label="{{ d }}" title="{{ d }}"
+        style="display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;
+               border-radius:50%;background:{{ bg }};color:#fff;font-size:12px;font-weight:700;margin-right:6px;">
     {{ arrow }}
   </span>
 {%- endmacro %}
+
+{# fixed one-liners driven by AI conclusion tokens #}
+
 <body>
 <div class="container">
 
-    <h1 style="color:#2c3e50; margin-top: 0;">Hey {{ customer.name }},</h1>
+    <h1 style="color:#2c3e50; margin-top:0;">Hey {{ customer.name }},</h1>
 
-    <p style="font-size: 18px; margin-top: 6px;">This past week in <strong>{{ customer.maincity.City }}</strong>:</p>
-    <h2 style="color:#27ae60; margin: 8px 0 12px;">{{ weekly_summary.headline }}</h2>
-    <p style="margin: 12px 0; font-size: 16px;">{{ weekly_summary.body }}</p>
+    {# ---------- AI Title & Explanation (top) ---------- #}
+    {# Prefer structured dict `ai`, else parse `ai_text` into title/expl/advice #}
+    {% set meeting = meeting_url if meeting_url is defined and meeting_url else ('https://www.drillbreaker29.com/meet?customer_id=' ~ customer.id) %}
 
-    {# ======= Buyer Snapshot Card (replaces old snapshot/rates/history block) ======= #}
-    {% set m = metrics %}
-    <div class="card">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;">
-            <div>
-                <span class="chip" style="background: {{ m.badge_bg }};">{{ m.label }}</span>
-                <span class="muted" style="margin-left:8px;">as of {{ m.as_of }}</span>
-            </div>
-            <div class="muted">Wayber Weekly</div>
-        </div>
+    {% set ai_title = (ai.title if ai is defined and ai and ai.title) %}
+    {% set ai_expl  = (ai.explanation if ai is defined and ai and ai.explanation) %}
+    {% set ai_adv   = (ai.advice if ai is defined and ai and ai.advice) %}
 
-        <div class="row">
-            <div class="label">Rates</div>
-            <div>
-                30-yr fixed <strong>{{ m.rate }}%</strong> ({{ m.arrow }}).
-                <span class="muted">Rule of thumb: every 0.25% ≈ $15/mo per $100k.</span>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="label">Speed</div>
-            <div>Median <strong>{{ m.dom }}</strong> DOM; <strong>{{ m.pct_under_7d }}%</strong> sell in &lt; 7 days.
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="label">Competition</div>
-            <div>Sale→List <strong>{{ m.sale_to_list }}%</strong>;
-                <strong>{{ m.pct_over_ask }}%</strong> over-ask; price cuts <strong>{{ m.pct_price_cuts }}%</strong>.
-            </div>
-        </div>
-
-        <div class="row" style="margin-top:12px;">
-            <div class="label">Snapshot</div>
-            <div>
-                Median price <strong>{{ snap.get('median_price') }}</strong>,
-                <strong>{{ snap.get('price_per_sqft') }}</strong> /sqft,
-                DOM <strong>{{ snap.get('days_on_market') }}</strong>.
-                <span class="muted">Rates: 30y {{ rates.get('30yr_fixed') }}, 5/6 ARM {{ rates.get('5/6 ARM') }}.</span>
-            </div>
-        </div>
-
-        <div class="row" style="margin-top:8px;">
-            <div class="label">Pro tip</div>
-            <div><em>{{ data.get('protip','') }}</em></div>
-        </div>
-
-        <div class="row" style="margin-top:14px;">
-            <div class="label">History</div>
-            <div>{{ hist|safe }}</div>
-        </div>
-
-        <div class="row">
-            <div class="label">Rates</div>
-            <div>
-                {{ trend_icon(metrics.rate_dir) }}
-                30-yr fixed <strong>{{ metrics.rate }}%</strong>.
-                <span class="muted">Every 0.25% ≈ $15/mo per $100k.</span>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="label">Speed</div>
-            <div>
-                {{ trend_icon(metrics.dom_dir) }}
-                Median <strong>{{ metrics.dom }}</strong> DOM; <strong>{{ metrics.pct_under_7d }}%</strong> sell in &lt;
-                7 days.
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="label">Competition</div>
-            <div>
-                {{ trend_icon(metrics.comp_dir) }}
-                Sale→List <strong>{{ metrics.sale_to_list }}%</strong>; {{ metrics.pct_over_ask }}% over-ask; price
-                cuts {{ metrics.pct_price_cuts }}%.
-            </div>
-        </div>
-
-        <div style="border:1px solid #e8eef5; background:#f9fbff; border-radius:12px; padding:14px; margin:18px 0;">
-            {% if ai_text %}
-                {% for line in ai_text.splitlines() %}
-                    <p style="margin:6px 0;">{{ line }}</p>
-                {% endfor %}
-            {% else %}
-                <p style="color:#6b7280;">AI explanation unavailable.</p>
+    {% if (not ai_title or not ai_expl or not ai_adv) and ai_text %}
+        {# Fallback parser for ai_text format with Title:/Explanation:/Advice: #}
+        {% set ns = namespace(title=ai_title, expl=ai_expl, in_adv=False, adv=(ai_adv if ai_adv else [])) %}
+        {% for line in ai_text.splitlines() %}
+            {% set l = line.strip() %}
+            {% if not ns.title and l|lower.startswith('title:') %}
+                {% set ns.title = l[6:].strip() %}
+            {% elif not ns.expl and l|lower.startswith('explanation:') %}
+                {% set ns.expl = l[12:].strip() %}
+            {% elif l|lower.startswith('advice:') %}
+                {% set ns.in_adv = True %}
+            {% elif l|lower.startswith('cta:') %}
+                {% set ns.in_adv = False %}
+            {% elif ns.in_adv and (l.startswith('-') or l.startswith('•') or l[:2].isdigit()) %}
+                {% set ns.adv = ns.adv + [l.lstrip('-•0123456789.). ').strip()] %}
             {% endif %}
+        {% endfor %}
+        {% set ai_title = ai_title or ns.title %}
+        {% set ai_expl  = ai_expl  or ns.expl %}
+        {% set ai_adv   = ai_adv   or ns.adv %}
+    {% endif %}
+
+    {% if ai_title %}
+        <h2 style="margin:6px 0 4px; font-size:18px; color:#1f2937;">{{ ai_title }}</h2>
+    {% endif %}
+    {% if ai_expl %}
+        <p style="margin:6px 0 10px; font-size:14px; color:#374151;">{{ ai_expl }}</p>
+    {% endif %}
+
+    {# ===== Snapshot Table ===== #}
+    <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+            <div>
+                <span class="chip" style="background: {{ labels.badge_bg }};">{{ labels.label }}</span>
+                <span class="muted"
+                      style="margin-left:8px;">{{ customer.maincity.City }} · as of {{ labels.as_of }}</span>
+            </div>
         </div>
 
+        {% set c = ai.conclusions if ai and ai.conclusions else {} %}
+        {% set rates_dir = c.rates|default('unknown') %}
+        {% set speed_dir = c.speed|default('unknown') %}
+        {% set comp_dir  = c.competition|default('unknown') %}
+        {% set price_dir = c.price|default('unknown') %}
 
+        <table>
+            <tbody>
+            <tr>
+                <td>Rates</td>
+                <td>
+                    {{ trend_icon(mortgageoutlook['30y_fixed']['direction']) }}
+                    30-yr fixed <br>
+                    <strong>{{ mortgageoutlook['30y_fixed']['now'] }}%</strong>
+                    <span class="muted">· 0.25% ≈ $15/mo per $100k</span>
+                </td>
+                <td>{{ verdicts['rates']}}</td>
+            </tr>
+
+            <tr>
+                <td>Speed</td>
+                <td>
+                    {{ trend_icon(speed_dir) }}
+                    Median <strong>{{ stats.median_days }}</strong> DOM; <strong>{{ ( '{:,.0f}'.format(stats.pct_under_7d)) }}%</strong> &lt; 7d
+                </td>
+                <td>{{ verdicts['speed'] }}</td>
+            </tr>
+
+            <tr>
+                <td>Competition</td>
+                <td>
+                    {{ trend_icon(comp_dir) }}
+                    {{ ('{:,.0f}'.format(stats.pct_over_ask)) }}% over asking; <br>
+                    {{ ('{:,.0f}'.format(stats.pct_price_cuts)) }}% cut prices
+                </td>
+                <td>{{ verdicts['competition'] }}</td>
+            </tr>
+
+            <tr>
+                <td>Price</td>
+                <td>
+                    {{ trend_icon(price_dir) }}
+                    <span class="muted">{{ stats.total_sold }} Houses sold</span>
+                    Median Sold <strong>{{ ('$' ~ '{:,.0f}'.format(stats.avg_sold_price)) if stats.avg_sold_price is not none else 'N/A' }}</strong><br>
+
+                </td>
+                <td>{{ verdicts['price'] }}</td>
+            </tr>
+            </tbody>
+        </table>
     </div>
-    {# ======= End Snapshot Card ======= #}
+    {# ===== End Snapshot Table ===== #}
 
-    <!-- Stats Table -->
-    <table style="width:100%; border-collapse:collapse; margin: 24px 0; font-size: 14px;">
-        <thead>
-        <tr style="background-color:#f2f2f2;">
-            <th style="text-align:left; padding:10px;">Metric</th>
-            <th style="text-align:right; padding:10px;">This Week</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <td style="padding:10px;">Homes Sold</td>
-            <td style="padding:10px; text-align:right;">{{ stats.total_sold }}</td>
-        </tr>
-        <tr>
-            <td style="padding:10px;">Median Days on Market</td>
-            <td style="padding:10px; text-align:right;">{{ stats.median_days }}</td>
-        </tr>
-        <tr>
-            <td style="padding:10px;">Sold Under Listing</td>
-            <td style="padding:10px; text-align:right;">{{ stats.under_list }}</td>
-        </tr>
-        <tr>
-            <td style="padding:10px;">Sold Above Listing</td>
-            <td style="padding:10px; text-align:right;">{{ stats.above_list }}</td>
-        </tr>
-        <tr>
-            <td style="padding:10px;">Fastest Sale</td>
-            <td style="padding:10px; text-align:right;">{{ stats.fastest_days }} days</td>
-        </tr>
-        </tbody>
-    </table>
+    {# ---------- Advice (below the table) ---------- #}
+    {% if ai_adv and ai_adv|length %}
+        <div style="margin:8px 0 12px;">
+            <div style="font-weight:700; color:#1f2937; margin-bottom:4px;">Advice</div>
+            <ul style="margin:4px 0 0 16px; padding:0; font-size:14px;">
+                {% for item in ai_adv[:3] %}
+                    <li style="margin:3px 0;">{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
 
-    <!-- CTA + Link -->
-    <div class="cta" style="text-align:center; margin: 28px 0 8px;">
-        <a href="https://www.drillbreaker29.com/customer_interest/all?customer_id={{ customer.id }}" target="_blank">
-            View your Wayber page
-        </a>
-        <div class="muted" style="margin-top:8px;">Explore options and weekly trends tailored to you.</div>
+    {# ---------- Fixed CTA ---------- #}
+    <div class="cta" style="text-align:center; margin: 18px 0 8px;">
+        <a href="{{ meeting }}" target="_blank">Set up a meeting with Wayber</a>
+        <div class="muted" style="margin-top:8px;">We’ll tailor a plan to your timeline and budget.</div>
     </div>
 
-    <!-- Homes Grid -->
+    {# ---------- Optional admin details ---------- #}
+    {% if admin and ai_history %}
+        <div style="margin-top:12px;">
+            <div style="font-weight:700;color:#1f2937;margin-bottom:6px;">Recent AI notes</div>
+
+            {% for it in ai_history %}
+                {% set ai = it.ai or {} %}
+                {% set when = (it.sent_at or it.occurred_at) %}
+                <div style="margin:10px 0;">
+                    <div style="font-weight:700;color:#1f2937;">
+                        {{ when.strftime('%Y-%m-%d') if when else '' }} — {{ ai.title or 'AI note' }}
+                    </div>
+
+                    {% if ai.explanation %}
+                        <p style="margin:4px 0;color:#374151;font-size:14px;">{{ ai.explanation }}</p>
+                    {% elif it.ai_text %}
+                        {% for line in it.ai_text.splitlines() %}
+                            <p style="margin:4px 0;color:#374151;font-size:14px;">{{ line }}</p>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% if ai.advice %}
+                        <ul style="margin:6px 0 0 16px;padding:0;">
+                            {% for a in ai.advice %}
+                                <li style="margin:2px 0;">{{ a }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+
+                    {% if it.send_status %}
+                        <div class="muted" style="font-size:12px;margin-top:4px;">
+                            Status: {{ it.send_status }}{% if it.test %} · test{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+
     <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:14px; margin-top: 20px;">
         {% for home in forsalehomes %}
-            <div style="width: 260px; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; background:#fff;">
-                <a href="{{ home.link }}" target="_blank" style="text-decoration:none; color:inherit;">
-                    <img src="{{ home.img }}" alt="{{ home.addr }}" style="width:100%; height:auto; display:block;">
-                    <div style="padding:10px;">
-                        <div style="font-weight:700; margin-bottom:4px;">{{ home.addr }}</div>
-                        <div class="muted">{{ home.beds }} bd · {{ home.baths }} ba</div>
-                        <div style="font-weight:700; margin-top:6px;">{{ home.price }}</div>
-                    </div>
-                </a>
-            </div>
+            <div style="width:260px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;background:#fff;"><a
+                    href="https://www.zillow.com{{ home.hdpUrl }}" target="_blank"
+                    style="text-decoration:none;color:inherit;"> <img
+                    src="{{ home.imgSrc }}" alt="{{ home.ref_address }}" style="width:100%;height:auto;display:block;">
+                <div style="padding:10px;">
+                    <div style="font-weight:700;margin-bottom:4px;">{{ home.pleasant_address() }}</div>
+                    <div class="muted">{{ home.bedrooms }} bd · {{ home.bathrooms }} ba</div>
+                    <div style="font-weight:700;margin-top:6px;">${{ home.price }}</div>
+
+                </div>
+            </a></div>
         {% endfor %}
     </div>
 
-    <p style="font-size: 15px; margin-top: 22px;">We track every sale, every trend, every week—so you don’t miss the
-        moves that matter.</p>
-    <p style="font-size: 15px;">Don't see what you like? Tour any home with Wayber.</p>
 
-    <p style="font-size: 18px; margin-top: 22px;">Best,<br><strong>Wayber Team</strong></p>
+    <p style="font-size:18px; margin-top:22px;">Best,<br><strong>Wayber Team</strong></p>
 
-    <p style="text-align:center; font-size: 13px; color:#888; margin-top: 30px;">
+    <p style="text-align:center; font-size:13px; color:#888; margin-top:30px;">
         <a href="https://www.drillbreaker29.com/campaign/unsubscribe?email={{ customer.email | urlencode }}"
            style="color:#888; text-decoration:underline;">
-            Unsubscribe, I don't want any more regional real estate statistics.
+            Unsubscribe, I don't want anymore regional real estate news.
         </a>
     </p>
 
-    <div style="background:#1a1a1a; padding: 20px 0; text-align:center; margin-top: 24px;">
+    <div style="background:#1a1a1a; padding:20px 0; text-align:center; margin-top:24px;">
         <img src="https://www.drillbreaker29.com/static/maps/KRRE-Horizontal_OrangeWhite.png"
              alt="Wayber Logo" style="max-width:150px; height:auto; display:inline-block;">
     </div>

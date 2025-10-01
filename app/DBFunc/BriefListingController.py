@@ -477,7 +477,7 @@ class BriefListingController():
         return BriefListing.query.filter(*filters)
 
 
-    def get_recent_listings(self, customer, zone_ids, limit=4, homestatus=FOR_SALE):
+    def get_recent_listings(self, customer, zone_ids, homestatus=FOR_SALE):
         filters = []
 
         # Limit to zones the customer is watching
@@ -507,7 +507,6 @@ class BriefListingController():
             BriefListing.query
             .filter(*filters)
             .order_by(BriefListing.listtime.desc())
-            .limit(limit)
             .all()
         )
     # +++++++++++++++++ZoneEnds

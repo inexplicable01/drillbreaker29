@@ -119,6 +119,9 @@ class BriefListing(db.Model):
         # effectively ignoring any unexpected keys.
         pass
 
+    def pleasant_address(self):
+        return f"{self.streetAddress}, {self.city} {self.zipcode}"
+
     def ref_address(self):
         return f"{self.streetAddress}, {self.city} {self.zipcode}, NWMLS {self.NWMLS_id}, zpid: {self.zpid}"
 
