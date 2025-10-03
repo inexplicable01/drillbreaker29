@@ -4,16 +4,24 @@ import sys
 import json
 import os
 import argparse
+# base = os.getenv("BASE")
+base = "http://127.0.0.1:5000/"
+# base = "https://www.drillbreaker29.com/"
+
+
+def str2bool(v):
+  if isinstance(v, bool):
+    return v
+  return v.strip().lower() in ("true", "1", "yes", "on")
+
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--test", action="store_true", help="send test emails (don’t update customer send-times)")
-parser.add_argument("--admin", action="store_true", help="render admin-only sections in the email")
-parser.add_argument("--forreal", action="store_true", help="actually send to real recipients")
+parser.add_argument("--forreal", type=str2bool, nargs="?", const=True, default=False)
+parser.add_argument("--test", type=str2bool, nargs="?", const=True, default=False)
+parser.add_argument("--admin", type=str2bool, nargs="?", const=True, default=False)
 args = parser.parse_args()
 
-# base = os.getenv("BASE")
-# base = "http://127.0.0.1:5000/"
-base = "https://www.drillbreaker29.com/"
+
 
 getcitylisturl = base + "maintanance/getCityList"
 url3 = base + "maintanance/listingscheck"
@@ -42,19 +50,14 @@ level3_buyer = response.json()['level3_buyer']
 
 message = ''
 
-test = str(args.test).lower()
-admin = str(args.admin).lower()
-forreal = str(args.forreal).lower()
-payload = json.dumps({
-  "forreal": forreal,
-  "test": test,
-  "admin":admin
-})
-headers = {
-  'Content-Type': 'application/json'
+payload = {
+    "forreal": args.forreal,   # <-- booleans, not strings
+    "test":    args.test,
+    "admin":   args.admin,
 }
+
 url = f"{base}campaign/sendLevel1Buyer_sendEmail"
-response = requests.request("GET", url, headers=headers, data=payload)
+response = requests.request("GET", url, headers=headers, json=payload)
 
 
 
