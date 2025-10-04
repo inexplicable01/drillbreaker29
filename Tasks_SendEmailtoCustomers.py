@@ -5,8 +5,8 @@ import json
 import os
 import argparse
 # base = os.getenv("BASE")
-base = "http://127.0.0.1:5000/"
-# base = "https://www.drillbreaker29.com/"
+# base = "http://127.0.0.1:5000/"
+base = "https://www.drillbreaker29.com/"
 
 
 def str2bool(v):
