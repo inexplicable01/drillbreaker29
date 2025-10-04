@@ -118,6 +118,7 @@ def sendLevel1Buyer_sendEmail():
                 break
             emailtest+=1
 
+    sendEmailtimecheck()
     return jsonify({
         'status': 'success',
         'customers': customernames,
