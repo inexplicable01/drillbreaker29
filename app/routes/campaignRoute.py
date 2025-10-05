@@ -113,10 +113,9 @@ def sendLevel1Buyer_sendEmail():
 
             printoutEmailsThatWerentSent(customer)
 
-        if test:
-            if emailtest >2:
-                break
-            emailtest+=1
+        if emailtest >2:
+            break
+        emailtest+=1
 
     sendEmailtimecheck()
     return jsonify({
