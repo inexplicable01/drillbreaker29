@@ -59,8 +59,9 @@ def ping_email():
 def sendLevel1Buyer_sendEmail():
     emailtest=0
     forreal =  request.json.get("forreal", False)
-    test = request.json.get("test", False)
+    ignoretimerestriction = request.json.get("ignoretimerestriction", False)
     admin = request.json.get("admin", False)
+    selectafew = request.json.get("selectafew", False)
     level1_type = customertypecontroller.get_customer_type_by_id(1)
     level2_type = customertypecontroller.get_customer_type_by_id(3)
 
@@ -82,7 +83,7 @@ def sendLevel1Buyer_sendEmail():
             invalid_emails.append({'name': customer.name, 'email': customer.email})
             continue
 
-        if customercontroller.shouldsendEmail(customer) or test:
+        if customercontroller.shouldsendEmail(customer) or ignoretimerestriction:
 
             wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
             if wcity:
@@ -100,10 +101,10 @@ def sendLevel1Buyer_sendEmail():
             emailsentsuccessfull = sendLevel1BuyerEmail(customer, pricechangepng, forsalehomes, stats, forreal, admin)
 
 
-            if emailsentsuccessfull and not test:
+            if emailsentsuccessfull and not ignoretimerestriction:
                 customercontroller.update_last_email_sent_at(customer)
                 print(f"Email sent to {customer.email}; next due {customer.next_email_due_at:%Y-%m-%d %H:%M:%S}")
-            elif emailsentsuccessfull and test:
+            elif emailsentsuccessfull and ignoretimerestriction:
                 print(f"[TEST] Email sent to {defaultrecipient} (customer {customer.id} / {customer.email})")
             else:
                 print(f"[FAIL] Email not sent for customer {customer.id} / {customer.email}")
@@ -112,10 +113,10 @@ def sendLevel1Buyer_sendEmail():
         else:
 
             printoutEmailsThatWerentSent(customer)
-
-        if emailtest >2:
-            break
-        emailtest+=1
+        if selectafew:
+            if emailtest >2:
+                break
+            emailtest+=1
 
     sendEmailtimecheck()
     return jsonify({

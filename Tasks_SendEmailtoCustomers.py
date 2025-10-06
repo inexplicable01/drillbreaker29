@@ -17,7 +17,8 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--forreal", type=str2bool, nargs="?", const=True, default=False)
-parser.add_argument("--test", type=str2bool, nargs="?", const=True, default=False)
+parser.add_argument("--ignoretimerestriction", type=str2bool, nargs="?", const=True, default=False)
+parser.add_argument("--selectafew", type=str2bool, nargs="?", const=True, default=False)
 parser.add_argument("--admin", type=str2bool, nargs="?", const=True, default=False)
 args = parser.parse_args()
 
@@ -52,8 +53,9 @@ message = ''
 
 payload = {
     "forreal": args.forreal,   # <-- booleans, not strings
-    "test":    args.test,
+    "ignoretimerestriction":    args.ignoretimerestriction,
     "admin":   args.admin,
+    "selectafew": args.selectafew
 }
 
 url = f"{base}campaign/sendLevel1Buyer_sendEmail"
