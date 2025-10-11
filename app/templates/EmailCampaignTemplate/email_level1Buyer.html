@@ -167,7 +167,7 @@
         </div>
 
         {% set c = ai.conclusions if ai and ai.conclusions else {} %}
-        {% set rates_dir = c.rates|default('unknown') %}
+        {% set sold_price_dir = c.sold_price|default('unknown') %}
         {% set speed_dir = c.speed|default('unknown') %}
         {% set comp_dir  = c.competition|default('unknown') %}
         {% set price_dir = c.price|default('unknown') %}
@@ -175,10 +175,8 @@
         <table>
             <tbody>
             <tr>
-                <td>Rates</td>
+                <td>Rates {{ trend_icon(mortgageoutlook['30y_fixed']["direction"]) }}</td>
                 <td>
-                    {{ trend_icon(mortgageoutlook['30y_fixed']['direction']) }}
-                    30-yr fixed <br>
                     <strong>{{ mortgageoutlook['30y_fixed']['now'] }}%</strong>
                     <span class="muted">· 0.25% ≈ $15/mo per $100k</span>
                 </td>
@@ -186,18 +184,18 @@
             </tr>
 
             <tr>
-                <td>Speed</td>
+                <td>Speed {{ trend_icon(speed_dir) }}</td>
                 <td>
-                    {{ trend_icon(speed_dir) }}
+
                     Median <strong>{{ stats.median_days }}</strong> DOM; <strong>{{ ( '{:,.0f}'.format(stats.pct_under_7d)) }}%</strong> &lt; 7d
                 </td>
                 <td>{{ verdicts['speed'] }}</td>
             </tr>
 
             <tr>
-                <td>Competition</td>
+                <td>Competition {{ trend_icon(comp_dir) }}</td>
                 <td>
-                    {{ trend_icon(comp_dir) }}
+
                     {{ ('{:,.0f}'.format(stats.pct_over_ask)) }}% over asking; <br>
                     {{ ('{:,.0f}'.format(stats.pct_price_cuts)) }}% cut prices
                 </td>
@@ -205,14 +203,13 @@
             </tr>
 
             <tr>
-                <td>Price</td>
+                <td>Price {{ trend_icon(sold_price_dir) }}</td>
                 <td>
-                    {{ trend_icon(price_dir) }}
                     <span class="muted">{{ stats.total_sold }} Houses sold</span>
                     Median Sold <strong>{{ ('$' ~ '{:,.0f}'.format(stats.avg_sold_price)) if stats.avg_sold_price is not none else 'N/A' }}</strong><br>
 
                 </td>
-                <td>{{ verdicts['price'] }}</td>
+                <td>{{ verdicts['sold_price'] }}</td>
             </tr>
             </tbody>
         </table>

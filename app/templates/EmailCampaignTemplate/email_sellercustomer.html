@@ -3,20 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <title>Weekly Market Update</title>
+
+        <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 600px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .muted {
+            color: #6b7280;
+        }
+
+        .row {
+            display: flex;
+            align-items: flex-start;
+            margin: 8px 0;
+        }
+
+        .row .label {
+            width: 140px;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .card {
+            border: 1px solid #e8eef5;
+            border-radius: 12px;
+            background: #f9fbff;
+            padding: 16px;
+            margin: 18px 0;
+        }
+
+        .cta a {
+            display: inline-block;
+            background: #1a73e8;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 640px) {
+            .row {
+                flex-direction: column;
+            }
+
+            .row .label {
+                width: auto;
+                margin-bottom: 4px;
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 8px 10px;
+            text-align: left;
+        }
+
+        thead tr {
+            background: #f3f4f6;
+        }
+    </style>
 </head>
+{% macro trend_icon(dir) -%}
+  {% set d = (dir or 'unknown')|lower %}
+  {% if d == 'up' %}
+    {% set bg = '#e74c3c' %}{% set arrow = '↑' %}
+  {% elif d == 'down' %}
+    {% set bg = '#27ae60' %}{% set arrow = '↓' %}
+  {% else %}
+    {# same/unknown -> neutral gray #}
+    {% set bg = '#9ca3af' %}{% set arrow = '→' %}
+  {% endif %}
+  <span aria-label="{{ d }}" title="{{ d }}"
+        style="display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;
+               border-radius:50%;background:{{ bg }};color:#fff;font-size:18px;font-weight:700;margin-right:6px;">
+    {{ arrow }}
+  </span>
+{%- endmacro %}
+
 <body style="font-family: Arial, sans-serif; line-height: 1.6; background-color: #f4f4f4; padding: 20px;">
     <div style="max-width: 600px; margin: auto; background-color: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-        <p>Hi {{ customer.name }},</p>
+        <p  style="font-size:20px; line-height:1.5; margin:0 0 10px; font-weight:600;">Hi {{ customer.name }},</p>
 
         <p>Thinking about selling, but not sure if now’s the right time?</p>
 
-        <p>Here’s a quick snapshot of what’s happening this week in your neighborhood:</p>
+        <p>We created a quick report for Real Estate Activity in your Area:</p>
 
-        <ul>
-            <li>📈 {{ stats.new_listings }} homes listed in the past 7 days in {{ customer.maincity.City }}</li>
-            <li>💰 Average sold price: ${{ stats.avg_sold_price | int  }}</li>
-            <li>⏳ Homes are selling in just {{ stats.avg_days_on_market  | round }} days on average</li>
-        </ul>
+            {# ===== Snapshot Table ===== #}
+    <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+            <div>
+                                <span
+                      style="margin-left:8px;font-size:20px;">
+                    {{ customer.maincity.City }} Market as of {{ labels.as_of }}</span>
+{#                <span class="chip" style="background: {{ labels.badge_bg }};">{{ labels.label }}</span>#}
+{#                <span class="muted"#}
+{#                      style="margin-left:8px;font-size:20px;">#}
+
+            </div>
+        </div>
+
+        {% set c = ai.conclusions if ai and ai.conclusions else {} %}
+        {% set sold_price_dir = c.sold_price|default('unknown') %}
+        {% set speed_dir = c.speed|default('unknown') %}
+        {% set inventory_dir  = c.inventory|default('unknown') %}
+        {% set price_dir = c.price|default('unknown') %}
+
+        <table>
+
+                        <tbody>
+
+            <tr>
+                <td>{{ trend_icon(sold_price_dir) }} Median Home Price</td>
+                <td>
+
+                   {{ ('{:,.0f}'.format(stats.pct_over_ask)) }}% Deals went over asking; <br>
+                    {{ ('{:,.0f}'.format(stats.pct_price_cuts)) }}% Deals cut prices from listing<br>
+
+                    Median Sold <strong>{{ ('$' ~ '{:,.0f}'.format(stats.avg_sold_price)) if stats.avg_sold_price is not none else 'N/A' }}</strong><br>
+
+                </td>
+                <td>{{ verdicts['sold_price'] }}</td>
+            </tr>
+
+            <tr>
+                <td>{{ trend_icon(speed_dir) }} Median Days on Market</td>
+                <td>
+
+                    Average Days on Market : {{ ('{:,.0f}'.format(stats.avg_days_on_market))}}
+                </td>
+                <td>{{ verdicts['speed'] }}</td>
+            </tr>
+
+            <tr>
+                <td>{{ trend_icon(inventory_dir) }} Available Listings</td>
+                <td>
+
+                    <span>{{ stats.for_sale }} Active Listings </span>
+
+                </td>
+                <td>{{ verdicts['inventory'] }}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    {# ===== End Snapshot Table ===== #}
+
+
+
+{#        <ul>#}
+{#            <li>📈 {{ stats.new_listings }} homes listed in the past 7 days in {{ customer.maincity.City }}</li>#}
+{#            <li>💰 Average sold price: ${{ stats.avg_sold_price | int  }}</li>#}
+{#            <li>⏳ Homes are selling in just {{ stats.avg_days_on_market  | round }} days on average</li>#}
+{#        </ul>#}
+{#        #}
+        <p style="margin:6px 0 10px; font-size:14px; color:#374151;">{{ ai['explanation'] }}</p>
 
                 <div style="text-align: center; margin: 30px 0;">
   <p style="font-size: 18px; font-weight: bold; color: #000; margin-bottom: 10px;">
@@ -32,17 +201,14 @@
   </div>
 </div>
 
-        <p>If you're even <em>thinking</em> about selling in the next few months, it’s worth chatting. I can give you a data-backed price estimate + strategy to sell fast — <strong>without paying 2.5% listing commissions!</strong>.</p>
+        <p>If you're even <em>thinking</em> about selling in the next few months, it’s worth chatting!!
+            I can give you a data-backed price estimate + strategy to sell fast — <strong>without paying 2.5% listing commissions!</strong>.</p>
 
         <p>
-            <strong>Our FULL SERVICE package price is $4995 (Includes photography!)</strong>
+            <strong>Our FULL SERVICE package price is $2749 (Includes photography!)</strong>
         </p>
 
-
-
-        <p>At <strong>Wayber</strong>, we help sellers keep more of their equity while still providing the full marketing, staging, negotiation, and paperwork support you'd expect from a top-tier agent — just without the bloated fees.</p>
-
-        <p>➡️ <strong>Reply to this email</strong> if you'd like a quick, no-pressure walkthrough of how much you could walk away with in today’s market.</p>
+        <p>➡️ <strong>Reply to this email</strong> for a quick, no-pressure walkthrough!!</p>
 
         <p>Talk soon,<br>
         Waichak Luk<br>

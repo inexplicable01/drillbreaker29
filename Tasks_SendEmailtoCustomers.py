@@ -5,8 +5,8 @@ import json
 import os
 import argparse
 # base = os.getenv("BASE")
-# base = "http://127.0.0.1:5000/"
-base = "https://www.drillbreaker29.com/"
+base = "http://127.0.0.1:5000/"
+# base = "https://www.drillbreaker29.com/"
 
 
 def str2bool(v):
@@ -61,8 +61,8 @@ payload = {
 url = f"{base}campaign/sendLevel1Buyer_sendEmail"
 response = requests.request("GET", url, headers=headers, json=payload)
 
-
-
+url = f"{base}campaign/sendLevel1_2_Seller_sendEmail"
+response = requests.request("GET", url, headers=headers, json=payload)
 # for customer in level1_2buyer:
 #     url = f"{base}email/sendEmailOutToLeads"
 #     payload = {**customer, "test": test, "group":"1"}  # or "true"

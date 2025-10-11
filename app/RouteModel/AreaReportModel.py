@@ -51,45 +51,47 @@ def _week_start(d: date) -> date:
     # Monday anchor
     return d - timedelta(days=d.weekday())
 
-def StatsModelRun(zone_ids, daysofconcern, daysofconcernforlistings=7):
-    # --- helpers (local to keep the function self-contained) ---
-    def _as_date(x):
-        if x is None:
-            return None
-        if isinstance(x, date):
-            return x
-        if isinstance(x, datetime):
-            return x.date()
-        # try ISO string
-        try:
-            return datetime.fromisoformat(str(x)).date()
-        except Exception:
-            return None
-
-    def _sold_date_for(br):
-        """
-        Convert br.soldtime (Unix epoch) -> date.
-        Accepts int/float/str; tolerates milliseconds.
-        Returns a datetime.date or None.
-        """
-        ts = getattr(br, "soldtime", None)
-        if ts is None:
+def StatsModelRun(zone_ids, emailcadencedays, daysofconcernforlistings=7):
+    # --- helpers ---
+    def _epoch_to_date(val):
+        """Accepts seconds or ms epoch (int/float/str). Returns date or None."""
+        if val is None:
             return None
         try:
-            ts = float(ts)
-            # if it's in milliseconds (13 digits), normalize to seconds
-            if ts > 1e12:
+            ts = float(val)
+            if ts > 1e12:  # ms → s
                 ts /= 1000.0
             return datetime.utcfromtimestamp(ts).date()
         except Exception:
             return None
 
-    def _week_start(d: date) -> date:
-        # Monday anchor
-        return d - timedelta(days=d.weekday())
+    def _sold_date_for(br):
+        """Use soldtime (epoch) → date."""
+        return _epoch_to_date(getattr(br, "soldtime", None))
 
-    # --- existing aggregations (unchanged) ---
-    fastest_days = 10
+    def _list_date_for(br):
+        """
+        Try common fields for the first time a listing went live.
+        Adjust names as needed for your model.
+        """
+        for name in ("listtime", "list_time", "list_date", "listed_date", "listdate", "created_at"):
+            val = getattr(br, name, None)
+            # allow either epoch or ISO date
+            d = _epoch_to_date(val)
+            if d:
+                return d
+            if val:
+                try:
+                    return datetime.fromisoformat(str(val)).date()
+                except Exception:
+                    pass
+        return None
+
+    def _week_start(d: date) -> date:
+        return d - timedelta(days=d.weekday())  # Monday
+
+    # --- aggregates ---
+    fastest_days = None
     fast_sales = 0
     under_list = 0
     above_list = 0
@@ -97,100 +99,199 @@ def StatsModelRun(zone_ids, daysofconcern, daysofconcernforlistings=7):
     sale_to_list_ratios = []
     list2penddayslist = []
 
-    # Pull enough sold inventory to cover 16 weeks (112 days)
-    sold_window_days = max(daysofconcernforlistings, 112)
+    # Pull enough sold inventory to cover 16 weeks (112d) for time series
+    series_window_days = max(daysofconcernforlistings, 112)
 
-    soldhomes = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, sold_window_days).all()
-    pending = brieflistingcontroller.listingsByZonesandStatus(zone_ids, PENDING, daysofconcernforlistings).all()
-    new_listings = brieflistingcontroller.listingsByZonesandStatus(zone_ids, FOR_SALE, daysofconcernforlistings).all()
+    soldhomes_cadence = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD,
+                                                                            emailcadencedays).all()
+    pending_cadance   = brieflistingcontroller.listingsByZonesandStatus(zone_ids, PENDING, emailcadencedays).all()
+    forsale_cadance = brieflistingcontroller.listingsByZonesandStatus(zone_ids, FOR_SALE, emailcadencedays).all()
+    forsale_total = brieflistingcontroller.listingsByZonesandStatus(zone_ids, FOR_SALE, 720).all()
 
-    brieflistings = soldhomes + pending
-    for br in brieflistings:
-        if br.list2penddays is not None:
-            d = br.list2penddays
-            if d < fastest_days:
-                fastest_days = d
+# For 16-week history of FOR_SALE *new actives per week*, load a long window
+    forsale_16w = brieflistingcontroller.listingsByZonesandStatus(zone_ids, FOR_SALE, 16*7).all()
+    pending_16W = brieflistingcontroller.listingsByZonesandStatus(zone_ids, PENDING, 16*7).all()
+    soldhomes_16w = brieflistingcontroller.listingsByZonesandStatus(zone_ids, RECENTLYSOLD, 16*7).all()
+
+    brieflisting_cadence = pending_cadance + soldhomes_cadence
+    brieflistings16W = pending_16W + soldhomes_16w
+
+    for br in brieflisting_cadence:
+        d = getattr(br, "list2penddays", None)
+        if d is not None:
+            list2penddayslist.append(d)
             if d < 8:
                 fast_sales += 1
-            list2penddayslist.append(d)
 
-        if br.listprice is not None and br.soldprice is not None and br.listprice > 0:
-            if br.soldprice < br.listprice:
+        lp = getattr(br, "listprice", None)
+        sp = getattr(br, "soldprice", None)
+        if lp is not None and sp is not None and lp > 0:
+            if sp < lp:
                 under_list += 1
             else:
                 above_list += 1
-            sold_prices.append(br.soldprice)
-            sale_to_list_ratios.append(100.0 * (br.soldprice / br.listprice))
+            sold_prices.append(sp)
+            sale_to_list_ratios.append(100.0 * (sp / lp))
+    new_listings_cadance=[]
+    cutoff = datetime.utcnow().date() - timedelta(days=emailcadencedays)
+    for br in brieflisting_cadence+forsale_cadance:
+        listtime = _list_date_for(br)
+        if listtime and cutoff <= listtime <= datetime.utcnow().date():
+            new_listings_cadance.append(br)
+
+
+    # Populate PENDING counts (bucket by pend date)
 
     total_with_days = len(list2penddayslist)
-    median_days = statistics.median(list2penddayslist) if total_with_days else None
-    avg_days_on_market = statistics.mean(list2penddayslist) if total_with_days else None
-    avg_sold_price = statistics.mean(sold_prices) if sold_prices else None
-    median_sold_price = statistics.median(sold_prices) if sold_prices else None
+    median_days = int(round(statistics.median(list2penddayslist))) if total_with_days else None
+    avg_days_on_market = float(round(statistics.mean(list2penddayslist), 2)) if total_with_days else None
 
-    basis_comp = (under_list + above_list) or 0
-    pct_over_ask = (100.0 * above_list / basis_comp) if basis_comp else 0.0
-    sale_to_list_avg_pct = statistics.mean(sale_to_list_ratios) if sale_to_list_ratios else None
-    pct_under_7d = (100.0 * fast_sales / total_with_days) if total_with_days else 0.0
-    pct_price_cuts = under_list/len(brieflistings)# TODO: set if you track cuts
+    avg_sold_price = int(round(statistics.mean(sold_prices))) if sold_prices else None
+    median_sold_price = int(round(statistics.median(sold_prices))) if sold_prices else None
 
-    # --- new: 16-week (weekly) median price time series ---
+    basis_comp = (under_list + above_list)
+    pct_over_ask = round(100.0 * above_list / basis_comp, 1) if basis_comp else 0.0
+    sale_to_list_avg_pct = round(statistics.mean(sale_to_list_ratios), 2) if sale_to_list_ratios else None
+    pct_under_7d = round(100.0 * fast_sales / total_with_days, 1) if total_with_days else 0.0
+
+    # Proxy for price cuts (kept for compatibility): % sold under list
+    pct_price_cuts = round(100.0 * under_list / basis_comp, 1) if basis_comp else 0.0
+
+    if total_with_days:
+        fastest_days = int(min(list2penddayslist))
+
+    # --- 16-week windows (oldest→newest) ---
     today = datetime.utcnow().date()
     this_monday = _week_start(today)
-    # Build week starts oldest→newest (16 weeks including this week)
     week_starts = [this_monday - timedelta(weeks=i) for i in range(15, -1, -1)]
-    buckets = {ws: [] for ws in week_starts}
 
-    for br in soldhomes:  # only look at sold homes for the price series
+    # Buckets
+    price_buckets = {ws: [] for ws in week_starts}    # sold price by sold week
+    dom_buckets   = {ws: [] for ws in week_starts}    # DOM by sold week
+    newlisting_buckets= {ws: 0  for ws in week_starts}    # count of NEW for-sale by listing week
+    pending_buckets = {ws: 0 for ws in week_starts}
+
+
+    for br in forsale_16w:
+        ld = _list_date_for(br)
+        if not ld:
+            continue
+        if ld < week_starts[0] or ld > (week_starts[-1] + timedelta(days=6)):
+            continue
+        ws = _week_start(ld)
+        if ws in newlisting_buckets:
+            newlisting_buckets[ws] += 1
+
+        pd = _epoch_to_date(br.pendday)
+        if not pd:
+            continue
+        if pd < week_starts[0] or pd > (week_starts[-1] + timedelta(days=6)):
+            continue
+        ws = _week_start(pd)
+        if ws in pending_buckets:
+            pending_buckets[ws] += 1
+
+    # Populate price & DOM (soldhomes, bucket by sold date)
+    for br in brieflistings16W:
         sd = _sold_date_for(br)
         if not sd:
             continue
-        # Only include if within our 16-week window
         if sd < week_starts[0] or sd > (week_starts[-1] + timedelta(days=6)):
             continue
         ws = _week_start(sd)
-        if ws in buckets:
+        if ws in price_buckets:
             sp = getattr(br, "soldprice", None)
             if sp is not None:
-                buckets[ws].append(sp)
+                price_buckets[ws].append(sp)
+            dom = getattr(br, "list2penddays", None)
+            if dom is not None:
+                dom_buckets[ws].append(dom)
 
-    median_price_16w = []
+    # Populate “active listings” history as NEW actives per week (forsale_long, bucket by list date)
+    today = datetime.utcnow().date()
+    this_monday = _week_start(today)
+    week_starts = [this_monday - timedelta(weeks=i) for i in range(15, -1, -1)]
+
+    active_listing_16W = []
     for ws in week_starts:
-        values = buckets.get(ws, [])
-        if values:
-            mp = int(round(statistics.median(values)))
-            cnt = len(values)
-        else:
-            mp = None
-            cnt = 0
+        we = ws + timedelta(days=6)
+        count = 0
+        for br in brieflistings16W:
+            lt = _epoch_to_date(getattr(br, "listtime", None))
+            pd = _epoch_to_date(getattr(br, "pendday", None))
+            if lt and lt <= we and (pd is None or pd > ws):
+                count += 1
+        active_listing_16W.append({"week_start": ws.isoformat(), "active_count": count})
+
+    # Build series
+    sold_count_16=[]
+    median_price_16w = []
+    median_dom_16w = []
+    newlistings_16w = []
+    pending_16w = []
+
+    for ws in week_starts:
+        # price series
+        pv = price_buckets.get(ws, [])
+        mp = int(round(statistics.median(pv))) if pv else None
+
+        pending_16w.append({
+            "week_start": ws.isoformat(),
+            "new_pending": int(pending_buckets.get(ws, 0)),
+        })
+
         median_price_16w.append({
             "week_start": ws.isoformat(),
-            "median_price": mp,  # raw number; format later in Jinja if needed
-            "count": cnt
+            "median_price": mp,
+            "count": len(pv),
+        })
+
+        # DOM series
+        dv = dom_buckets.get(ws, [])
+        md = int(round(statistics.median(dv))) if dv else None
+        median_dom_16w.append({
+            "week_start": ws.isoformat(),
+            "median_dom": md,
+            "count": len(dv),
+        })
+
+        # active listings (new actives that week)
+        newlistings_16w.append({
+            "week_start": ws.isoformat(),
+            "newlistings": int(newlisting_buckets.get(ws, 0)),
         })
 
     return {
-        # existing
-        "total_sold": len(soldhomes),
-        "total_pending": len(pending),
-        "new_listings": len(new_listings),
+        # counts / snapshots
+        "total_sold": len(soldhomes_cadence),
+        "total_pending": len(pending_cadance),
+        "new_listings": len(new_listings_cadance),
+        "for_sale": len(forsale_total),     # kept for backward compatibility
+
+        # speed / competition
         "fast_sales": fast_sales,
-        "under_list": under_list,
-        "above_list": above_list,
         "fastest_days": fastest_days,
         "median_days": median_days,
         "avg_days_on_market": avg_days_on_market,
+        "pct_under_7d": pct_under_7d,
+        "sale_to_list_avg_pct": sale_to_list_avg_pct,
+        "pct_over_ask": pct_over_ask,
+
+        # prices
+        "under_list": under_list,
+        "above_list": above_list,
         "avg_sold_price": avg_sold_price,
         "median_sold_price": median_sold_price,
-        "pct_over_ask": pct_over_ask,
-        "sale_to_list_avg_pct": sale_to_list_avg_pct,
-        "pct_under_7d": pct_under_7d,
-        "pct_price_cuts": pct_price_cuts,
+        "pct_price_cuts": pct_price_cuts,  # proxy
 
-        # new series
-        "median_price_16w": median_price_16w,  # ← list of {week_start, median_price, count}
+        # 16-week histories (oldest→newest)
+        "median_price_16w": median_price_16w,       # [{week_start, median_price, count}]
+        "median_dom_16w": median_dom_16w,           # [{week_start, median_dom, count}]
+        "newlistings_16w": newlistings_16w, # [{week_start, new_actives}]"
+        "pending_16w":pending_16w,
+        "active_listing_16W":active_listing_16W,
+
     }
-
 
 from datetime import datetime, timedelta
 def AreaReportModelRun(selected_zones, selectedhometypes,soldlastdays):

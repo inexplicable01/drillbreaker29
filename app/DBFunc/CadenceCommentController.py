@@ -366,7 +366,7 @@ class CommentController:
             return "same" if v == "neutral" else v
         return "unknown"
 
-    def _parse_ai_structured(self, text: str) -> Dict[str, Any]:
+    def _parse_ai_structured(self, text: str, segment: int) -> Dict[str, Any]:
         """
         Try to parse strict JSON; if it fails, try to yank the first {...} block.
         """
@@ -396,7 +396,8 @@ class CommentController:
                 "rates": self._normalize_dir_token(obj.get("conclusions", {}).get("rates")),
                 "speed": self._normalize_dir_token(obj.get("conclusions", {}).get("speed")),
                 "competition": self._normalize_dir_token(obj.get("conclusions", {}).get("competition")),
-                "price": self._normalize_dir_token(obj.get("conclusions", {}).get("price")),
+                "sold_price": self._normalize_dir_token(obj.get("conclusions", {}).get("sold_price")),
+                "inventory": self._normalize_dir_token(obj.get("conclusions", {}).get("inventory")),
             },
         }
         return out
@@ -442,18 +443,31 @@ class CommentController:
                     "Watch new listings that price fairly",
                 ],
                 "cta": "Reply 'meet' to schedule a 15-minute planning call with Wayber.",
-                "conclusions": {
+            }
+            if segment in (1, 2):  # buyers
+                out["conclusions"] = {
                     "rates": "unknown",
                     "speed": "unknown",
                     "competition": "unknown",
-                    "price": "unknown"  # only safe one from stats alone
-                },
-            }
+                    "sold_price": "unknown",
+                }
+            elif segment == 3:  # seller
+                out["conclusions"] = {
+                    "sold_price": "unknown",
+                    "speed": "unknown",
+                    "inventory": "unknown",
+                }
+            else:
+                # default to buyer schema
+                out["conclusions"] = {
+                    "rates": "unknown",
+                    "speed": "unknown",
+                    "competition": "unknown",
+                    "sold_price": "unknown",
+                }
+
         else:
-            out = self._parse_ai_structured(text_out)
-            # Fill anything missing/unknown for price from series
-            if out.get("conclusions", {}).get("price") in (None, "", "unknown"):
-                out["conclusions"]["price"] = "todo"
+            out = self._parse_ai_structured(text_out, segment)
 
         # Persist on the same cadence row if requested
 
@@ -471,47 +485,88 @@ class CommentController:
         return out
 
     def build_ai_explainer_prompt_from_stats(self, customer, segment: int, metrics) -> str:
+        """
+        Build an LLM prompt from stats, switching the 'conclusions' targets
+        depending on buyer/seller segment.
+
+        Buyer (1/2):    conclusions = rates | speed | competition | sold_price
+        Seller (3):     conclusions = sold_price | speed | inventory
+        """
         seg_map = {1: "Non-Active Buyer", 2: "Active Buyer", 3: "Seller"}
         seg_name = seg_map.get(int(segment or 1), "Non-Active Buyer")
+        is_seller = (int(segment or 1) == 3)
 
-        out = self.recent_cadences(customer.id, limit=5)
-        ##TODO Add a way to retrieve customer preferences
-        history = self.recent_cadence_prompt_builder(out)
+        # Pull a few recent cadences (AI titles/explanations) to give context
+        recent = self.recent_cadences(customer.id, limit=5)
+        history = self.recent_cadence_prompt_builder(recent) if hasattr(self, "recent_cadence_prompt_builder") else ""
 
-        return (
+        # Common header
+        header = (
             "You are a real-estate advisor for Wayber (WA).\n"
             "Use ONLY the data block provided. Do not invent numbers. Be concise and clear.\n\n"
             f"CUSTOMER:\n- Name: {getattr(customer, 'name', 'there')}\n"
-            f"- Segment: {seg_name} (1=Non-Active Buyer, 2=Active Buyer, 3=seller)\n"
+            f"- Segment: {seg_name} (1=Non-Active Buyer, 2=Active Buyer, 3=Seller)\n"
             f"- City: {getattr(getattr(customer, 'maincity', None), 'City', 'N/A')}\n\n"
             "DATA:\n"
             f"{metrics}\n\n"
             "HISTORY:\n"
             f"{history}\n\n"
             "TASK:\n"
-            "1) Decide directional conclusions (one word each) for:\n"
-            "   - rates: up|down|same|unknown\n"
-            "   - speed (DOM — larger means slower): up|down|same|unknown\n"
-            "   - competition (use sale_to_list_avg_pct, pct_over_ask, price_cuts): up|down|same|unknown\n"
-            "   - price (use PRICE_SERIES_16W trend): up|down|same|unknown\n"
-            "2) Write a short title (≤60 chars), a 90–120 word explanation, and 3 short advice bullets.\n"
-            "3) Provide a CTA line (encourage booking a planning call with Wayber).\n"
-            "4) Don't use phrases like As a non active buyer.....\n\n"
-            "OUTPUT: Return ONLY valid JSON with this exact schema (no backticks, no prose):\n"
-            "{\n"
-            '  "title": "string",\n'
-            '  "explanation": "string",\n'
-            '  "advice": ["string","string","string"],\n'
-            '  "cta": "string",\n'
-            '  "conclusions": {\n'
-            '    "rates": "up|down|same|unknown",\n'
-            '    "speed": "up|down|same|unknown",\n'
-            '    "competition": "up|down|same|unknown",\n'
-            '    "price": "up|down|same|unknown"\n'
-            "  }\n"
-            "}\n"
-            "Rules: If a dimension is not present in DATA, set it to \"unknown\". Keep it brief and useful.\n"
         )
+
+        if not is_seller:
+            # BUYER conclusions
+            task = (
+                "1) Decide directional conclusions (one word each) for:\n"
+                "   - rates: up|down|same|unknown\n"
+                "   - speed (DOM — larger means slower): up|down|same|unknown\n"
+                "   - competition (use sale_to_list_avg_pct, pct_over_ask, price_cuts): up|down|same|unknown\n"
+                "   - price (use PRICE_SERIES_16W trend): up|down|same|unknown\n"
+                "2) Write a short title (≤60 chars), a 90–120 word explanation, and 3 short advice bullets.\n"
+                "3) Provide a CTA line (encourage booking a planning call with Wayber).\n"
+                "4) Don't say “As a non active buyer…”. Speak directly and briefly.\n\n"
+                "OUTPUT: Return ONLY valid JSON (no backticks, no prose):\n"
+                "{\n"
+                '  "title": "string",\n'
+                '  "explanation": "string",\n'
+                '  "advice": ["string","string","string"],\n'
+                '  "cta": "string",\n'
+                '  "conclusions": {\n'
+                '    "rates": "up|down|same|unknown",\n'
+                '    "speed": "up|down|same|unknown",\n'
+                '    "competition": "up|down|same|unknown",\n'
+                '    "sold_price": "up|down|same|unknown"\n'
+                "  }\n"
+                "}\n"
+                'Rules: If a dimension is missing in DATA, set it to "unknown". Keep it brief and useful.\n'
+            )
+        else:
+            # SELLER conclusions
+            # Tell the model exactly which fields to use, and preferred fallbacks.
+            task = (
+                "1) Decide directional conclusions (one word each) for the SELLER view:\n"
+                "   - sold_price: up|down|same|unknown  (use median_sold_price if present, else avg_sold_price)\n"
+                "   - speed:      up|down|same|unknown  (use median_days; note: higher DOM ⇒ slower ⇒ 'up')\n"
+                "   - inventory:  up|down|same|unknown  (use active_listings if present; else use new_listings as a proxy)\n"
+                "2) Write a short title (≤60 chars), a 90–120 word explanation, and 3 short advice bullets tailored to a seller.\n"
+                "3) Provide a CTA line (encourage booking a planning call with Wayber).\n"
+                "4) Be concrete. Do not invent numbers not in DATA. Do not use boilerplate.\n\n"
+                "OUTPUT: Return ONLY valid JSON (no backticks, no prose):\n"
+                "{\n"
+                '  "title": "string",\n'
+                '  "explanation": "string",\n'
+                '  "advice": ["string","string","string"],\n'
+                '  "cta": "string",\n'
+                '  "conclusions": {\n'
+                '    "sold_price": "up|down|same|unknown",\n'
+                '    "speed": "up|down|same|unknown",\n'
+                '    "inventory": "up|down|same|unknown"\n'
+                "  }\n"
+                "}\n"
+                'Rules: If a dimension is missing in DATA, set it to "unknown". Keep it brief and useful.\n'
+            )
+
+        return header + task
 
 
 commentcontroller = CommentController()

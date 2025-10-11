@@ -95,7 +95,7 @@ def label_from_stats(stats):
         return "COOL"
     return "BALANCED"
 
-def verbalize_stats( stats: Dict[str, Any]) -> str:
+def verbalize_stats(stats: Dict[str, Any], emailcadence) -> str:
     """
     Turn raw StatsModelRun(...) dict into a compact, readable block for the LLM.
     Does not compute directions; just reports the numbers.
@@ -112,12 +112,13 @@ def verbalize_stats( stats: Dict[str, Any]) -> str:
             return str(v)
 
     lines = []
-    lines.append(f"TOTAL_SOLD={_v('total_sold')}, PENDING={_v('total_pending')}, NEW_LISTINGS={_v('new_listings')}")
-    lines.append(f"DOM_MEDIAN={_v('median_days')}, DOM_AVG={_v('avg_days_on_market')}, FASTEST_DAYS={_v('fastest_days')}")
+    lines.append(f"Below is the data for the latest {emailcadence} days")
+    lines.append(f"DOM_MEDIAN_IN={_v('median_days')}, DOM_AVG={_v('avg_days_on_market')}, FASTEST_DAYS={_v('fastest_days')}")
     lines.append(f"OVER_ASK_PCT={_v('pct_over_ask','{:.1f}')}, UNDER_7D_PCT={_v('pct_under_7d','{:.1f}')}, PRICE_CUTS_PCT={_v('pct_price_cuts','{:.1f}')}")
-    lines.append(f"SALE_TO_LIST_AVG_PCT={_v('sale_to_list_avg_pct','{:.2f}')}")
-    lines.append(f"SOLD_PRICE_AVG={_v('avg_sold_price','$ {:,}')}, SOLD_PRICE_MEDIAN={_v('median_sold_price','$ {:,}')}")
+    # lines.append(f"SALE_TO_LIST_AVG_PCT={_v('sale_to_list_avg_pct','{:.2f}')}")
+    # lines.append(f"SOLD_PRICE_AVG={_v('avg_sold_price','$ {:,}')}, SOLD_PRICE_MEDIAN={_v('median_sold_price','$ {:,}')}")
 
+    lines.append(f"Below is the data for the last 16 weeks days")
     # 16-week series (oldest→newest). Keep it machine-friendly and human-readable.
     series = s.get("median_price_16w") or []
     ser_pairs = []
@@ -132,8 +133,44 @@ def verbalize_stats( stats: Dict[str, Any]) -> str:
     else:
         lines.append("PRICE_SERIES_16W=(none)")
 
+    series = s.get("pending_16w") or []
+    ser_pairs = []
+    for pt in series:
+        ws = pt.get("week_start", "N/A")
+        cnt = pt.get("new_pending", 0)
+        ser_pairs.append(f"({ws},listingpending={cnt})")
+    if ser_pairs:
+        lines.append("PENDING_COUNT_16W=" + ", ".join(ser_pairs))
+    else:
+        lines.append("PENDING_COUNT_16W=(none)")
+
+
+    # NEW: 16-week active listings series (new actives per week; oldest→newest)
+    series_active = s.get("newlistings_16w") or []
+    act_pairs = []
+    for pt in series_active:
+        ws = pt.get("week_start", "N/A")
+        na = pt.get("newlistings", 0)
+        act_pairs.append(f"({ws},{int(na)})")
+    if act_pairs:
+        lines.append("NEW_LISTINGS_16W=" + ", ".join(act_pairs))
+    else:
+        lines.append("NEW_LISTINGS_16W=(none)")
+
+    series_active = s.get("active_listing_16W") or []
+    act_pairs = []
+    for pt in series_active:
+        ws = pt.get("week_start", "N/A")
+        na = pt.get("active_count", 0)
+        act_pairs.append(f"({ws},{int(na)})")
+    if act_pairs:
+        lines.append("ACTIVE_LISTINGS_16W=" + ", ".join(act_pairs))
+    else:
+        lines.append("ACTIVE_LISTINGS_16W=(none)")
+
     # One compact blob
     return "\n".join(lines)
+
 
 def _normalize_dir_token_py(val):
     v = (str(val or "")).strip().lower()
@@ -154,11 +191,11 @@ def verdict_sentence(kind, dir_token):
         if d == "same":  return "Listings are likely to stay on market for about the same length"
         return "time-on-market direction is unclear"
     if kind == "competition":
-        if d == "up":    return "Market is likely to be more competitive"
-        if d == "down":  return "Market is likely to be less competitive"
-        if d == "same":  return "Market is likely to be about as competitive"
+        if d == "up":    return "Market is likely to be more seller friendly"
+        if d == "down":  return "Market is likely to be more buyer friendly"
+        if d == "same":  return "Competitiveness of listings to remain about the same"
         return "competition direction is unclear"
-    if kind == "price":
+    if kind == "sold_price":
         if d == "up":    return "Prices are likely to rise"
         if d == "down":  return "Prices are likely to fall"
         if d == "same":  return "Prices are likely to stay about the same"

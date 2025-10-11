@@ -291,7 +291,7 @@ def build_verdicts_from_ai(ai, mortgageoutlook):
         "rates":       verdict_sentence("rates",       mortgageoutlook['30y_fixed']['direction']),
         "speed":       verdict_sentence("speed",       c.get("speed")),
         "competition": verdict_sentence("competition", c.get("competition")),
-        "price":       verdict_sentence("price",       c.get("price")),
+        "sold_price":       verdict_sentence("sold_price",       c.get("sold_price")),
     }
 
 import pandas as pd
@@ -311,7 +311,7 @@ def sendLevel1BuyerEmail(customer, pricechangepng, forsalehomes, stats, forreal=
     }
     mortgageoutlook = mortgage_rate_outlook(history, weeks_ahead=4)
 
-    metrics = verbalize_stats(stats or {})
+    metrics = verbalize_stats(stats or {}, customer.email_cadence_days)
 
     try:
         ai = CC.generate_ai_explainer_structured_from_stats(
@@ -363,6 +363,10 @@ def sendLevel1BuyerEmail(customer, pricechangepng, forsalehomes, stats, forreal=
 
 
     if forreal:
+        send_email(subject=f'{ai["title"]}- copy sent to Customer',
+                   html_content=html_content,
+                   recipient=defaultrecipient)
+
         recipient = customer.email
     else:
         recipient = defaultrecipient
@@ -422,38 +426,58 @@ def sendLevel3BuyerEmail(customer:Customer,locations,
 def sendLevel1_2SellerEmail(customer, soldhomes, stats,
                             forreal=False):
 
+    ai_history = CC.recent_cadences(customer.id,  limit=5)
+
+    metrics = verbalize_stats(stats or {}, customer.email_cadence_days)
+
     email_subject = f'Wayber Real Estate Analytics : {customer.maincity.City}'
     weekly_summary = generate_weekly_summary(customer.maincity.City, stats)
 
+    try:
+        ai = CC.generate_ai_explainer_structured_from_stats(
+            customer=customer,
+            segment=3,
+            stats = stats,
+            metrics=metrics,
+        )
+        # CC.add_email_digest(customer.id, metrics)
+    except Exception:
+        ai = None
+
+    verdicts = {
+        "sold_price": verdict_sentence("sold_price", ai['conclusions']['sold_price']),
+        "speed":       verdict_sentence("speed",       ai['conclusions']['speed']),
+        "inventory": verdict_sentence("competition", ai['conclusions']['inventory']),
+   }
+    labels = derive_header_fields(stats, ai)
     html_content = render_template(
         'EmailCampaignTemplate/email_sellercustomer.html',  # Your template in app/templates
         customer=customer,
         weekly_summary=weekly_summary,
+        ai_history=ai_history,
+        ai=ai,
         stats=stats,
+        verdicts=verdicts,
         soldhomes=soldhomes,
         showScheduleButton=True,
-        website='https://www.wayber.net/'
+        website='https://www.wayber.net/',
+        labels=labels
     )
 
     try:
         if forreal:
-            send_email(
-                subject=email_subject,
-                recipient=customer.email,  # Email address of the customer
-                html_content=html_content
-            )
+            send_email(subject=f'{ai["title"]}- copy sent to Customer',
+                       html_content=html_content,
+                       recipient=defaultrecipient)
+
+            recipient = customer.email
         else:
-            send_email(
-                subject=email_subject,
-                recipient='waichak.luk@gmail.com',#customer.email,  # Email address of the customer
-                html_content=html_content
-            )
-            send_email(
-                subject=email_subject,
-                recipient=mo_email,#customer.email,  # Email address of the customer
-                html_content=html_content
-            )
-        flash("The email was sent successfully!", "success")
+            recipient = defaultrecipient
+        return send_email(subject=f'{ai["title"]}',
+                          html_content=html_content,
+                          recipient=recipient)
+
+        # flash("The email was sent successfully!", "success")
     except Exception as e:
         print(f"Error sending email: {e}")
         flash("An error occurred while sending the email.", "danger")

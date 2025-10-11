@@ -185,7 +185,11 @@ def printoutEmailsThatWerentSent(customer):
 
 @campaignRoute_bp.route('/sendLevel1_2_Seller_sendEmail', methods=['GET'])
 def sendLevel1_2_Seller_sendEmail():
+    emailtest=0
     forreal =  request.json.get("forreal", False)
+    ignoretimerestriction = request.json.get("ignoretimerestriction", False)
+    admin = request.json.get("admin", False)
+    selectafew = request.json.get("selectafew", False)
     level1_seller = customertypecontroller.get_customer_type_by_id(2)
     level2_seller = customertypecontroller.get_customer_type_by_id(4)
     level3_seller = customertypecontroller.get_customer_type_by_id(6)
@@ -198,27 +202,40 @@ def sendLevel1_2_Seller_sendEmail():
     for customer in level1_2_seller_customers:
         if customer.dontemail:
             continue
-        print(customer.name)
+        # print(customer.name)
         customernames.append(customer.name)
         # mappng = f"{base}static/maps/citymap_{customer.maincity.City}_{next_thursday}.png"
         # pricechangepng = f"{base}static/maps/pricechange_{customer.maincity.City}_{next_thursday}.png"
-        if not is_valid_email(customer.email):
-            invalid_emails.append({'name': customer.name, 'email': customer.email})
-            continue
-        wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
-        if wcity:
-            results = washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
-        else:
-            results = washingtonzonescontroller.getzonebyName(customer.maincity.City)
-        zone_ids = []
-        for result in results:
-            zone_ids.append(result.id)
+        if customercontroller.shouldsendEmail(customer) or ignoretimerestriction:
+            if not is_valid_email(customer.email):
+                invalid_emails.append({'name': customer.name, 'email': customer.email})
+                continue
+            wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
+            if wcity:
+                results = washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
+            else:
+                results = washingtonzonescontroller.getzonebyName(customer.maincity.City)
+            zone_ids = []
+            for result in results:
+                zone_ids.append(result.id)
 
-        soldhomes = brieflistingcontroller.get_recent_listings(customer, zone_ids, homestatus=RECENTLYSOLD)
-        stats = StatsModelRun(zone_ids, 30 , 7)
-        print(stats)
-        sendLevel1_2SellerEmail(customer,  soldhomes, stats, forreal)
+            soldhomes = brieflistingcontroller.get_recent_listings(customer, zone_ids, homestatus=RECENTLYSOLD)
+            stats = StatsModelRun(zone_ids, customer.email_cadence_days , 7)
+            # print(stats)
+            emailsentsuccessfull =sendLevel1_2SellerEmail(customer,  soldhomes, stats, forreal)
+
+            if emailsentsuccessfull and not ignoretimerestriction:
+                customercontroller.update_last_email_sent_at(customer)
+                print(f"Email sent to {customer.email}; next due {customer.next_email_due_at:%Y-%m-%d %H:%M:%S}")
+            elif emailsentsuccessfull and ignoretimerestriction:
+                print(f"[TEST] Email sent to {defaultrecipient} (customer {customer.id} / {customer.email})")
+            else:
+                print(f"[FAIL] Email not sent for customer {customer.id} / {customer.email}")
         # print(f"Prepared email for {customer.email} with images: {mappng}")
+            if selectafew:
+                if emailtest >2:
+                    break
+                emailtest+=1
 
     return jsonify({
         'status': 'success',
