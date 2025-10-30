@@ -99,7 +99,7 @@ def sendLevel1Buyer_sendEmail():
 
             stats = StatsModelRun(zone_ids, 30)
 
-            emailsentsuccessfull = sendLevel1BuyerEmail(customer, pricechangepng, forsalehomes, stats, forreal, admin)
+            emailsentsuccessfull = sendLevel1BuyerEmail(customer, pricechangepng, forsalehomes, stats, forreal, False)
 
 
             if emailsentsuccessfull and forreal and not ignoretimerestriction:
@@ -109,8 +109,11 @@ def sendLevel1Buyer_sendEmail():
                 print(f"[TEST] Email sent to {defaultrecipient} (customer {customer.id} / {customer.email})")
             else:
                 print(f"[FAIL] Email not sent for customer {customer.id} / {customer.email}")
+            if admin and forreal:
+                emailsentsuccessfull = sendLevel1BuyerEmail(customer, pricechangepng, forsalehomes, stats, forreal,
+                                                            admin)
             if selectafew:
-                if emailtest > 2:
+                if emailtest > 1:
                     break
                 emailtest += 1
 
@@ -233,8 +236,10 @@ def sendLevel1_2_Seller_sendEmail():
             else:
                 print(f"[FAIL] Email not sent for customer {customer.id} / {customer.email}")
         # print(f"Prepared email for {customer.email} with images: {mappng}")
+            if admin and forreal:
+                emailsentsuccessfull = sendLevel1_2SellerEmail(customer, soldhomes, stats, forreal, admin)
             if selectafew:
-                if emailtest > 2:
+                if emailtest > 1:
                     break
                 emailtest += 1
 

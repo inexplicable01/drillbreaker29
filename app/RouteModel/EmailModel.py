@@ -363,13 +363,14 @@ def sendLevel1BuyerEmail(customer, pricechangepng, forsalehomes, stats, forreal=
 
 
     if forreal:
-        send_email(subject=f'{ai["title"]}- copy sent to Customer',
-                   html_content=html_content,
-                   recipient=defaultrecipient)
-
         recipient = customer.email
     else:
         recipient = defaultrecipient
+
+    if admin:
+        recipient = defaultrecipient
+
+
     return send_email(subject=f'{ai["title"]}',
                html_content=html_content,
                recipient =recipient)
@@ -424,7 +425,7 @@ def sendLevel3BuyerEmail(customer:Customer,locations,
         flash("An error occurred while sending the email.", "danger")
 
 def sendLevel1_2SellerEmail(customer, soldhomes, stats,
-                            forreal=False):
+                            forreal=False, admin=False):
 
     ai_history = CC.recent_cadences(customer.id,  limit=5)
 
