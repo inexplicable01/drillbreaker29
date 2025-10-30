@@ -8,13 +8,13 @@ from app.config import Config, RECENTLYSOLD, FOR_SALE, PENDING, FOR_RENT, OTHER
 import decimal
 from sqlalchemy import distinct
 from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
-from app.MapTools.MappingTools import findNeighbourhoodfromCoord, get_zone_as_array
+from app.MapTools.MappingTools import findNeighbourhoodfromCoord
 from app.DBModels.FSBOStatus import FSBOStatus
 from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID
 import traceback
-from app.MapTools.MappingTools import get_zone
+# from app.MapTools.MappingTools import get_zone
 from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
-
+from shapely.geometry import Polygon, MultiPolygon, Point
 import os
 
 
@@ -300,32 +300,34 @@ class BriefListingController():
 
         return latest_time
 
-    def setZoneForBriefListing(self, brieflisting: BriefListing):
+    def setZoneForBriefListing(self, brieflisting: BriefListing, zonepolygons):
         try:
-            cityname, neighbourhood = get_zone(brieflisting.latitude, brieflisting.longitude, brieflisting.city)
+            cityname=None
+            neighbourhood= None
+            for polygon in zonepolygons:
+                if polygon["geom"].contains(Point(brieflisting.longitude, brieflisting.latitude)):
+                    zone = polygon["zone"]
+                    cityname = zone.City
+                    neighbourhood = zone.neighbourhood
+                    break
             if cityname is None and neighbourhood is None:
                 brieflisting.outsideZones = True
                 brieflisting.zone_id = None
                 return
-            zone = washingtonzonescontroller.get_zone_id_by_name(cityname, neighbourhood)
+            # zone = washingtonzonescontroller.get_zone_id_by_name(cityname, neighbourhood)
             print(zone)
             if zone:
                 brieflisting.zone_id = zone.id
                 brieflisting.outsideZones = False
+                print("zone found")
             else:
-                print(zone)
+                print(f"zone not found for {brieflisting}")
         except Exception as e:
             print(e, brieflisting)
             print(brieflisting.latitude, brieflisting.longitude)
             print(brieflisting.__str__())
 
-    def setZoneForBriefListingList(self, brieflistinglist):
-        try:
-            get_zone_as_array(brieflistinglist, washingtonzonescontroller)
-            self.simplebrieflistinglistupdate(brieflistinglist)
 
-        except Exception as e:
-            print(e)
 
     def getListingsWithStatus(self, fromdays, homeStatus):  # pendingListings(self, fromdays):
         days_ago = int((datetime.now() - timedelta(days=fromdays)).timestamp())

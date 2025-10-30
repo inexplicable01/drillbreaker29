@@ -9,7 +9,7 @@ from app.config import Config,SW
 zonestats_bp = Blueprint('zonestats_interesting', __name__, url_prefix='/zonestats')
 from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 from app.DBFunc.WashingtonZonesController import   washingtonzonescontroller
-from app.MapTools.MappingTools import WA_geojson_features
+# from app.MapTools.MappingTools import WA_geojson_features
 from app.config import RECENTLYSOLD, FOR_SALE, PENDING
 from app.GraphTools.plt_plots import *
 
@@ -96,7 +96,7 @@ def monthlytrends():
 
     chart_data3 = createBarGraphWeekly(results3, "Homes Pending", f"Homes Pending by Week (Zones {', '.join(map(str, zonenames))})")
 
-
+    WA_geojson_features = washingtonzonescontroller.getallGeoJson()
     return render_template(
         'monthlyhtml/clickablemap_monthly.html',
         HOMETYPES=Config.HOMETYPES,

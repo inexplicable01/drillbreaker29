@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Edit or Create Zones</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 0; }
+    .wrap { max-width: 1000px; margin: 16px auto; padding: 0 16px; }
+    #map { height: 480px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 12px; }
+    form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { font-size: 14px; color: #333; }
+    input, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+    textarea { min-height: 140px; }
+    .full { grid-column: 1 / -1; }
+    button { padding: 10px 14px; background: #0b5; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    button:hover { background: #0a4; }
+    .btn-secondary { background: #555; }
+    .note { margin-bottom: 12px; color: #333; font-size: 13px; }
+    .highlight { background: #eef; padding: 6px 10px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>Zone Manager</h2>
+    <div class="note">
+      Click any zone polygon to view or edit its data.
+      Modify details below and click <strong>Save Changes</strong> to update.
+      You can also create a new zone by filling out the form and providing GeoJSON or lat/lon string.
+    </div>
+
+    <div id="map"></div>
+
+    <form id="zoneForm">
+      <div>
+        <label>Zone ID (read-only)</label>
+        <input type="text" id="zone_id" name="zone_id" readonly />
+      </div>
+
+      <div>
+        <label>City</label>
+        <input type="text" id="city_name" name="city_name" />
+      </div>
+
+      <div>
+        <label>Neighbourhood</label>
+        <input type="text" id="neighbourhood" name="neighbourhood" />
+      </div>
+
+      <div>
+        <label>Neighbourhood Sub</label>
+        <input type="text" id="neighbourhood_sub" name="neighbourhood_sub" />
+      </div>
+
+      <div class="full">
+        <label>GeoJSON Geometry</label>
+        <textarea id="geojson_text" name="geojson_text"></textarea>
+      </div>
+
+      <div class="full actions">
+        <button type="button" id="saveZone">Save Changes</button>
+        <button type="button" class="btn-secondary" id="clear">Clear</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const map = L.map('map').setView([47.6062, -122.3321], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    const zonesLayer = L.geoJSON(null, {
+      style: { color: '#0077ff', weight: 1.5, fillOpacity: 0.2 },
+      onEachFeature: function (feature, layer) {
+        const props = feature.properties || {};
+        const name = props.S_HOOD || props.CityName || props.Neighbourhood || "Zone";
+        layer.bindPopup(name);
+
+        layer.on("click", function () {
+          // Highlight selected layer
+          zonesLayer.eachLayer(l => zonesLayer.resetStyle(l));
+          layer.setStyle({ color: "red", weight: 3 });
+
+          // Populate form fields
+          document.getElementById("zone_id").value = props.id || "";
+          document.getElementById("city_name").value = props.CityName || props.City || "";
+          document.getElementById("neighbourhood").value = props.Neighbourhood || "";
+          document.getElementById("neighbourhood_sub").value = props.S_HOOD || "";
+          document.getElementById("geojson_text").value = JSON.stringify(feature.geometry, null, 2);
+        });
+      }
+    }).addTo(map);
+
+    async function loadZones() {
+      try {
+        const res = await fetch('{{ url_for("zones.zones_geojson") }}');
+        const fc = await res.json();
+        zonesLayer.clearLayers().addData(fc);
+        if (zonesLayer.getLayers().length) {
+          map.fitBounds(zonesLayer.getBounds(), { padding: [12,12] });
+        }
+      } catch (e) {
+        console.error("Error loading zones:", e);
+      }
+    }
+    loadZones();
+
+    document.getElementById("clear").addEventListener("click", () => {
+      document.getElementById("zoneForm").reset();
+      zonesLayer.eachLayer(l => zonesLayer.resetStyle(l));
+    });
+
+    document.getElementById("saveZone").addEventListener("click", async () => {
+      const id = document.getElementById("zone_id").value.trim();
+      const geojsonText = document.getElementById("geojson_text").value.trim();
+        console.log("gothere");
+      let geometry = null;
+      try { geometry = JSON.parse(geojsonText); } catch (e) {}
+
+      const payload = {
+        id: id || null,
+        city_name: document.getElementById("city_name").value,
+        neighbourhood: document.getElementById("neighbourhood").value,
+        neighbourhood_sub: document.getElementById("neighbourhood_sub").value,
+        geojson_geom: geometry
+      };
+
+      try {
+          console.log("gothere2");
+        const url = id ? `/zones/update_geom/${id}` : `/zones`; // create or update
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Requested-With": "fetch" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          alert("Zone saved successfully!");
+          await loadZones();
+          document.getElementById("zoneForm").reset();
+        } else {
+          alert("Error: " + (data.message || data.error || "Unknown"));
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Failed to save zone.");
+      }
+    });
+  </script>
+</body>
+</html>

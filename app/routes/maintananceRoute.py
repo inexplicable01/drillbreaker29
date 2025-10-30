@@ -6,8 +6,9 @@ from app.DBModels.BriefListing import BriefListing
 from app.config import Config, SW, RECENTLYSOLD, FOR_SALE
 # from flask import Flask, render_template, make_response
 # from weasyprint import HTML
-from app.MapTools.MappingTools import WA_geojson_features
+# from app.MapTools.MappingTools import WA_geojson_features
 from app.DBFunc.CustomerZoneController import customerzonecontroller
+from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
 from app.RouteModel.AIModel import AIModel
 from app.DBFunc.AIListingController import ailistingcontroller
 from app.ZillowAPI.ZillowAPICall import SearchZillowHomesByZone
@@ -18,6 +19,8 @@ from datetime import datetime
 from app.RouteModel.BriefListingsVsApi import ZPIDinDBNotInAPI_FORSALE, EmailCustomersIfInterested
 
 maintanance_bp = Blueprint('maintanance_bp', __name__, url_prefix='/maintanance')
+
+
 
 @maintanance_bp.route('/updateopenhouse', methods=['PATCH'])
 def updateopenhouse():
@@ -91,6 +94,7 @@ def checkInterestedListingsChange():
 @maintanance_bp.route('/maintainSoldListings', methods=['PATCH'])
 def maintainSoldListings():
     if request.method == 'PATCH':
+        zonepolygons = washingtonzonescontroller.load_zone_polygons()
         try:
             doz = int(request.form.get('doz'))
             city = request.form.get('city')
@@ -131,7 +135,7 @@ def maintainSoldListings():
                         brieflistinginDB.getPropertyData()
                         brieflistinginDB.search_neigh = city
 
-                        brieflistingcontroller.setZoneForBriefListing(brieflisting)
+                        brieflistingcontroller.setZoneForBriefListing(brieflisting, zonepolygons)
                         if brieflistinginDB.NWMLS_id is None:
                             print(brieflistinginDB)
                         brieflistingcontroller.updateBriefListing(brieflistinginDB)
@@ -144,7 +148,7 @@ def maintainSoldListings():
                 try:
                     print(f"{ccc} out of {soldbrieflistingarr.__len__()}")
                     brieflisting.getPropertyData()
-                    brieflistingcontroller.setZoneForBriefListing(brieflisting)
+                    brieflistingcontroller.setZoneForBriefListing(brieflisting, zonepolygons)
                     newsoldbriefs.append(brieflisting)  # looking for new sold stuff
                     if len(newsoldbriefs) > 100:
                         brieflistingcontroller.SaveBriefListingArr(
@@ -161,6 +165,7 @@ def maintainSoldListings():
 
 @maintanance_bp.route('/maintainPendingListings', methods=['PATCH'])
 def maintainPendingListings():
+    zonepolygons = washingtonzonescontroller.load_zone_polygons()
     if request.method == 'PATCH':
 
         city = request.form.get('city')
@@ -203,6 +208,7 @@ def maintainPendingListings():
 
 @maintanance_bp.route('/maintainFORSALEListings', methods=['PATCH'])
 def maintainForSaleListings():
+    zonepolygons = washingtonzonescontroller.load_zone_polygons()
     if request.method == 'PATCH':
         try:
             doz = int(request.form.get('doz'))
@@ -211,6 +217,7 @@ def maintainForSaleListings():
             forsalebrieflistingarr = []
             forsalerawdata = SearchZillowHomesByLocation(city, status="forSale", doz="180", timeOnZillow="any")
             for briefhomedata in forsalerawdata:
+
                 forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
 
             # forsalebrief_ids = [listing.zpid for listing in forsalebrieflistingarr]
@@ -225,6 +232,8 @@ def maintainForSaleListings():
             for api_zpid, brieflisting in forsaleAPIbrief_dict.items():  ##LOOP THROUGH API
                 count += 1
                 print(count)
+                if api_zpid == 82215003:
+                    talsdkfj = 4
                 # print(brieflisting.streetAddress)
                 if api_zpid in forsaledb_ids:
                     ## If API listing (brieflisting is from API) is in DB already
@@ -247,7 +256,7 @@ def maintainForSaleListings():
                     ## Brieflisting here is not in DATAbase yet.
                     brieflisting.getPropertyData()
                     brieflisting.search_neigh = city
-                    brieflistingcontroller.setZoneForBriefListing(brieflisting)
+                    brieflistingcontroller.setZoneForBriefListing(brieflisting, zonepolygons)
                     newsalebriefs.append(brieflisting)
                     if len(newsalebriefs) > 10:
                         brieflistingcontroller.SaveBriefListingArr(
@@ -427,19 +436,14 @@ def updateathing3():
 
 
     for brieflisting in listings:
-    # brieflisting=brieflistingcontroller.get_listing_by_zpid(48906318)
         brieflisting.getPropertyData()
-            # brieflistingcontroller.setZoneForBriefListing(brieflisting)
-            # print(brieflisting.zone_id)
-            # print(brieflisting)
         brieflistingcontroller.updateBriefListing(brieflisting)
-    # brieflistingcontroller.setZoneForBriefListingList(listings)
 
     return {"Seattle Neighbourhood_subs updated": 'listings.__len__()'}, 200
 
 
 from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
-from app.MapTools.MappingTools import citygeojson_features, WA_geojson_features
+# from app.MapTools.MappingTools import citygeojson_features, WA_geojson_features
 
 
 @maintanance_bp.route('/updateathing4', methods=['post'])
@@ -447,27 +451,48 @@ def updateathing4():
     # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
     # iter_value = request.args.get('iter')
     # washingtonzonescontroller.repair_from_geojson(citygeojson_features,WA_geojson_features, washingtoncitiescontroller)
+    WA_geojson_features = washingtonzonescontroller.getallGeoJson()
     washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
     # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
 
     return {"Seattle Neighbourhood_subs updated": 'listings.__len__()'}, 200
 
-
+from shapely.geometry import Polygon, MultiPolygon, Point
 @maintanance_bp.route('/updateathing5', methods=['post'])
 def updateathing5():
     # washingtonzonescontroller.update_geometry_from_geojson(WA_geojson_features)
     # iter_value = request.args.get('iter')
     zone_id = int(request.args.get('zone_id'))
-    listings = (BriefListing.query.filter(BriefListing.zone_id== zone_id)
-     .filter(BriefListing.homeStatus == RECENTLYSOLD) .all())
+    # listings = (BriefListing.query.filter(BriefListing.zone_id== zone_id)
+    #  .filter(BriefListing.homeStatus == RECENTLYSOLD) .all())
+    zonepolygons = washingtonzonescontroller.load_zone_polygons()
+    listings = (BriefListing.query.filter(BriefListing.city=="Bothell")
+                .filter(BriefListing.zone_id.is_(None)).all())
 
-    for brieflisting in listings:
-
-        brieflisting.getPropertyData()
-        brieflistingcontroller.setZoneForBriefListing(brieflisting)
-        print(brieflisting.zone_id)
-        print(brieflisting)
-        brieflistingcontroller.updateBriefListing(brieflisting)
+    for polygon in zonepolygons:
+        cityname = None
+        neighbourhood = None
+        zone = 99999
+        if polygon["zone"].zonename() not in ["North Brier","Bothell North","Lynnwood North",
+                                              "Lake Stickney",
+                                              "Lynnwood East","East Brier","Mill Creak South"
+                                              ,"Mill Creek East"] :
+        # if polygon["zone"].zonename() not in ["Bothell North"] :
+            continue
+        for brieflisting in listings:
+            print(brieflisting)
+            oldzone = brieflisting.zone_id
+            if oldzone is None:
+                pause = True
+            # brieflisting.getPropertyData()
+            if polygon["geom"].contains(Point(brieflisting.longitude, brieflisting.latitude)):
+                zone = polygon["zone"]
+                cityname = zone.City
+                neighbourhood = zone.neighbourhood
+                brieflisting.zone_id = zone.id
+                if brieflisting.zone_id != oldzone:
+                    print(f"Zone being Updated! {brieflisting}")
+                    brieflistingcontroller.updateBriefListing(brieflisting)
         # brieflistingcontroller.setZoneForBriefListingList(listings)
 
 

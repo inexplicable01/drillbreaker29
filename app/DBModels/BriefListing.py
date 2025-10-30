@@ -135,10 +135,10 @@ class BriefListing(db.Model):
             self.pricedelta=self.soldprice-self.listprice
 
     def __str__(self):
-        return self.ref_address()
+        return f"{self.ref_address()}, zone {self.zone_id},"
 
     def __repr__(self):
-        return self.ref_address()
+        return f"{self.ref_address()}, zone {self.zone_id},"
 
     def to_dict(self):
         return {

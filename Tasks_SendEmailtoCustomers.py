@@ -5,7 +5,11 @@ import json
 import os
 import argparse
 # base = os.getenv("BASE")
-base = "http://127.0.0.1:5000/"
+from dotenv import load_dotenv
+# Load API key
+load_dotenv()
+base = os.getenv("BASE")
+# base = "http://127.0.0.1:5000/"
 # base = "https://www.drillbreaker29.com/"
 
 

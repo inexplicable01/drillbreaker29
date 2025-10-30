@@ -1,10 +1,10 @@
 from flask import Blueprint, render_template,jsonify, redirect, url_for, request
 from app.RouteModel.AreaReportModel import AreaReportModelRun,AreaReportModelRunForSale
 from app.config import Config,SW
-from app.MapTools.MappingTools import WA_geojson_features, featureAreas
+# from app.MapTools.MappingTools import WA_geojson_features, featureAreas
 soldhomes_bp = Blueprint('soldhomes_bp', __name__,url_prefix='/soldhomes')
 from app.GraphTools.plt_plots import *
-
+from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
 
 # @soldhomes_bp.route('/update-graph', methods=['POST'])
 # def update_graph():
@@ -83,10 +83,12 @@ def AreaReport():
             brieflistings_SoldHomes_dict.append(
                brieflisting.to_dict()
             )
+
+    features = washingtonzonescontroller.getallGeoJson()
     return render_template(
         'ClickAbleMap/ClickAbleMapMain.html',
                            HOMETYPES=Config.HOMETYPES,
-                           geojson_features=WA_geojson_features,
+                           geojson_features=features,
                            housesoldpriceaverage=housesoldpriceaverage,
                            doz_options=doz_options,
                            selected_doz=selected_doz,

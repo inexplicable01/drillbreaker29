@@ -16,7 +16,8 @@ from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from app.DBFunc.AIListingController import ailistingcontroller
 from app.DBFunc.CustomerController import customercontroller
 from app.DBFunc.PropertyListingController import propertylistingcontroller
-from app.MapTools.MappingTools import WA_geojson_features, create_map
+from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
+# from app.MapTools.MappingTools import WA_geojson_features, create_map
 from app.RouteModel.AIModel import AIModel
 from app.RouteModel.EmailModel import sendemailforcustomerhometour
 from app.DBFunc.CustomerZpidController import customerzpidcontroller
@@ -303,7 +304,7 @@ def displayCustomerInterest():
     aicomments=[]
     selectedhomes=[]
     homes_with_comments=[]
-    geojson_features = WA_geojson_features  # Replace `WA_geojson_features` with your actual data
+    WA_geojson_features = washingtonzonescontroller.getallGeoJson()
 
     # Define file paths
     output_dir = Path("app/static/maps")

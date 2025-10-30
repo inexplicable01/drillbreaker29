@@ -44,7 +44,8 @@ def createPriceChangevsDays2PendingPlot(soldhomes, savefilepath=None):
     plt.grid(which='major', linestyle='-', linewidth='0.5', color='gray')
     plt.minorticks_on()
     plt.grid(which='minor', linestyle=':', linewidth='0.5', color='lightgray')
-
+    plt.ylim([-100000, 100000])
+    plt.xlim([0, 50])
     # Saving the plot to a bytes buffer
     buf = BytesIO()
     plt.savefig(buf, format='png')

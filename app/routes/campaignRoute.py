@@ -19,11 +19,12 @@ from datetime import datetime, timedelta
 from app.DBFunc.CustomerController import customercontroller
 from app.DBFunc.CadenceCommentController import commentcontroller
 import re
-from app.MapTools.MappingTools import create_map , WA_geojson_features
+# from app.MapTools.MappingTools import create_map , WA_geojson_features
 from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID, SearchZillowHomesFSBO
 from datetime import datetime
 from app.RouteModel.BriefListingsVsApi import ZPIDinDBNotInAPI_FORSALE, EmailCustomersIfInterested
 from app.GraphTools.plt_plots import *
+from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
 
 campaignRoute_bp = Blueprint('campaignRoute_bp', __name__, url_prefix='/campaign')
 defaultrecipient = 'waichak.luk@gmail.com'
@@ -101,7 +102,7 @@ def sendLevel1Buyer_sendEmail():
             emailsentsuccessfull = sendLevel1BuyerEmail(customer, pricechangepng, forsalehomes, stats, forreal, admin)
 
 
-            if emailsentsuccessfull and not ignoretimerestriction:
+            if emailsentsuccessfull and forreal and not ignoretimerestriction:
                 customercontroller.update_last_email_sent_at(customer)
                 print(f"Email sent to {customer.email}; next due {customer.next_email_due_at:%Y-%m-%d %H:%M:%S}")
             elif emailsentsuccessfull and ignoretimerestriction:
@@ -224,7 +225,7 @@ def sendLevel1_2_Seller_sendEmail():
             # print(stats)
             emailsentsuccessfull =sendLevel1_2SellerEmail(customer,  soldhomes, stats, forreal)
 
-            if emailsentsuccessfull and not ignoretimerestriction:
+            if emailsentsuccessfull and forreal and not ignoretimerestriction:
                 customercontroller.update_last_email_sent_at(customer)
                 print(f"Email sent to {customer.email}; next due {customer.next_email_due_at:%Y-%m-%d %H:%M:%S}")
             elif emailsentsuccessfull and ignoretimerestriction:
@@ -266,7 +267,11 @@ def sendLevel3Buyer_sendEmail():
             return "No customers found", 404
         zones_ids = [zone.id for zone in customer.zones]
         stats = StatsModelRun(zones_ids, 30)
-        sendLevel3BuyerEmail(customer,locations, plot_url, soldhomes, selectedaicomments, stats, forreal)
+        WA_geojson_features = washingtonzonescontroller.getallGeoJson()
+        sendLevel3BuyerEmail(customer,locations,
+                             plot_url, soldhomes,
+                             selectedaicomments, stats,
+                             WA_geojson_features, forreal)
 
     # Redirect back to the same interests page after sending email
     return jsonify({

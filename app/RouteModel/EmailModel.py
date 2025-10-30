@@ -15,7 +15,7 @@ from app.DBFunc.CustomerController import Customer, customercontroller
 from app.DBFunc.CadenceCommentController import commentcontroller as CC
 import pytz
 from datetime import datetime, timedelta
-from app.MapTools.MappingTools import WA_geojson_features
+
 from typing import Optional, Dict, Any, Tuple
 from app.RouteModel.RatesModel import *
 from app.RouteModel.StatsOrganizingMethods import *
@@ -384,7 +384,7 @@ def sendLevel1BuyerEmail(customer, pricechangepng, forsalehomes, stats, forreal=
         #            recipient =mo_email)
 
 def sendLevel3BuyerEmail(customer:Customer,locations,
-                      plot_url, soldhomes, selectedaicomments,stats, forreal=False):
+                      plot_url, soldhomes, selectedaicomments,stats, WA_geojson_features,forreal=False):
 
 
     weekly_summary = generate_weekly_summary(customer.maincity.City, stats)
@@ -530,7 +530,6 @@ def sendunsubscribemeail(customer):
         html_content=html_content,
         recipient=defaultrecipient
     )
-
 
 
 

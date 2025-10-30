@@ -2,11 +2,12 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 # from app.RouteModel.EmailModel import sendEmailwithNewListing
 from app.DBFunc.BriefListingController import brieflistingcontroller
-from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
+
 from app.RouteModel.NeighbourhoodReport import NeighbourhoodReportDetails
 import json
-from app.MapTools.MappingTools import geojson_features, WA_geojson_features
+# from app.MapTools.MappingTools import geojson_features, WA_geojson_features
 from shapely.geometry import Point, shape
+from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
 
 clickablemap_bp = Blueprint('clickablemap_bp', __name__, url_prefix='/clickablemap')
 
@@ -47,8 +48,8 @@ def clickablemap():
 
     # for g in geojson_features:
     #     g['properties']['S_HOOD_ALT_NAMES']='None'
-
-    return render_template('ClickAbleMap.html',geojson_features=geojson_features)
+    WA_geojson_features = washingtonzonescontroller.getallGeoJson()
+    return render_template('ClickAbleMap.html',geojson_features=WA_geojson_features)
 
 # @clickablemap_bp.route('/fullmap', methods=['GET','POST'])
 # def clickablemap2():

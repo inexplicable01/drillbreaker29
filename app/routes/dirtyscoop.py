@@ -2,21 +2,21 @@ from app.DBFunc.WashingtonZonesController import WashingtonZonesController, wash
 from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from flask import flash,Blueprint, render_template, redirect, url_for, request,jsonify
 # from app.RouteModel.EmailModel import sendEmailwithNewListing
-from app.DBFunc.BriefListingController import brieflistingcontroller
-from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,AreaReportModelRunForSale
-from app.config import Config, SW, RECENTLYSOLD, FOR_SALE, PENDING
-from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
+# from app.DBFunc.BriefListingController import brieflistingcontroller
+# from app.RouteModel.AreaReportModel import displayModel,AreaReportModelRun,AreaReportModelRunForSale
+# from app.config import Config, SW, RECENTLYSOLD, FOR_SALE, PENDING
+# from app.DBFunc.WashingtonCitiesController import washingtoncitiescontroller
 dirty_scoop_bp = Blueprint('dirty_scoop_bp', __name__, url_prefix='/dirty_scoop')
-from app.DBFunc.CustomerZoneController import customerzonecontroller
-from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
-from app.DBFunc.AIListingController import ailistingcontroller
-from app.DBFunc.CustomerController import customercontroller
-from app.DBFunc.PropertyListingController import propertylistingcontroller
-from app.MapTools.MappingTools import WA_geojson_features, create_map
-from app.RouteModel.AIModel import AIModel
-from app.RouteModel.EmailModel import sendemailforcustomerhometour
-from app.DBFunc.CustomerZpidController import customerzpidcontroller
-from app.ZillowAPI.ZillowAPICall import SearchZilowByMLSID, SearchZillowByZPID
+# from app.DBFunc.CustomerZoneController import customerzonecontroller
+# from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
+# from app.DBFunc.AIListingController import ailistingcontroller
+# from app.DBFunc.CustomerController import customercontroller
+# from app.DBFunc.PropertyListingController import propertylistingcontroller
+# from app.MapTools.MappingTools import WA_geojson_features, create_map
+# from app.RouteModel.AIModel import AIModel
+# from app.RouteModel.EmailModel import sendemailforcustomerhometour
+# from app.DBFunc.CustomerZpidController import customerzpidcontroller
+# from app.ZillowAPI.ZillowAPICall import SearchZilowByMLSID, SearchZillowByZPID
 import requests
 from app.RouteModel.AreaReportModel import gatherCustomerData
 from app.GraphTools.plt_plots import *

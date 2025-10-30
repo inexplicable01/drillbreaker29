@@ -82,8 +82,23 @@ def derive_header_fields(stats, ai=None):
     return {
         "label": label,
         "badge_bg": _label_color(label),
-        "as_of": as_of_date.strftime("%Y-%m-%d"),  # or "%b %d, %Y"
+        "as_of": nice_ord_date(as_of_date.strftime("%Y-%m-%d")),  # or "%b %d, %Y"
     }
+
+def nice_ord_date(value):
+    # Accept either a datetime or an ISO/date string like '2025-10-20'
+    if isinstance(value, str):
+        try:
+            dt = datetime.fromisoformat(value)  # handles 'YYYY-MM-DD' and full ISO
+        except ValueError:
+            dt = datetime.strptime(value, "%Y-%m-%d")  # fallback
+    else:
+        dt = value
+
+    d = dt.day
+    suffix = 'th' if 10 <= d % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(d % 10, 'th')
+    return f"{dt.strftime('%b')} {d}{suffix} {dt:%Y}"
+
 
 def label_from_stats(stats):
     sl = stats.get("sale_to_list_avg_pct") or 0.0
