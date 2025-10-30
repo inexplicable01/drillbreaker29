@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 # Load API key
 load_dotenv()
 base = os.getenv("BASE")
-# base = "http://127.0.0.1:5000/"
+base = "http://127.0.0.1:5000/"
 # base = "https://www.drillbreaker29.com/"
 
 
@@ -48,6 +48,7 @@ headers = {}
 # print(url)
 response = requests.request("GET", url, headers=headers, data=payload)
 
+print(response.json())
 activeCustomers = response.json()['activeCustomers']
 level1_2seller = response.json()['level1_2seller']
 level1_2buyer = response.json()['level1_2buyer']

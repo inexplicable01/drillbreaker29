@@ -109,15 +109,15 @@ def sendLevel1Buyer_sendEmail():
                 print(f"[TEST] Email sent to {defaultrecipient} (customer {customer.id} / {customer.email})")
             else:
                 print(f"[FAIL] Email not sent for customer {customer.id} / {customer.email}")
-
+            if selectafew:
+                if emailtest > 2:
+                    break
+                emailtest += 1
 
         else:
 
             printoutEmailsThatWerentSent(customer)
-        if selectafew:
-            if emailtest >2:
-                break
-            emailtest+=1
+
 
     sendEmailtimecheck()
     return jsonify({
@@ -234,9 +234,9 @@ def sendLevel1_2_Seller_sendEmail():
                 print(f"[FAIL] Email not sent for customer {customer.id} / {customer.email}")
         # print(f"Prepared email for {customer.email} with images: {mappng}")
             if selectafew:
-                if emailtest >2:
+                if emailtest > 2:
                     break
-                emailtest+=1
+                emailtest += 1
 
     return jsonify({
         'status': 'success',
