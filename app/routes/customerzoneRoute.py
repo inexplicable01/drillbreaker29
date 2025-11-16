@@ -347,10 +347,10 @@ def displayCustomerInterest():
 
     print("Turning For Sale into to_dict")
     forsalehomes_dict = []
-    for brieflisting in forsalebrieflistings:
-        if brieflisting.fsbo_status is None:
+    # for brieflisting in forsalebrieflistings:
+    #     if brieflisting.fsbo_status is None:
             # print(brieflisting)
-            forsalehomes_dict.append(brieflisting.to_dict())
+            # forsalehomes_dict.append(brieflisting.to_dict())
     print("Turning For Sale into to_dict - Done")
     if len(zpidlist)>0:
         active_tab='available'
