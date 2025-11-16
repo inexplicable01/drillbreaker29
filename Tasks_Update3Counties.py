@@ -1,8 +1,12 @@
 import requests
 from datetime import datetime
 import sys
-# base = "http://127.0.0.1:5000/"
-base = "https://www.drillbreaker29.com/"
+import os
+from dotenv import load_dotenv
+# Load API key
+load_dotenv()
+base = os.getenv("BASE")
+
 
 getcitylisturl = base + "maintanance/getCityList"
 url3 = base + "maintanance/listingscheck"
