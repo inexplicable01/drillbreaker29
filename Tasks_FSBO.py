@@ -17,5 +17,5 @@ response = requests.request("PATCH", urlfsbo, headers=headers, data=payload)
 response = requests.request("PATCH", urlopen, headers=headers, data=payload)
 url = "https://www.drillbreaker29.com/email/email_healthcheck"
 payload = {'message': "completed FSBO listing maintenance"}
-response = requests.request("GET", url, headers=headers, data=payload)
+response = requests.request("GET", url, headers=headers, json=payload)
 

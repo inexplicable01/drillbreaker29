@@ -1,5 +1,3 @@
-from app.DBModels.AIListingComments import AIListingComments
-
 from sqlalchemy.sql import func
 from sqlalchemy.orm import aliased
 from app.extensions import db
@@ -9,47 +7,82 @@ from app.extensions import db
 # from app.config import Config, SW
 # import pytz
 
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+from app.extensions import db
+from datetime import datetime
+
+
+class AIListingComments(db.Model):
+    __tablename__ = 'AI_Listing_Comments'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('Customer.id', ondelete="CASCADE"), nullable=False)
+    listing_id = db.Column(db.BigInteger, db.ForeignKey('BriefListing.zpid', ondelete="CASCADE"), nullable=False)
+
+    ai_comment = db.Column(db.Text, nullable=False)
+    likelihood_score = db.Column(db.Integer, nullable=False)
+    listing_price = db.Column(db.Integer, nullable=True)  # NEW: price at time of evaluation
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    customer = db.relationship('Customer', backref='ai_comments', lazy=True)
+    listing = db.relationship('BriefListing', backref='ai_comments', lazy=True)
+
+from sqlalchemy.sql import func
+from app.extensions import db
+
+
 class AIListingController:
     def __init__(self):
         self.db = db
         self.AIListingComments = AIListingComments
 
     @staticmethod
-    def check_existing_evaluation(customer_id, zpid)->[AIListingComments]:
-        """
-        Checks if AI has already evaluated this listing for this customer.
-        """
-        existing_comment = AIListingComments.query.filter_by(
-            customer_id=customer_id, listing_id=zpid
-        ).first()
-        return existing_comment
+    def get_latest_evaluation(customer_id, zpid):
+        return (
+            AIListingComments.query
+            .filter_by(customer_id=customer_id, listing_id=zpid)
+            .order_by(AIListingComments.created_at.desc())
+            .first()
+        )
 
     @staticmethod
-    def save_ai_evaluation(customer_id, zpid, ai_comment,likelihood_score):
+    def should_re_evaluate(customer_id, listing):
         """
-        Saves the AI evaluation result (likelihood score & comment) in the database.
-        Also updates the `BriefListing` with the likelihood score.
+        Re-evaluate if:
+        - never evaluated before; or
+        - price has changed since last eval.
         """
+        latest = AIListingController.get_latest_evaluation(customer_id, listing.zpid)
+        if latest is None:
+            return True
 
-        # Save AI evaluation in AI_Listing_Comments
+        current_price = listing.price  # <--- using BriefListing.price directly
+
+        if latest.listing_price != current_price:
+            return True
+
+        # Optional: also refresh if too old
+        # if latest.created_at < datetime.utcnow() - timedelta(days=7):
+        #     return True
+
+        return False
+
+    @staticmethod
+    def save_ai_evaluation(customer_id, zpid, ai_comment, likelihood_score, listing_price=None):
         new_ai_comment = AIListingComments(
             customer_id=customer_id,
             listing_id=zpid,
             ai_comment=ai_comment,
-            likelihood_score=likelihood_score
+            likelihood_score=likelihood_score,
+            listing_price=listing_price,
         )
         db.session.add(new_ai_comment)
-
-        # Update BriefListing to store likelihood score
         db.session.commit()
 
     def retrieve_ai_evaluation(self, customer_id):
-        """
-        Retrieves the latest AI evaluation (based on created_at) for each listing_id
-        of a given customer, ordered by highest likelihood_score.
-        """
-
-        # Subquery: Get the latest created_at timestamp per listing_id
         latest_subquery = (
             self.db.session.query(
                 self.AIListingComments.listing_id,
@@ -60,7 +93,6 @@ class AIListingController:
             .subquery()
         )
 
-        # Main query: Join back to AIListingComments to get full records
         latest_evaluations = (
             self.db.session.query(self.AIListingComments)
             .join(
@@ -69,7 +101,7 @@ class AIListingController:
                 (self.AIListingComments.created_at == latest_subquery.c.latest_created_at)
             )
             .filter(self.AIListingComments.customer_id == customer_id)
-            .order_by(self.AIListingComments.likelihood_score.desc())  # Order by highest likelihood score
+            .order_by(self.AIListingComments.likelihood_score.desc())
             .all()
         )
 

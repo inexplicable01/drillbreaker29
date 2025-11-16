@@ -38,12 +38,10 @@ def sendEmailUpdates():
     sendEmailwithNewListing()
     return redirect(url_for('main.index'))
 
-@email_bp.route('/email_healthcheck', methods=['GET'])
+@email_bp.route('/email_healthcheck', methods=['POST'])
 def sendEmailHealthCheck():
-    # Retrieve the 'message' parameter from the request
-    message = request.args.get('message')  # For GET requests, use args to get query parameters
-    if not message:
-        message = None
+    data = request.get_json(silent=True) or {}
+    message = data.get('message')
     sendEmailtimecheck(message)
     return jsonify({"message": "Viewing request submitted successfully!"}), 200
 

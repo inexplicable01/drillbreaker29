@@ -38,9 +38,9 @@ headers = {}
 # print(url)
 response = requests.request("GET", url, headers=headers, data=payload)
 
-activeCustomers = response.json()['activeCustomers']
+level3_buyer = response.json()['level3_buyer']
 
-for customer in activeCustomers:
+for customer in level3_buyer:
     print(customer)
 
     url = f"{base}maintanance/clients_listing_Recommendation?customer_id={customer['id']}"
@@ -50,6 +50,7 @@ for customer in activeCustomers:
     # response = requests.request("POST", url, headers=headers, data=payload)
 
 url_health = f"{base}email/email_healthcheck"
-payload = {'message': "completed customer AI listing"}
-response = requests.request("GET", url_health, headers=headers, data=payload)
+payload = {"message": "completed customer AI listing"}
+
+response = requests.post(url_health, headers=headers, json=payload)
 

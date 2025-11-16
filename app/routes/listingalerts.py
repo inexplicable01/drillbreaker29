@@ -15,7 +15,7 @@ def activeCustomers():
     level2buyer = customercontroller.getCustomerByIDType(3,as_dict=True)
     level1seller = customercontroller.getCustomerByIDType(2,as_dict=True)
     level2seller = customercontroller.getCustomerByIDType(4,as_dict=True)
-    level3buyer = customercontroller.getCustomerByIDType(6,as_dict=True)
+    level3buyer = customercontroller.getCustomerByIDType(5,as_dict=True)
 
 
     return {'activeCustomers':customercontroller.get_active_customers(as_dict=True),

@@ -76,5 +76,7 @@ for i,city in enumerate(response.json()["cities"]):
 payload = {}
 response = requests.request("POST", base+"zonestats/update", headers=headers, data=payload)
 
-
+url_health = f"{base}email/email_healthcheck"
+payload = {'message': "completed all county update"}
+response = requests.post(url_health, headers=headers, json=payload)
 

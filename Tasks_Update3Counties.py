@@ -72,5 +72,5 @@ response = requests.request("POST", base+"zonestats/update", headers=headers, da
 
 url_health = f"{base}email/email_healthcheck"
 payload = {'message': "completed 3 county update"}
-response = requests.request("GET", url_health, headers=headers, data=payload)
+response = requests.post(url_health, headers=headers, json=payload)
 

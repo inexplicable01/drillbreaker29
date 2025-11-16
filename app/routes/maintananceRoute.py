@@ -360,30 +360,43 @@ def updatefsbo():
     return f"Committed {count} entires", 200
 
 
-@maintanance_bp.route('/clients_listing_Recommendation', methods=['patch'])
+@maintanance_bp.route('/clients_listing_Recommendation', methods=['PATCH'])
 def clients_listing_Recommendation():
     customer_id = request.args.get("customer_id", type=int, default=None)
-    # customer, locations = customerzonecontroller.get_customer_zone(customer_id)
     customer = customerzonecontroller.get_customer(customer_id)
 
-    # Loop through neighborhoods to extract data when city is 'Seattle'
-    forsalehomes = brieflistingcontroller.getListingByCustomerPreference(customer, FOR_SALE, 90).all()
+    forsalehomes = brieflistingcontroller.getListingByCustomerPreference(
+        customer, FOR_SALE, 90
+    ).all()
+
+    updated_count = 0
+
     for forsale_bl in forsalehomes:
+        # Skip if nothing changed that matters (price)
+        if not ailistingcontroller.should_re_evaluate(customer_id, forsale_bl):
+            continue
+
         propertydata = forsale_bl.getPropertyData()
         brieflistingcontroller.updateBriefListing(forsale_bl)
+
         ai_response = AIModel(forsale_bl, customer, propertydata)
         likelihood_score = ai_response.get("likelihood_score", 0)
         ai_comment = ai_response.get("reason", "")
 
-        # Save AI results to database
+        # Use BriefListing.price directly
+        current_price = forsale_bl.price
+
         ailistingcontroller.save_ai_evaluation(
             customer_id=customer_id,
             zpid=forsale_bl.zpid,
             ai_comment=ai_comment,
-            likelihood_score=likelihood_score
+            likelihood_score=likelihood_score,
+            listing_price=current_price,
         )
-    return {"Updated Recommendations ": len(forsalehomes)}, 200
 
+        updated_count += 1
+
+    return {"Updated Recommendations": updated_count}, 200
 
 @maintanance_bp.route('/updateathing', methods=['post'])
 def updateathing():
