@@ -53,8 +53,8 @@ for i,city in enumerate(response.json()["cities"]):
     # print(city)
     # if city!='Seattle':
     #     continue
-    if city not  in ["Lynnwood"]:
-        continue
+    # if city not  in ["Lynnwood"]:
+    #     continue
     print(city)
     payload = {'doz': '720',
                'city': city}
