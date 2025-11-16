@@ -17,6 +17,22 @@ def str2bool(v):
     return v
   return v.strip().lower() in ("true", "1", "yes", "on")
 
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--base",
+    choices=["local", "prod"],
+    default="local",
+    help="Which base URL to use: 'local' or 'prod' (default: local)",
+)
+
+args = parser.parse_args()
+
+if args.base == "local":
+    base = "http://127.0.0.1:5000/"
+else:  # "prod"
+    base = "https://www.drillbreaker29.com/"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--forreal", type=str2bool, nargs="?", const=True, default=False)

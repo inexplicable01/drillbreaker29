@@ -2,10 +2,22 @@ import requests
 from datetime import datetime
 import sys
 import os
-from dotenv import load_dotenv
-# Load API key
-load_dotenv()
-base = os.getenv("BASE")
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--base",
+    choices=["local", "prod"],
+    default="local",
+    help="Which base URL to use: 'local' or 'prod' (default: local)",
+)
+
+args = parser.parse_args()
+
+if args.base == "local":
+    base = "http://127.0.0.1:5000/"
+else:  # "prod"
+    base = "https://www.drillbreaker29.com/"
 
 
 getcitylisturl = base + "maintanance/getCityList"
