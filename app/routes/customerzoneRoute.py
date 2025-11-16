@@ -150,6 +150,10 @@ def save_customer_nwmls_id_interest():
                 brieflisting = brieflistingcontroller.CreateBriefListingFromPropertyData(propertydata)
                 propertylistingcontroller.create_property(zpid, propertydata)
                 brieflistingcontroller.updateBriefListing(brieflisting)
+            else:
+                # If neither NWMLS_id nor ZPID exists, don't proceed with saving
+                print("Can;t listing based on nwmls id ", nwmls_id)
+                return f"Can;t listing based on nwmls id {nwmls_id}", 400
         else:
             # If neither NWMLS_id nor ZPID exists, don't proceed with saving
             print("No NWMLS_id or ZPID provided. Cannot find listing.", "error")
@@ -297,7 +301,7 @@ def displayCustomerInterest():
     selected_doz=30
     (customer, locations, locationzonenames, customerlistings,housesoldpriceaverage, plot_url,
      plot_url2,
-     soldhomes, forsalehomes_dict, brieflistings_SoldHomes_dict,
+     soldhomes, forsalebrieflistings,
      selectedaicomments,ai_comment_zpid)\
         = gatherCustomerData(customer_id, selected_doz)
 
@@ -313,6 +317,16 @@ def displayCustomerInterest():
     url_image_path= f"maps/map_{customer.name}_screenshot.png"
     # # Step 1: Generate map HTML
 
+
+
+    brieflistings_SoldHomes_dict=[]
+    for brieflisting in soldhomes:
+        if brieflisting.fsbo_status is None: # don't want to include fsbos cause it causes an error
+            # hard code out for now.
+            brieflistings_SoldHomes_dict.append(
+               brieflisting.to_dict()
+            )
+
     zpidlist = []
     for customerzpid in customer.customerzpid_array:
         if propertylistingcontroller.get_property(customerzpid.brief_listing.zpid) is None:
@@ -323,12 +337,39 @@ def displayCustomerInterest():
     for customerzpid in customer.customerzpid_array:
         zpidlist.append(customerzpid.brief_listing.zpid)
         if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
-            customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data()
+            customerzpid.brief_listing.getPropertyData()# Update in case status has changed
+            brieflistingcontroller.updateBriefListing(customerzpid.brief_listing)## Commit
 
+    customer = customerzonecontroller.get_customer_zone(customer_id)
+    for customerzpid in customer.customerzpid_array:
+        customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data() # Retrieve Data
+
+
+    print("Turning For Sale into to_dict")
+    forsalehomes_dict = []
+    for brieflisting in forsalebrieflistings:
+        if brieflisting.fsbo_status is None:
+            # print(brieflisting)
+            forsalehomes_dict.append(brieflisting.to_dict())
+    print("Turning For Sale into to_dict - Done")
     if len(zpidlist)>0:
         active_tab='available'
     else:
         active_tab='hotness'
+
+    customerzpid_map_data = []
+    for idx, cz in enumerate(customer.customerzpid_array, start=1):
+        home = cz.brief_listing  # assuming relationship .brief_listing is loaded
+
+        customerzpid_map_data.append({
+            "index": idx,
+            "zpid": getattr(home, "zpid", None),
+            "latitude": getattr(home, "latitude", None),
+            "longitude": getattr(home, "longitude", None),
+            "streetAddress": getattr(home, "streetAddress", None),
+            "price": getattr(home, "price", None),
+            # If you want more fields, add them here
+        })
 
     return render_template('InterestReport/NeighbourhoodInterest.html',
                            customer=customer,
@@ -348,6 +389,7 @@ def displayCustomerInterest():
                             selectedaicomments=selectedaicomments,
                            ai_comment_zpid=ai_comment_zpid,
                            customerzpid_array=customer.customerzpid_array,
+                           customerzpid_map_data=customerzpid_map_data,
                            zpidlist=zpidlist,
                            active_tab=active_tab
                            )

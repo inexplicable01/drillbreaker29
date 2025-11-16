@@ -18,7 +18,6 @@ dirty_scoop_bp = Blueprint('dirty_scoop_bp', __name__, url_prefix='/dirty_scoop'
 # from app.DBFunc.CustomerZpidController import customerzpidcontroller
 # from app.ZillowAPI.ZillowAPICall import SearchZilowByMLSID, SearchZillowByZPID
 import requests
-from app.RouteModel.AreaReportModel import gatherCustomerData
 from app.GraphTools.plt_plots import *
 from geopy.geocoders import Nominatim
 

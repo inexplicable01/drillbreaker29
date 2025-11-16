@@ -102,6 +102,59 @@ def AreaReport():
                         brieflistings_SoldHomes_dict=brieflistings_SoldHomes_dict
                            )
 
+from random import randint
+@soldhomes_bp.route('/area_numbering', methods=['GET','POST','PATCH'])
+def AreaNumbering():
+
+    doz_options = Config.doz_options
+    # AllNeighbourhoods = featureAreas.keys()
+    if request.method == 'POST':
+        selectedhometypes = request.form.getlist('home_type')
+        selectedlocations = request.form.getlist('location')
+        selected_doz = int(request.form.get('selected_doz'))
+
+        selected_zones= request.form.getlist('selected_zones')
+        if ',' in selected_zones[0]:
+            selected_zones=selected_zones[0].split(',')
+
+        # Process the selections as needed
+    elif request.method == 'GET':
+        selectedlocations = []
+        selectedhometypes = Config.HOMETYPES
+        selected_doz = 30
+        selected_zones=[]
+
+    housesoldpriceaverage, soldhomes=AreaReportModelRun(selected_zones, selectedhometypes,selected_doz)
+    # housesoldpriceaverage={}
+    # soldhomes=[]
+    plot_url = createPriceChangevsDays2PendingPlot(soldhomes)
+    plot_url2= createPricevsDays2PendingPlot(soldhomes)
+    brieflistings_SoldHomes_dict=[]
+    for brieflisting in soldhomes:
+        if brieflisting.fsbo_status is None: # don't want to include fsbos cause it causes an error
+            # hard code out for now.
+            brieflistings_SoldHomes_dict.append(
+               brieflisting.to_dict()
+            )
+
+    features = washingtonzonescontroller.getallGeoJson()
+    return render_template(
+        'ClickAbleMap/ZoneMapWIds.html',
+                           HOMETYPES=Config.HOMETYPES,
+                           geojson_features=features,
+                           housesoldpriceaverage=housesoldpriceaverage,
+                           doz_options=doz_options,
+                           selected_doz=selected_doz,
+                           selected_zones=selected_zones,
+                           selectedhometypes=selectedhometypes,
+                           LOCATIONS=[],
+                           selected_locations=selectedlocations,
+                           plot_url=plot_url,
+                           plot_url2=plot_url2,
+                           soldhouses=soldhomes,
+                        brieflistings_SoldHomes_dict=brieflistings_SoldHomes_dict
+                           )
+
 @soldhomes_bp.route('/areareportforsale', methods=['GET', 'POST', 'PATCH'])
 def AreaReportFor_sale():
 

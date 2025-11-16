@@ -1,0 +1,17 @@
+<form method="POST">
+  <select id="customerSelect" name="customer_id">
+    {% for c in customers %}
+      <option value="{{ c.id }}" {% if c.id == selected_customer_id %}selected{% endif %}>
+        {{ c.name }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <button id="saveZonesBtn" type="button">Save Zones</button>
+
+  <div id="map_click" style="height: 600px;"></div>
+
+  <p>Selected zones for this customer: <span id="selectedZones"></span></p>
+
+  <input type="hidden" id="selectedZonesInput" name="selected_zones">
+</form>

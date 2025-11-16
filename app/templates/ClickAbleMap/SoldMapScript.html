@@ -1,18 +1,20 @@
-
-
 <!-- Include Leaflet and jQuery -->
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://unpkg.com/leaflet-image/leaflet-image.js"></script>
 <script>
-    var map_Sold = L.map('map_Sold', { scrollWheelZoom: false }); // Centered on Seattle
+    var map_Sold = L.map('map_Sold', {scrollWheelZoom: false}); // Centered on Seattle
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map_Sold);
 
     function handleClick(region) {
-        document.getElementById('label').innerHTML = region;
+        // Only update #label if it exists on this page
+        var labelEl = document.getElementById('label');
+        if (labelEl) {
+            labelEl.innerHTML = region;
+        }
 
         $.ajax({
             url: '/clickablemap/process',
@@ -20,8 +22,12 @@
             contentType: 'application/json',
             data: JSON.stringify({region: region}),
             success: function (response) {
-                document.getElementById('result').innerHTML = response.message;
-                // Here you can add code to display graphs or other processed data
+                // Only update #result if it exists on this page
+                var resultEl = document.getElementById('result');
+                if (resultEl) {
+                    resultEl.innerHTML = response.message;
+                }
+                // You can still do other stuff here if needed
             },
             error: function (error) {
                 console.log('Error:', error);
@@ -36,13 +42,19 @@
     console.log('Selected Zones:', selectedZones);
 
     function updateHiddenInput() {
-        document.getElementById('selectedZonesInput').value = selectedZones.join(','); // Convert to comma-separated string
+        var input = document.getElementById('selectedZonesInput');
+        if (input) {
+            input.value = selectedZones.join(','); // Convert to comma-separated string
+        }
     }
 
+    // Only attach submit handler if a form exists on this page
     var form = document.querySelector('form');
-    form.addEventListener('submit', function () {
-        updateHiddenInput(); // Populate the hidden input with selected zones
-    });
+    if (form) {
+        form.addEventListener('submit', function () {
+            updateHiddenInput(); // Populate the hidden input with selected zones
+        });
+    }
     {#// Function to handle toggle behavior#}
     {#// Array to keep track of all polygons#}
     var polygons = [];
@@ -72,9 +84,9 @@
         var isSelected = selectedZones.includes(zoneName);
         var color = isSelected ? "green" : "red";
 
-        var poly = L.polygon(value.geometry.coordinates, { color: color }).addTo(map_Sold);
+        var poly = L.polygon(value.geometry.coordinates, {color: color}).addTo(map_Sold);
         polygons.push(poly);
-        poly.bindTooltip(zoneName, { permanent: true, direction: "center", className: "zone-label" }).openTooltip();
+        poly.bindTooltip(zoneName, {permanent: true, direction: "center", className: "zone-label"}).openTooltip();
 
         // ✅ Extend bounds only if the zone is selected
         if (isSelected) {
@@ -132,30 +144,31 @@
     }
 
     function getCustomIcon(color) {
-    return L.icon({
-        iconUrl: `https://maps.google.com/mapfiles/ms/icons/${color}-dot.png`, // Google Maps-style marker icons
-        iconSize: [32, 32],  // Adjust the size
-        iconAnchor: [16, 32], // Center the marker at the bottom
-        popupAnchor: [0, -30]  // Adjust popup position
-    });
-}
+        return L.icon({
+            iconUrl: `https://maps.google.com/mapfiles/ms/icons/${color}-dot.png`, // Google Maps-style marker icons
+            iconSize: [32, 32],  // Adjust the size
+            iconAnchor: [16, 32], // Center the marker at the bottom
+            popupAnchor: [0, -30]  // Adjust popup position
+        });
+    }
+
     brieflistings_SoldHomes_dict.forEach(function (listing) {
         // Calculate the marker’s color
 
-        let markerColor=getMarkerColor(listing.list2penddays)
+        let markerColor = getMarkerColor(listing.list2penddays)
         {#console.log("listing:", listing);#}
         // Create a marker using a custom icon with the selected color
 
         var customIcon = getCustomIcon(markerColor);
 
-    // Create the marker with the custom icon
+        // Create the marker with the custom icon
         var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map_Sold);
 
         // Add the marker to the map
 
         // Bind a popup with details about the listing
 
-                marker.bindPopup(
+        marker.bindPopup(
             `<a href='https://www.zillow.com${listing.hdpUrl}' target='_blank'>${listing.streetAddress}</a><br>
             <b>Price:</b> ${listing.price}<br>
 <b>Days on Market:</b> ${listing.list2penddays}<br>

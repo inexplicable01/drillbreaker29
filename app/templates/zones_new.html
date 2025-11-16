@@ -4,8 +4,15 @@
   <meta charset="utf-8" />
   <title>Edit or Create Zones</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Leaflet core -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Leaflet.draw (NEW) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 0; }
     .wrap { max-width: 1000px; margin: 16px auto; padding: 0 16px; }
@@ -26,9 +33,15 @@
   <div class="wrap">
     <h2>Zone Manager</h2>
     <div class="note">
+      <div class="highlight">
+        <strong>Tip:</strong> To create a new zone, click the polygon tool on the map
+        (top left), draw the boundary, then fill out the form and click
+        <strong>Save Changes</strong>.
+      </div>
       Click any zone polygon to view or edit its data.
       Modify details below and click <strong>Save Changes</strong> to update.
-      You can also create a new zone by filling out the form and providing GeoJSON or lat/lon string.
+      You can also create a new zone by drawing a polygon on the map
+      and/or providing GeoJSON in the box.
     </div>
 
     <div id="map"></div>
@@ -67,11 +80,13 @@
   </div>
 
   <script>
+    // Base map
     const map = L.map('map').setView([47.6062, -122.3321], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
+    // Existing zones from backend
     const zonesLayer = L.geoJSON(null, {
       style: { color: '#0077ff', weight: 1.5, fillOpacity: 0.2 },
       onEachFeature: function (feature, layer) {
@@ -84,15 +99,83 @@
           zonesLayer.eachLayer(l => zonesLayer.resetStyle(l));
           layer.setStyle({ color: "red", weight: 3 });
 
-          // Populate form fields
+          // Populate form fields from existing zone
           document.getElementById("zone_id").value = props.id || "";
           document.getElementById("city_name").value = props.CityName || props.City || "";
           document.getElementById("neighbourhood").value = props.Neighbourhood || "";
           document.getElementById("neighbourhood_sub").value = props.S_HOOD || "";
+
+          // Fill GeoJSON with this zone's geometry
           document.getElementById("geojson_text").value = JSON.stringify(feature.geometry, null, 2);
+
+          // Clear any drawn shape, since we're in "edit existing" mode now
+          drawnItems.clearLayers();
         });
       }
     }).addTo(map);
+
+    // ---------- Leaflet.draw setup (NEW) ----------
+
+    // FeatureGroup to store drawn shapes
+    const drawnItems = L.featureGroup().addTo(map);
+
+    const drawControl = new L.Control.Draw({
+      edit: {
+        featureGroup: drawnItems,   // only edit user-drawn shapes
+        edit: true,
+        remove: true
+      },
+      draw: {
+        polygon: {
+          allowIntersection: false,
+          showArea: true,
+        },
+        polyline: false,
+        rectangle: false,
+        circle: false,
+        marker: false,
+        circlemarker: false
+      }
+    });
+    map.addControl(drawControl);
+
+    // When the user finishes drawing a polygon
+    map.on(L.Draw.Event.CREATED, function (e) {
+      const layer = e.layer;
+
+      // We only want one "new zone" shape at a time, so clear old ones
+      drawnItems.clearLayers();
+      drawnItems.addLayer(layer);
+
+      // Convert to GeoJSON geometry and put it in the textarea
+      const geom = layer.toGeoJSON().geometry;
+      document.getElementById("geojson_text").value = JSON.stringify(geom, null, 2);
+
+      // Clear zone_id so we go through the "create" path on save
+      document.getElementById("zone_id").value = "";
+
+      // Optional: clear highlight on zones layer so it's visually clear
+      zonesLayer.eachLayer(l => zonesLayer.resetStyle(l));
+    });
+
+    // When user edits drawn shape(s), update the GeoJSON text
+    map.on(L.Draw.Event.EDITED, function (e) {
+      // For simplicity assume a single drawn polygon
+      let geom = null;
+      drawnItems.eachLayer(function (layer) {
+        geom = layer.toGeoJSON().geometry;
+      });
+      if (geom) {
+        document.getElementById("geojson_text").value = JSON.stringify(geom, null, 2);
+      }
+    });
+
+    // When user deletes drawn shape(s), clear GeoJSON text
+    map.on(L.Draw.Event.DELETED, function (e) {
+      document.getElementById("geojson_text").value = "";
+    });
+
+    // ---------- Load zones from backend ----------
 
     async function loadZones() {
       try {
@@ -108,15 +191,19 @@
     }
     loadZones();
 
+    // ---------- Form actions ----------
+
     document.getElementById("clear").addEventListener("click", () => {
       document.getElementById("zoneForm").reset();
       zonesLayer.eachLayer(l => zonesLayer.resetStyle(l));
+      drawnItems.clearLayers();
+      document.getElementById("geojson_text").value = "";
     });
 
     document.getElementById("saveZone").addEventListener("click", async () => {
       const id = document.getElementById("zone_id").value.trim();
       const geojsonText = document.getElementById("geojson_text").value.trim();
-        console.log("gothere");
+      console.log("gothere");
       let geometry = null;
       try { geometry = JSON.parse(geojsonText); } catch (e) {}
 
@@ -129,7 +216,7 @@
       };
 
       try {
-          console.log("gothere2");
+        console.log("gothere2");
         const url = id ? `/zones/update_geom/${id}` : `/zones`; // create or update
         const res = await fetch(url, {
           method: "POST",
@@ -141,6 +228,8 @@
           alert("Zone saved successfully!");
           await loadZones();
           document.getElementById("zoneForm").reset();
+          drawnItems.clearLayers();
+          document.getElementById("geojson_text").value = "";
         } else {
           alert("Error: " + (data.message || data.error || "Unknown"));
         }

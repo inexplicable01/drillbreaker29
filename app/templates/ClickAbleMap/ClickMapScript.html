@@ -1,0 +1,193 @@
+<!-- Include Leaflet and jQuery -->
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://unpkg.com/leaflet-image/leaflet-image.js"></script>
+
+<script>
+    // Data from backend
+    var geojson_features = {{ geojson_features | tojson | safe }};
+    // This is a list of zone IDs assigned to the initially selected customer
+    var selectedZones = {{ selected_zones | tojson | safe }};   // e.g. [511, 204, ...]
+    var currentCustomerId = {{ selected_customer_id or 'null' }};
+
+    console.log("Initial selected zone IDs:", selectedZones);
+    console.log("Current customer ID:", currentCustomerId);
+
+    // Init map on #map_Sold
+    var map_Sold = L.map('map_Sold', { scrollWheelZoom: false });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map_Sold);
+
+    // Keep track of polygons by zoneId so we can recolor them
+    var polygonsByZoneId = {};  // { 511: polygon, ... }
+    var bounds = L.latLngBounds();
+
+    function updateHiddenInput() {
+        var input = document.getElementById('selectedZonesInput');
+        if (input) {
+            input.value = selectedZones.join(','); // IDs as CSV
+        }
+    }
+
+    function updateSelectedZonesUI() {
+        var span = document.getElementById('selectedZones');
+        if (span) {
+            span.innerText = selectedZones.join(', ');
+        }
+        updateHiddenInput();
+    }
+
+    function colorPolygon(zoneId) {
+        var poly = polygonsByZoneId[zoneId];
+        if (!poly) return;
+
+        if (selectedZones.includes(zoneId)) {
+            poly.setStyle({ color: 'green' });
+        } else {
+            poly.setStyle({ color: 'red' });
+        }
+    }
+
+    function recolorAllPolygons() {
+        Object.keys(polygonsByZoneId).forEach(function (zidStr) {
+            var zid = parseInt(zidStr, 10);
+            colorPolygon(zid);
+        });
+    }
+
+    // Build polygons
+    geojson_features.forEach(function (feature) {
+        if (!feature.geometry) return;
+
+        // Swap [lon, lat] -> [lat, lon]
+        if (feature.geometry.type === "Polygon") {
+            feature.geometry.coordinates = feature.geometry.coordinates.map(function (ring) {
+                return ring.map(function (coord) { return [coord[1], coord[0]]; });
+            });
+        } else if (feature.geometry.type === "MultiPolygon") {
+            feature.geometry.coordinates = feature.geometry.coordinates.map(function (polygon) {
+                return polygon.map(function (ring) {
+                    return ring.map(function (coord) { return [coord[1], coord[0]]; });
+                });
+            });
+        }
+
+        var props    = feature.properties || {};
+        var zoneId   = props.id; // e.g. 511
+        var zoneName = props.S_HOOD && props.S_HOOD.trim() !== ""
+            ? props.S_HOOD
+            : props.CityName;
+        var zoneLabel = zoneId + " - " + zoneName;
+
+        // Is this zone currently selected for this customer?
+        var isSelected = selectedZones.includes(zoneId);
+        var color      = isSelected ? "green" : "red";
+
+        var poly = L.polygon(feature.geometry.coordinates, { color: color }).addTo(map_Sold);
+        polygonsByZoneId[zoneId] = poly;
+
+        poly.bindTooltip(zoneLabel, {
+            permanent: true,
+            direction: "center",
+            className: "zone-label"
+        }).openTooltip();
+
+        // Extend bounds
+        poly.getLatLngs().forEach(function (latlngGroup) {
+            (Array.isArray(latlngGroup) ? latlngGroup : [latlngGroup]).forEach(function (latlng) {
+                if (Array.isArray(latlng)) {
+                    latlng.forEach(function (pt) { bounds.extend(pt); });
+                } else {
+                    bounds.extend(latlng);
+                }
+            });
+        });
+
+        // Click: toggle selection for the *current* customer
+        poly.on('click', function () {
+            if (!currentCustomerId) {
+                alert('Select a customer first.');
+                return;
+            }
+
+            if (selectedZones.includes(zoneId)) {
+                // Deselect
+                selectedZones = selectedZones.filter(function (id) { return id !== zoneId; });
+            } else {
+                // Select
+                selectedZones.push(zoneId);
+            }
+
+            colorPolygon(zoneId);
+            updateSelectedZonesUI();
+        });
+    });
+
+    if (bounds.isValid()) {
+        map_Sold.fitBounds(bounds, { padding: [20, 20] });
+    } else {
+        map_Sold.setView([47.6062, -122.3321], 10); // Seattle fallback
+    }
+
+    // Init UI on first load
+    updateSelectedZonesUI();
+
+    // Handle form submit (if you ever submit normally instead of AJAX)
+    var form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            updateHiddenInput();
+        });
+    }
+
+    // --- 🔄 DROPDOWN CHANGE: load zones for the selected customer ---
+    var customerSelect = document.getElementById('customerSelect');
+    if (customerSelect) {
+        customerSelect.addEventListener('change', function () {
+            var val = this.value;
+            if (!val) return;
+
+            currentCustomerId = parseInt(val, 10);
+            console.log("Changed customer to:", currentCustomerId);
+
+            $.getJSON('/zones/api/customer/' + currentCustomerId + '/zones', function (data) {
+                // data.zone_ids is e.g. [511, 204, ...]
+                selectedZones = data.zone_ids || [];
+                console.log("New selected zones for customer", currentCustomerId, ":", selectedZones);
+
+                recolorAllPolygons();
+                updateSelectedZonesUI();
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                console.error('Error fetching zones for customer:', textStatus, errorThrown);
+            });
+        });
+    }
+
+    // --- Optional: Save button via AJAX ---
+    var saveBtn = document.getElementById('saveZonesBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function () {
+            if (!currentCustomerId) {
+                alert('Select a customer first.');
+                return;
+            }
+
+            $.ajax({
+                url: '/zones/api/customer/' + currentCustomerId + '/zones',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ zone_ids: selectedZones }),
+                success: function (resp) {
+                    console.log('Saved zones:', resp);
+                    alert('Zones saved for this customer.');
+                },
+                error: function (err) {
+                    console.error('Error saving zones:', err);
+                    alert('Error saving zones.');
+                }
+            });
+        });
+    }
+</script>

@@ -232,9 +232,6 @@ def maintainForSaleListings():
             for api_zpid, brieflisting in forsaleAPIbrief_dict.items():  ##LOOP THROUGH API
                 count += 1
                 print(count)
-                if api_zpid == 82215003:
-                    talsdkfj = 4
-                # print(brieflisting.streetAddress)
                 if api_zpid in forsaledb_ids:
                     ## If API listing (brieflisting is from API) is in DB already
                     ## This is where you would check if priced change
@@ -248,7 +245,7 @@ def maintainForSaleListings():
                         brieflistdb.search_neigh = city
                         brieflistdb.price= brieflisting.price
                         brieflistdb.lpctime = datetime.now().timestamp()
-                        brieflistingcontroller.UpdateBriefListing(brieflistdb)
+                        brieflistingcontroller.updateBriefListing(brieflistdb)
                     continue
                 ## write code here to do this:  forsaleinarea is a list of ids that are for sale in the database, the forsalebriefarr is a list of brieflistings that are currently on sale as extracted by the API.
                 ## if any id in forsaleinarea is not in forsalebriefarr, then that means that id is no longer selling and I have to create an array of that.

@@ -504,28 +504,7 @@ def gatherCustomerData(customer_id, selected_doz):
             area["forsaleadded7_TCA"] = zonestats.forsaleadded7_TCA
             area["sold"] = zonestats.sold
             locations.append(area)
-        # else:
-        #     city_row = zonestatscachecontroller.get_zone_stats_by_zone(city_name)
-        #     forsalehomes= forsalehomes + brieflistingcontroller.forSaleListingsByCity(city_name, 365, homeType=homeType
-        #                                                                       ).all()
-        #     print(f"{city_name}")
-        #     if city_row:
-        #         area["forsale"]=city_row.forsale
-        #         area["pending7_SFH"] = city_row.pending7_SFH
-        #         area["pending7_TCA"] = city_row.pending7_TCA
-        #         area["sold7_SFH"] = city_row.sold7_SFH
-        #         area["sold7_TCA"] = city_row.sold7_TCA
-        #         area["forsaleadded7_SFH"] = city_row.forsaleadded7_SFH
-        #         area["forsaleadded7_TCA"] = city_row.forsaleadded7_TCA
-        #         area["sold"] = city_row.sold
 
-
-    # neighbourhoods_subs = []
-    # cities = []
-    # for n in locations:
-    #     neighbourhoods_subs.append(n["neighbourhood_sub"])
-    #     cities.append(n["city"])
-    # customerlistings = brieflistingcontroller.getListingByCustomerPreference(customer, FOR_SALE, 90)
     aicomments = ailistingcontroller.retrieve_ai_evaluation(customer_id)
     customerlistings=[]
     selectedaicomments=[]
@@ -550,20 +529,9 @@ def gatherCustomerData(customer_id, selected_doz):
     print("Running Area Sale Report")
     asdf, forsalebrieflistings = AreaReportModelRunForSale(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
                                                                             365)
-    forsalehomes_dict=[]
-    for brieflisting in forsalebrieflistings:
-        if brieflisting.fsbo_status is None:
-            forsalehomes_dict.append(brieflisting.to_dict())
 
-    brieflistings_SoldHomes_dict=[]
-    for brieflisting in soldhomes:
-        if brieflisting.fsbo_status is None: # don't want to include fsbos cause it causes an error
-            # hard code out for now.
-            brieflistings_SoldHomes_dict.append(
-               brieflisting.to_dict()
-            )
 
 
     return (customer, locations , locationzonenames , customerlistings , housesoldpriceaverage,
-            plot_url, plot_url2, soldhomes , forsalehomes_dict, brieflistings_SoldHomes_dict ,
+            plot_url, plot_url2, soldhomes , forsalebrieflistings,
             selectedaicomments,ai_comment_zpid)

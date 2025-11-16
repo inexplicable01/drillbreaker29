@@ -79,6 +79,33 @@
         .tab-content.active {
             display: block;
         }
+
+
+        .numbered-marker {
+            background: transparent;
+            border: none;
+        }
+
+        .numbered-marker .pin {
+            width: 28px;
+            height: 28px;
+            border-radius: 50% 50% 50% 0;
+            background: #ff5722; /* marker color */
+            position: relative;
+            transform: rotate(-45deg);
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .numbered-marker .pin span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
     </style>
     {% include "js/card_mini_buttons.html" with context %}
 </head>
@@ -118,10 +145,10 @@
             <h1>Customer Neighborhood Interests for {{ customer.name }}</h1>
         </div>
         <div class="topright-box">
-{#            <form action="{{ url_for('campaignRoute_bp.sendLevel3Buyer_sendEmail', customer_id=customer.id) }}" method="POST"#}
-{#                  style="margin-top: 20px;">#}
-{#                <button type="submit">Send Neighborhood Interests to Email</button>#}
-{#            </form>#}
+            {#            <form action="{{ url_for('campaignRoute_bp.sendLevel3Buyer_sendEmail', customer_id=customer.id) }}" method="POST"#}
+            {#                  style="margin-top: 20px;">#}
+            {#                <button type="submit">Send Neighborhood Interests to Email</button>#}
+            {#            </form>#}
             {#                <button id="capture-map">Capture Map</button>#}
         </div>
 
@@ -156,19 +183,23 @@
     </div>
 
 
-<div>
-    <div class="tab {% if active_tab == 'available' %}active{% endif %}" onclick="showTab('available')">Available Homes</div>
-    <div class="tab {% if active_tab == 'hotness' %}active{% endif %}" onclick="showTab('hotness')">Market Hotness</div>
-</div>
+    <div>
+        <div class="tab {% if active_tab == 'available' %}active{% endif %}" onclick="showTab('available')">Available
+            Homes
+        </div>
+        <div class="tab {% if active_tab == 'hotness' %}active{% endif %}" onclick="showTab('hotness')">Market Hotness
+        </div>
+    </div>
 
     <!-- Tab Content -->
     <div id="available" class="tab-content {% if active_tab == 'available' %}active{% endif %}">
-        <h1>How Are Houses in this region selling?</h1>
+        <h1>Tracking your interest</h1>
         <div class="content-wrapper">
             <div class="map-box">
                 For Sale
                 <div id="map_forsale"></div>
                 {% include "InterestReport/ForSaleMapScript.html" with context %}
+                <p> Red pins are shown on the right here.</p>
             </div>
             <div class="forsale-box ">
                 {% include "components/AddMLSDiv.html" with context %}
@@ -178,6 +209,9 @@
                     {% endwith %}
                 {% endfor %}
             </div>
+        </div>
+        <div id="customer_interest">
+            {% include "components/Customer_Interest_Track.html" with context %}
         </div>
         {% include "InterestReport/InterestTable.html" with context %}
     </div>
@@ -199,9 +233,7 @@
         </div>
         {% include 'ClickAbleMap/data_table.html' %}
         <div id="details-container"></div>
-        <div id="customer_interest">
-            {% include "components/Customer_Interest_Track.html" with context %}
-        </div>
+
     </div>
 
 

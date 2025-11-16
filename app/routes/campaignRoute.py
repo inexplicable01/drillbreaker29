@@ -265,8 +265,21 @@ def sendLevel3Buyer_sendEmail():
 
         (customer, locations, locationzonenames, customerlistings,
          housesoldpriceaverage, plot_url, plot_url2,
-         soldhomes, forsalehomes_dict,
-         brieflistings_SoldHomes_dict, selectedaicomments, ai_comment_zpid)  = gatherCustomerData(customer.id, 30)
+         soldhomes, forsalebrieflistings,
+         selectedaicomments, ai_comment_zpid)  = gatherCustomerData(customer.id, 30)
+
+        # forsalehomes_dict = []
+        # for brieflisting in forsalebrieflistings:
+        #     if brieflisting.fsbo_status is None:
+        #         forsalehomes_dict.append(brieflisting.to_dict())
+        #
+        # brieflistings_SoldHomes_dict = []
+        # for brieflisting in soldhomes:
+        #     if brieflisting.fsbo_status is None:  # don't want to include fsbos cause it causes an error
+        #         # hard code out for now.
+        #         brieflistings_SoldHomes_dict.append(
+        #             brieflisting.to_dict()
+        #         )
 
         if not customer:
             return "No customers found", 404

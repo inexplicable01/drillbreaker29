@@ -98,13 +98,16 @@
             if (shouldExtendBounds) {
                 bounds.extend(poly.getBounds());
             }
+            if (locationzonenames.includes(zoneName)) {
+                poly.bindTooltip(zoneName, {
+                    permanent: true,
+                    direction: "center",
+                    className: "zone-label"
+                }).openTooltip();
 
+            }
             // Single tooltip for the whole shape
-            poly.bindTooltip(zoneName, {
-                permanent: true,
-                direction: "center",
-                className: "zone-label"
-            }).openTooltip();
+
 
             // Single click handler for the whole shape
             poly.on('click', () => handleClick(properties.L_HOOD + ',' + properties.S_HOOD));
@@ -140,57 +143,59 @@
         });
     }
 
-    forsalehomes_dict.forEach(function (listing) {
-        // Calculate the marker’s color
-        {#var markerColor = getMarkerColor(listing.list2penddays);#}
-        let markerColor = "purple"; // Default color
-        if (ai_comment_zpid.includes(listing.zpid)) {
-            markerColor = "red";
-        }
-        {#console.log("listing:", listing);#}
-        // Create a marker using a custom icon with the selected color
-        var customIcon = getCustomIcon(markerColor);
-        // Create the marker with the custom icon
-        var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map_forsale);
-        // Add the marker to the map
-        {#var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map);#}
-        {#var marker = L.marker([listing.latitude, listing.longitude]).addTo(map_forsale);#}
-        // Bind a popup with details about the listing
-        marker.bindPopup(
-            `<a href='https://www.zillow.com${listing.hdpUrl}' target='_blank'>${listing.streetAddress}</a><br>
-            <b>Price:</b> ${listing.price}<br>
-            ${listing.bedrooms} bed, ${listing.bathrooms} bath, ${listing.livingArea} sqft, ${listing.zone_id}`
-        );
+    {#forsalehomes_dict.forEach(function (listing) {#}
+    {#    // Calculate the marker’s color#}
+    {#var markerColor = getMarkerColor(listing.list2penddays);#}
+    {#    let markerColor = "purple"; // Default color#}
+    {#    if (ai_comment_zpid.includes(listing.zpid)) {#}
+    {#        markerColor = "red";#}
+    {#    }#}
+    {#console.log("listing:", listing);#}
+    {#    // Create a marker using a custom icon with the selected color#}
+    {#    var customIcon = getCustomIcon(markerColor);#}
+    {#    // Create the marker with the custom icon#}
+    {#    var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map_forsale);#}
+    {#    // Add the marker to the map#}
+    {#var marker = L.marker([listing.latitude, listing.longitude], {icon: customIcon}).addTo(map);#}
+    {#var marker = L.marker([listing.latitude, listing.longitude]).addTo(map_forsale);#}
+    {#    // Bind a popup with details about the listing#}
+    {#    marker.bindPopup(#}
+    {#        `<a href='https://www.zillow.com${listing.hdpUrl}' target='_blank'>${listing.streetAddress}</a><br>#}
+    {#        <b>Price:</b> ${listing.price}<br>#}
+    {#        ${listing.bedrooms} bed, ${listing.bathrooms} bath, ${listing.livingArea} sqft, ${listing.zone_id}`#}
+    {#    );#}
+    {##}
+    {#    // Optional: Add click event for interaction#}
+    {#    marker.on('click', function () {#}
+    {#        console.log(`Marker clicked: ${listing.streetAddress}, Price: ${listing.price}`);#}
+    {#    });#}
+    {#})
+        ;
+        #}
 
-        // Optional: Add click event for interaction
-        marker.on('click', function () {
-            console.log(`Marker clicked: ${listing.streetAddress}, Price: ${listing.price}`);
-        });
-    });
+        customerzpid_map_data.forEach(function (cz, idx) {
+            console.log(cz)
 
-    customerzpid_map_data.forEach(function (cz, idx) {
-        console.log(cz)
+            var lat = cz.latitude;
+            var lng = cz.longitude;
 
-        var lat = cz.latitude;
-        var lng = cz.longitude;
+            if (lat == null || lng == null) return;
 
-        if (lat == null || lng == null) return;
+            var n = idx + 1;  // 1, 2, 3, ...
 
-        var n = idx + 1;  // 1, 2, 3, ...
+            var marker = L.marker([lat, lng], {
+                icon: makeNumberedIcon(n)
+            }).addTo(map_forsale);
 
-        var marker = L.marker([lat, lng], {
-            icon: makeNumberedIcon(n)
-        }).addTo(map_forsale);
-
-        // Optional: popup or label
-        marker.bindPopup(
-            `<b>#${n}</b><br>
+            // Optional: popup or label
+            marker.bindPopup(
+                `<b>#${n}</b><br>
          ${cz.streetAddress || ''}<br>
          Price: ${cz.price || ''}`
-        );
+            );
 
-        // Optional: store index for cross-linking with a list
-        marker._customerIndex = n;
-    });
+            // Optional: store index for cross-linking with a list
+            marker._customerIndex = n;
+        });
 
 </script>

@@ -17,7 +17,7 @@ def ZPIDinDBNotInAPI_FORSALE(zpid, doz, mismanagedcount):
             brieflist.pendday = int(datetime.now().timestamp())
             listresults = ListingLengthbyBriefListing(propertydetail)
             brieflist.updateListingLength(listresults)
-            brieflistingcontroller.UpdateBriefListing(brieflist)
+            brieflistingcontroller.updateBriefListing(brieflist)
 
         elif propertydetail['homeStatus'] == 'RECENTLY_SOLD':
             print(
@@ -27,7 +27,7 @@ def ZPIDinDBNotInAPI_FORSALE(zpid, doz, mismanagedcount):
             brieflist.dateSold = int(propertydetail['homeStatus'] / 1000)
             listresults = ListingLengthbyBriefListing(propertydetail)
             brieflist.updateListingLength(listresults)
-            brieflistingcontroller.UpdateBriefListing(brieflist)
+            brieflistingcontroller.updateBriefListing(brieflist)
 
         else:
 
@@ -46,10 +46,10 @@ def ZPIDinDBNotInAPI_FORSALE(zpid, doz, mismanagedcount):
                 print(f"Not sure how we got here.  Need to continue to monitor.zpid : {propertydetail['zpid']}")
                 mismanagedcount[brieflist.zpid]=propertydetail
                 brieflist.getPropertyData()
-                brieflistingcontroller.UpdateBriefListing(brieflist)
+                brieflistingcontroller.updateBriefListing(brieflist)
                 return mismanagedcount
             brieflist.homeStatus = propertydetail['homeStatus']
-            brieflistingcontroller.UpdateBriefListing(brieflist)  ###This ONLY updates home status, does not update price
+            brieflistingcontroller.updateBriefListing(brieflist)  ###This ONLY updates home status, does not update price
             print(brieflist)
         # print(propertydetail)
 

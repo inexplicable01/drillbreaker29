@@ -1,0 +1,26 @@
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    // ✅ Very simple sanity-check map
+
+    // 1) Init map on #map_Sold
+    var map_Sold = L.map('map_Sold', { scrollWheelZoom: false });
+
+    // 2) Base tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map_Sold);
+
+    // 3) Hard-code a center (Seattle-ish) and zoom
+    map_Sold.setView([47.6062, -122.3321], 11);
+
+    // 4) Single test marker so you know it’s alive
+    var marker = L.marker([47.6062, -122.3321]).addTo(map_Sold);
+    marker.bindPopup("Hello from Seattle!").openPopup();
+
+    // 5) (Optional) simple click logger
+    map_Sold.on('click', function (e) {
+        console.log("Clicked at:", e.latlng);
+    });
+</script>

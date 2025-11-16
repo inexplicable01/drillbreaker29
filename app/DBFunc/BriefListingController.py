@@ -51,6 +51,8 @@ class BriefListingController():
 
         return BriefListing.CreateBriefListingFromPropertyData(propertydata, neighbourhood, gapis_neighbourhood, None)
 
+
+
     def updateBriefListing(self, updatedbrieflisting: BriefListing, fsbo_status=None):
         ##METHOD WORKS EVEN IF upddatedbrieflisting does not exist in db yet.
         try:
@@ -135,13 +137,6 @@ class BriefListingController():
             self.db.session.merge(brieflisting)
         self.db.session.commit()
 
-    def UpdateBriefListing(self, brieflisting):
-        try:
-            self.db.session.merge(brieflisting)
-            self.db.session.commit()
-        except Exception as e:
-            print_and_log(f"Error during update or insert: {str(e)}")
-            self.db.session.rollback()
 
     def listingsN_Cleanup(self):
         # Query to find all listings with 'FIX ME' as the neighborhood

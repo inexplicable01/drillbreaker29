@@ -1,18 +1,13 @@
 from app.DBFunc.WashingtonZonesController import WashingtonZones
-from app.extensions import db
-from dataclasses import dataclass, field, InitVar, fields
-from typing import Optional, Dict
-from sqlalchemy.orm import relationship
-from app.DBFunc.WashingtonCitiesController import WashingtonCities
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, Text, BigInteger, DateTime , Numeric , ForeignKey
+from typing import List, Optional
 
 from app.DBFunc.CustomerController import Customer
-# from app.DBModels.CustomerZone import CustomerZone
-from typing import Optional
 
 Base = declarative_base()
 from app.extensions import db
+
 
 class CustomerZone(db.Model):
     __tablename__ = 'CustomerZone'
@@ -21,10 +16,7 @@ class CustomerZone(db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey('Customer.id'), nullable=False)
     zone_id = db.Column(db.Integer, db.ForeignKey('WashingtonZones.id'), nullable=False)
     # city_id = db.Column(db.Integer, db.ForeignKey('WashingtonCities.city_id'), nullable=False)
-    #zone = db.relationship("WashingtonZones", back_populates="interests")
-    #customer = db.relationship('Customer', back_populates='interests')
-    #zone = db.relationship('WashingtonZones', back_populates='interests')
-    # WashingtonCities = db.relationship('WashingtonCities', back_populates='interests')
+
 
 class CustomerZoneController:
     def __init__(self):
@@ -38,7 +30,6 @@ class CustomerZoneController:
         customer = self.Customer.query.filter_by(id=customer_id).first()
         if not customer:
             return None, []  # Return None if the customer is not found
-
         return customer
 
     def get_customer(self, customer_id: int) -> Optional[Customer]:
@@ -47,5 +38,44 @@ class CustomerZoneController:
         """
         customer: Optional[Customer] = Customer.query.filter_by(id=customer_id).first()
         return customer
+
+    def get_customer_zone_ids(self, customer_id: int) -> List[int]:
+        """
+        Return a list of zone_id values for the given customer_id.
+        """
+        rows = (
+            self.CustomerZone.query
+            .with_entities(self.CustomerZone.zone_id)
+            .filter_by(customer_id=customer_id)
+            .all()
+        )
+        # rows is a list of single-element tuples like [(511,), (204,), ...]
+        return [zone_id for (zone_id,) in rows]
+
+    def set_customer_zone_ids(self, customer_id: int, zone_ids: List[int]) -> List[int]:
+        """
+        Replace all zone assignments for a customer with the given zone_ids.
+        Commits the change and returns the normalized list of ints.
+        """
+        # Normalize to ints (in case they come in as strings)
+        cleaned_ids: List[int] = []
+        for z in zone_ids:
+            try:
+                cleaned_ids.append(int(z))
+            except (TypeError, ValueError):
+                # skip bad values silently; you can raise if you prefer
+                continue
+
+        # Delete existing rows
+        self.CustomerZone.query.filter_by(customer_id=customer_id).delete()
+
+        # Insert new ones
+        for zid in cleaned_ids:
+            cz = self.CustomerZone(customer_id=customer_id, zone_id=zid)
+            self.db.session.add(cz)
+
+        self.db.session.commit()
+        return cleaned_ids
+
 
 customerzonecontroller = CustomerZoneController()
