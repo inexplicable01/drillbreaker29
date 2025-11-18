@@ -24,8 +24,11 @@ headers = {
 
 # from app.DataBaseFunc import dbmethods
 
+def SearchZillowByAddress(address):
+    querystring = {"address":address}
 
-
+    response = requests.get(url, headers=headers, params=querystring)
+    return response.json()
 
 def SearchZillowByZPID(ZPID):
     querystring = {"zpid": ZPID}

@@ -125,6 +125,7 @@
         <td>Zones Creation</td>
     <td><a href="{{ url_for('zones.new_zone') }}">Zones Creation</a></td>
         </tr>
+
 {#    <td>Set Alerts</td>#}
 {#    <td><a href="{{ url_for('customer_interest_bp.listCustomersforAlerts') }}">Customer Interest Homes</a></td>#}
 {#    </tr>#}
@@ -132,30 +133,71 @@
 </table>
 
 
-{##}
-{#        <form action="{{ url_for('main.send_test_email') }}" method="post">#}
-{#            <button type="submit">Send Us a Question!</button>#}
-{#        </form>#}
-{#<form action="{{ url_for('email.sendEmailUpdates') }}" method="post">#}
-{#    <button type="submit">Send Email!</button>#}
-{#</form>#}
-
 <p>This is last update on {{ lastupdate }}</p>
 <p>{{ recent_pending_count }} went pending in the last 7 days.</p>
-{#        <a href="/downloadpicsfromMLS">downloadpicsfromMLS</a>#}
-{#        <p>fkajdsf</p>#}
-{#        <a href="/mapexample">mapexample</a>#}
 
-{#        <p>Where to Build</p>#}
-{#        <a href="/wheretobuild">Where to Build</a>#}
-{##}
 
-{#        <p>Some addresses</p>#}
-{#        <a href="/abunchofBellevueAddress">Some addresses</a>#}
-{##}
-{#        <p>Map of new Build</p>#}
-{#        <a href="/newbuildlocations">Map of new Build</a>#}
+<hr>
 
+<h2>Zillow Address Tester</h2>
+<div id="zillow-tester">
+    <input
+        type="text"
+        id="zillow-address"
+        style="width: 60%; padding: 6px;"
+        placeholder="123 Main St, Seattle, WA 98101"
+    />
+    <button id="zillow-search-btn" style="padding: 6px 12px; margin-left: 4px;">
+        Search Zillow
+    </button>
+
+    <div id="zillow-status" style="margin-top: 10px; font-weight: bold;"></div>
+
+    <pre id="zillow-result"
+         style="text-align: left; margin: 10px auto; width: 80%; max-height: 400px; overflow: auto; border: 1px solid #ccc; padding: 8px;">
+    </pre>
+</div>
+
+<script>
+    $(function () {
+        $("#zillow-search-btn").on("click", function () {
+            const address = $("#zillow-address").val().trim();
+            if (!address) {
+                $("#zillow-status").text("Please enter an address.");
+                $("#zillow-result").text("");
+                return;
+            }
+
+            $("#zillow-status").text("Loading...");
+            $("#zillow-result").text("");
+
+            $.ajax({
+                url: "{{ url_for('main.api_zillow_search_by_address') }}",  // <-- updated
+                method: "POST",
+                contentType: "application/json",
+                dataType: "json",
+                data: JSON.stringify({ address: address }),
+                success: function (data) {
+                    $("#zillow-status").text("Success!");
+                    $("#zillow-result").text(JSON.stringify(data, null, 2));
+                },
+                error: function (xhr) {
+                    let msg = "Error calling API";
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        if (resp.error) {
+                            msg += ": " + resp.error;
+                        }
+                    } catch (e) {
+                        // ignore parse errors
+                    }
+                    $("#zillow-status").text(msg);
+                    $("#zillow-result").text(xhr.responseText || "");
+                }
+            });
+        });
+    });
+</script>
 
 </body>
 </html>
