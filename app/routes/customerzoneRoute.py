@@ -302,7 +302,7 @@ def displayCustomerInterest():
     (customer, locations, locationzonenames, customerlistings,housesoldpriceaverage, plot_url,
      plot_url2,
      soldhomes, forsalebrieflistings,
-     selectedaicomments,ai_comment_zpid)\
+     selectedaicomments,ai_comment_zpid , ai_suggestion_map_data)\
         = gatherCustomerData(customer_id, selected_doz)
 
     aicomments=[]
@@ -340,9 +340,11 @@ def displayCustomerInterest():
             customerzpid.brief_listing.getPropertyData()# Update in case status has changed
             brieflistingcontroller.updateBriefListing(customerzpid.brief_listing)## Commit
 
+
     customer = customerzonecontroller.get_customer_zone(customer_id)
     for customerzpid in customer.customerzpid_array:
         customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data() # Retrieve Data
+
 
 
     print("Turning For Sale into to_dict")
@@ -371,6 +373,8 @@ def displayCustomerInterest():
             # If you want more fields, add them here
         })
 
+
+
     return render_template('InterestReport/NeighbourhoodInterest.html',
                            customer=customer,
                            Webpage=True,
@@ -390,6 +394,7 @@ def displayCustomerInterest():
                            ai_comment_zpid=ai_comment_zpid,
                            customerzpid_array=customer.customerzpid_array,
                            customerzpid_map_data=customerzpid_map_data,
+                           ai_suggestion_map_data=ai_suggestion_map_data,
                            zpidlist=zpidlist,
                            active_tab=active_tab
                            )

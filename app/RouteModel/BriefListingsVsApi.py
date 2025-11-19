@@ -59,25 +59,76 @@ def ZPIDinDBNotInAPI_FORSALE(zpid, doz, mismanagedcount):
               'found anymore on api, so likely pending or sold or taken off market')
     return mismanagedcount
 
+
+
 def EmailCustomersIfInterested(api_zpid, apibrieflisting, brieflistdb):
-    # brieflistdb = brieflistingcontroller.get_listing_by_zpid(api_zpid)
-    # if brieflistdb.price != apibrieflisting.price:
-#     print(message)
-        ## Create a latestPriceChangeTime column set time, update price
     try:
         customerzpids = customerzpidcontroller.getCustomerZpidByZpid(api_zpid)
-        if customerzpids:
-            message = (f"Price Change for {brieflistdb}\nFrom {brieflistdb.price} to {apibrieflisting.price}\n"
-                       f"Status went from {brieflistdb.homeStatus} to {apibrieflisting.homeStatus}")
-            for customerzpid in customerzpids:
-                print(f"{customerzpid.customer.name} is interested in this property!")
-                # SendEmail()
-                if customerzpid.is_retired:
-                    continue
-                title = f'{brieflistdb.__str__()} has changed.'
-                sendEmailListingChange(message, title, brieflistdb.hdpUrl)
+        if not customerzpids:
+            return
+
+        old_price = brieflistdb.price
+        new_price = apibrieflisting.price
+        old_status = brieflistdb.homeStatus
+        new_status = apibrieflisting.homeStatus
+
+        # Nicely formatted status labels
+        STATUS_LABELS = {
+            "FOR_SALE": "For Sale",
+            "PENDING": "Pending",
+            "RECENTLYSOLD": "Recently Sold",
+            "SOLD": "Sold",
+        }
+
+        old_status_label = STATUS_LABELS.get(old_status, old_status.replace("_", " ").title())
+        new_status_label = STATUS_LABELS.get(new_status, new_status.replace("_", " ").title())
+
+        change_lines = []
+
+        if old_price != new_price:
+            change_lines.append(
+                f"• Price: ${old_price:,.0f} → ${new_price:,.0f}"
+            )
+
+        if old_status != new_status:
+            change_lines.append(
+                f"• Status: {old_status_label} → {new_status_label}"
+            )
+
+        # Fallback if something triggered the function but we didn’t detect a diff
+        if not change_lines:
+            change_lines.append("• We detected an update on this property.")
+
+        change_text = "\n".join(change_lines)
+
+        # This is what will show inside the “message-block” in the HTML email
+        message = (
+            f"{brieflistdb}\n\n"
+            f"Here’s what changed:\n"
+            f"{change_text}\n\n"
+            f"Current status: {new_status_label}\n"
+            f"Current price: ${new_price:,.0f}"
+        )
+
+        title = f"Update on {brieflistdb}"
+
+        for customerzpid in customerzpids:
+            if customerzpid.is_retired:
+                continue
+
+            customer = customerzpid.customer  # assumes relationship exists
+            print(f"{customer.name} is interested in this property!")
+
+            sendEmailListingChange(
+                message=message,
+                title=title,
+                hdpUrl=brieflistdb.hdpUrl,
+                customer=customer,  # passes customer through for personalization
+            )
+
     except Exception as e:
-        print(f'Email to customer for {brieflistdb.__str__()} failed.')
+        print(f"Email to customer for {brieflistdb.__str__()} failed.")
         print(e)
 
     return
+

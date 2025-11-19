@@ -78,27 +78,84 @@ def sendEmailListingChange(message=None, title=None, hdpUrl=None):
                recipient =defaultrecipient)
 
 
-def sendEmailListingChange(message=None, title=None, hdpUrl=None):
-    # subject, body, recipient = defaultrecipient, html_content = None
+def sendEmailListingChange(message=None, title=None, hdpUrl=None, customer=None):
     seattle_tz = pytz.timezone('America/Los_Angeles')
     current_time = datetime.now(seattle_tz)
-    formatted_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+    formatted_time = current_time.strftime('%B %d, %Y at %I:%M %p %Z')
 
-    # Prepare the email content
+    message = message or ""
+    message_html = "<br>".join(message.splitlines())
+
+    customer_name = None
+    customer_email = None
+
+    if customer is not None:
+        customer_name = getattr(customer, "name", None) or getattr(customer, "first_name", None)
+        customer_email = getattr(customer, "email", None) or getattr(customer, "email_address", None)
+
+    greeting_name = customer_name.split()[0] if customer_name else "there"
+    recipient = customer_email or defaultrecipient
+
+    listing_link_html = ""
+    if hdpUrl:
+        listing_link_html = f"""
+            <div class="cta">
+                <a href="https://www.zillow.com{hdpUrl}" target="_blank">
+                    View this home on Zillow
+                </a>
+            </div>
+        """
+
     html_content = f"""
     <html>
-        <body>
-            <p>The email was sent on {formatted_time} (Seattle Time).</p>
-            <p>{message}</p>
-            <a href='https://www.zillow.com{hdpUrl}' target='_blank'>House Link</a>
-        </body>
+      <head>
+        <meta charset="UTF-8" />
+        <style>
+          /* (same styles as before) */
+        </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <div class="card">
+            <div class="header">
+              <p class="header-title">Home update from Wayber</p>
+              <p class="subtext">Sent on {formatted_time} (Seattle time)</p>
+            </div>
+
+            <p class="greeting">Hi {greeting_name},</p>
+
+            <p style="font-size:14px; margin: 0 0 12px 0;">
+              There’s been an update to a home you’re following. Here are the details:
+            </p>
+
+            <div class="message-block">
+              {message_html}
+            </div>
+
+            {listing_link_html}
+
+            <p class="brand">
+              Best regards,<br>
+              Wayber Team
+            </p>
+
+            <p class="footer">
+              You’re receiving this email because you asked Wayber to track this property for you.
+              If you’d like to stop receiving updates for this home, simply reply to this email and let us know.
+            </p>
+          </div>
+        </div>
+      </body>
     </html>
     """
-    # html_content=''
 
-    send_email(subject=title,
-               html_content=html_content,
-               recipient =defaultrecipient)
+    send_email(
+        subject=title,
+        html_content=html_content,
+        recipient='waichak.luk@gmail.com'
+    )
+
+
 
 from pathlib import Path
 def sendemailforcustomerhometour(customer:Customer,brieflisting):

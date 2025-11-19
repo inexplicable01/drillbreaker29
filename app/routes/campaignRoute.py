@@ -266,7 +266,7 @@ def sendLevel3Buyer_sendEmail():
         (customer, locations, locationzonenames, customerlistings,
          housesoldpriceaverage, plot_url, plot_url2,
          soldhomes, forsalebrieflistings,
-         selectedaicomments, ai_comment_zpid)  = gatherCustomerData(customer.id, 30)
+         selectedaicomments, ai_comment_zpid, ai_suggestion_map_data)  = gatherCustomerData(customer.id, 30)
 
         # forsalehomes_dict = []
         # for brieflisting in forsalebrieflistings:

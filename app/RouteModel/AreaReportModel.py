@@ -509,13 +509,24 @@ def gatherCustomerData(customer_id, selected_doz):
     customerlistings=[]
     selectedaicomments=[]
     ai_comment_zpid=[]
-    for aicomment in aicomments:
+    ai_suggestion_map_data = []
+
+    for (idx,aicomment) in enumerate(aicomments, start=1):
         print(aicomment.listing.homeStatus)
         if aicomment.listing.homeStatus !=FOR_SALE:
             continue
         selectedaicomments.append((aicomment,aicomment.listing))
         customerlistings.append(aicomment.listing )
         ai_comment_zpid.append(aicomment.listing.zpid)
+        ai_suggestion_map_data.append({
+            "index": idx,
+            "zpid": getattr(aicomment.listing, "zpid", None),
+            "latitude": getattr(aicomment.listing, "latitude", None),
+            "longitude": getattr(aicomment.listing, "longitude", None),
+            "streetAddress": getattr(aicomment.listing, "streetAddress", None),
+            "price": getattr(aicomment.listing, "price", None),
+            # If you want more fields, add them here
+        })
         if selectedaicomments.__len__()>10:
             break
 
@@ -534,4 +545,4 @@ def gatherCustomerData(customer_id, selected_doz):
 
     return (customer, locations , locationzonenames , customerlistings , housesoldpriceaverage,
             plot_url, plot_url2, soldhomes , forsalebrieflistings,
-            selectedaicomments,ai_comment_zpid)
+            selectedaicomments,ai_comment_zpid , ai_suggestion_map_data)

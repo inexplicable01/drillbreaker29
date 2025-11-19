@@ -42,14 +42,7 @@ response = requests.request("GET", getcitylisturl,  params=params, headers=heade
 
 
 for i,city in enumerate(response.json()["cities"]):
-    # print(city)
-    # if city!='Seattle':
-    #     continue
-    # if city not  in ["Arlington", "Auburn", "Bellevue", "Bothell", "Edmonds", "Everett", "Issaquah", "Kent"
-    # , "Lake Stevens", "Lynnwood", "Marysville", "Monroe", "Renton", "Seattle", "Snohomish"]:
-    #     continue
     print(city)
-
     payload = {'doz': '90',
                'city': city}
     files = []
@@ -73,4 +66,5 @@ response = requests.request("POST", base+"zonestats/update", headers=headers, da
 url_health = f"{base}email/email_healthcheck"
 payload = {'message': "completed 3 county update"}
 response = requests.post(url_health, headers=headers, json=payload)
+print(response)
 
