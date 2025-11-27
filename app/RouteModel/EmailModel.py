@@ -91,7 +91,7 @@ def sendEmailListingChange(message=None, title=None, hdpUrl=None, customer=None)
 
     if customer is not None:
         customer_name = getattr(customer, "name", None) or getattr(customer, "first_name", None)
-        customer_email = getattr(customer, "email", None) or getattr(customer, "email_address", None)
+        customer_email = customer.email or getattr(customer, "email_address", None)
 
     greeting_name = customer_name.split()[0] if customer_name else "there"
     recipient = customer_email or defaultrecipient
@@ -148,7 +148,11 @@ def sendEmailListingChange(message=None, title=None, hdpUrl=None, customer=None)
       </body>
     </html>
     """
-
+    # send_email(
+    #     subject=title,
+    #     html_content=html_content,
+    #     recipient=customer_email
+    # )
     send_email(
         subject=title,
         html_content=html_content,
@@ -480,6 +484,68 @@ def sendLevel3BuyerEmail(customer:Customer,locations,
     except Exception as e:
         print(f"Error sending email: {e}")
         flash("An error occurred while sending the email.", "danger")
+
+def sendLevel2SellerEmailWithAnalysis(customer, soldhomes, stats, analysis_result=None,
+                                     forreal=False, admin=False):
+    """
+    Send email to Level 2 sellers with property-specific regression analysis.
+    """
+    ai_history = CC.recent_cadences(customer.id, limit=5)
+    metrics = verbalize_stats(stats or {}, customer.email_cadence_days)
+
+    email_subject = f'Wayber Real Estate Analytics : {customer.maincity.City}'
+    weekly_summary = generate_weekly_summary(customer.maincity.City, stats)
+
+    try:
+        ai = CC.generate_ai_explainer_structured_from_stats(
+            customer=customer,
+            segment=3,
+            stats=stats,
+            metrics=metrics,
+        )
+    except Exception:
+        ai = None
+
+    verdicts = {
+        "sold_price": verdict_sentence("sold_price", ai['conclusions']['sold_price']),
+        "speed": verdict_sentence("speed", ai['conclusions']['speed']),
+        "inventory": verdict_sentence("competition", ai['conclusions']['inventory']),
+    }
+    labels = derive_header_fields(stats, ai)
+
+    # Render template with analysis data
+    html_content = render_template(
+        'EmailCampaignTemplate/email_level2seller_analysis.html',
+        customer=customer,
+        weekly_summary=weekly_summary,
+        ai_history=ai_history,
+        ai=ai,
+        stats=stats,
+        verdicts=verdicts,
+        soldhomes=soldhomes,
+        analysis=analysis_result,  # NEW: Analysis results
+        showScheduleButton=True,
+        website='https://www.wayber.net/',
+        labels=labels
+    )
+
+    try:
+        if forreal:
+            send_email(subject=f'{ai["title"]}- copy sent to Customer',
+                       html_content=html_content,
+                       recipient=defaultrecipient)
+
+            recipient = customer.email
+        else:
+            recipient = defaultrecipient
+        return send_email(subject=f'{ai["title"]}',
+                          html_content=html_content,
+                          recipient=recipient)
+
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        flash("An error occurred while sending the email.", "danger")
+
 
 def sendLevel1_2SellerEmail(customer, soldhomes, stats,
                             forreal=False, admin=False):

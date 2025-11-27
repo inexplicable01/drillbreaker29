@@ -11,16 +11,23 @@ keystokeep = ['zpid','price','unit','streetAddress',
               'city','state','zipcode','bedrooms',
               'bathrooms','zestimate','daysOnZillow',
               'dateSold','homeType','latitude','longitude']
+from dotenv import load_dotenv
+# Load API key
+load_dotenv()
+# headers = {
+#     "X-RapidAPI-Key": os.getenv('RAPID_API_KEY'),
+#     "X-RapidAPI-Host": "zillow56.p.rapidapi.com"
+# }
 
-headers = {
-    "X-RapidAPI-Key": os.getenv('RAPID_API_KEY'),
-    "X-RapidAPI-Host": "zillow56.p.rapidapi.com"
-}
 
 # headers = {
-# 	"x-rapidapi-key": os.getenv('RAPID_API_KEY'),
-# 	"x-rapidapi-host": "zillow-com4.p.rapidapi.com"
+#     "x-rapidapi-key": "0bc02c9596msh137f931ca8f2502p12d190jsn7dd0bc9a97dc",
+#     "x-rapidapi-host": "zillow56.p.rapidapi.com"
 # }
+headers = {
+	"x-rapidapi-key": os.getenv('RAPID_API_KEY'),
+	"x-rapidapi-host": "zillow56.p.rapidapi.com"
+}
 
 # from app.DataBaseFunc import dbmethods
 
@@ -72,7 +79,8 @@ def SearchZilowByMLSID(MLSID):
 def SearchZillowByAddress(addressStr):
     # querystring = {"location":location + ", wa","page": str(lastpage),"status":"forSale","doz":"14"}
     querystring = {"address": addressStr}
-    response = requests.get("https://zillow56.p.rapidapi.com/search_address", headers=headers, params=querystring)
+    url = "https://zillow56.p.rapidapi.com/search_address"
+    response = requests.get(url, headers=headers, params=querystring)
     time.sleep(0.5)
     if response.status_code==502:
         warn('502 on ' + addressStr)

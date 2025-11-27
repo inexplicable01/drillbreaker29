@@ -50,10 +50,19 @@
                     </p>
                 {% endif %}
             <p style="margin: 2px 0; font-size: 14px;">
-                <strong>Bedrooms:</strong> {{ home.bedrooms }}, <strong>Bathrooms:</strong> {{ home.bathrooms }}
+                <strong>Bedrooms:</strong> {{ home.bedrooms }},
+                <strong>Bathrooms:</strong> {{ home.bathrooms }}
             </p>
+
+            {% if home.listtime %}
+                {% set list_ts = home.listtime|int %}
+                {% set dom = (now_ts - list_ts) // 86400 %}
+                <p style="margin: 2px 0; font-size: 14px;">
+                    <strong>Days on Market:</strong> {{ dom if dom > 0 else 0 }}
+                </p>
+            {% endif %}
             <p style="margin: 2px 0; font-size: 14px;">
-                <a href="https://www.zillow.com/{{ home.hdpUrl }}" target="_blank" style="
+                <a href="https://www.zillow.com{{ home.hdpUrl }}" target="_blank" style="
                     color: #0073e6;
                     text-decoration: none;
                     font-weight: bold;">

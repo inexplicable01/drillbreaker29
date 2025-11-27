@@ -24,11 +24,15 @@
             <p style="margin: 2px 0; font-size: 8px;">
                 Zpid {{ home.zpid }} MLS {{ home.NWMLS_id }}
             </p>
+
             <p style="margin: 2px 0; font-size: 12px;">
                 {{ home.homeStatus }}
             </p>
+
             <p style="margin: 2px 0; font-size: 14px;">
-                <strong>Address:</strong> {{ home.streetAddress }}, {{ home.city }}, {{ home.state }}, {{ home.zipcode }}
+                <strong>Address:</strong>
+                {{ home.streetAddress }}, {{ home.city }}, {{ home.state }}, {{ home.zipcode }}
+            </p>
 
             {% if home.homeStatus == 'RECENTLY_SOLD' %}
                 <p style="margin: 2px 0; font-size: 20px;">
@@ -39,9 +43,20 @@
                     <strong>Price:</strong> ${{ "{:,.0f}".format(home.price) }}
                 </p>
             {% endif %}
+
             <p style="margin: 2px 0; font-size: 14px;">
-                <strong>Bedrooms:</strong> {{ home.bedrooms }}, <strong>Bathrooms:</strong> {{ home.bathrooms }}
+                <strong>Bedrooms:</strong> {{ home.bedrooms }},
+                <strong>Bathrooms:</strong> {{ home.bathrooms }}
             </p>
+
+            {% if home.listtime %}
+                {% set list_ts = home.listtime|int %}
+                {% set dom = (now_ts - list_ts) // 86400 %}
+                <p style="margin: 2px 0; font-size: 14px;">
+                    <strong>Days on Market:</strong> {{ dom if dom > 0 else 0 }}
+                </p>
+            {% endif %}
+
             <p style="margin: 2px 0; font-size: 14px;">
                 <a href="https://www.zillow.com/{{ home.hdpUrl }}" target="_blank" style="
                     color: #0073e6;
@@ -51,9 +66,8 @@
                 </a>
             </p>
 
-
             {% if showScheduleButton %}
-                <!-- Buttons -->
+                <!-- Schedule Button -->
                 <button onclick="scheduleHomeTour('{{ home.zpid }}', '{{ customer.id }}')" style="
                     background-color: #28a745;
                     color: white;
@@ -66,12 +80,12 @@
                     Schedule a Home Tour!
                 </button>
             {% endif %}
+
             {% if showTrackButton %}
                 {% set tracking = false %}
                 {% if home.zpid in zpidlist %}
                     {% set tracking = true %}
                 {% endif %}
-
 
                 <button onclick="trackListing('{{ home.zpid }}', '{{ customer.id }}')" style="
                         background-color: {% if tracking %} #ccc {% else %} #0073e6 {% endif %};
@@ -82,30 +96,26 @@
                         cursor: {% if tracking %} not-allowed {% else %} pointer {% endif %};
                         border-radius: 5px;
                         font-size: 14px;"
-                        {% if tracking %} disabled {% endif %}
-                >
+                        {% if tracking %} disabled {% endif %}>
                     {% if tracking %}
                         Tracking
                     {% else %}
                         Track!
-
                     {% endif %}
                 </button>
             {% endif %}
-
-
         </div>
     </div>
 
     <!-- Right Section: AI Evaluation (Shown Only If Comment Exists) -->
     {% if aicomment %}
         <div class="ai-comment-section" style="
-        flex: 0 0 200px;
-        text-align: left;
-        padding: 10px;
-        border-left: 1px solid #ddd;
-        background: #f9f9f9;
-        border-radius: 5px;">
+            flex: 0 0 200px;
+            text-align: left;
+            padding: 10px;
+            border-left: 1px solid #ddd;
+            background: #f9f9f9;
+            border-radius: 5px;">
 
             <p style="margin: 0; font-size: 16px; font-weight: bold;">Wayber Evaluation</p>
             <p style="margin: 2px 0; font-size: 14px;">

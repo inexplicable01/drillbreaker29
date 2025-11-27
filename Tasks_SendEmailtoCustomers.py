@@ -26,20 +26,16 @@ parser.add_argument(
     default="local",
     help="Which base URL to use: 'local' or 'prod' (default: local)",
 )
-
+parser.add_argument("--forreal", type=str2bool, nargs="?", const=True, default=False)
+parser.add_argument("--ignoretimerestriction", type=str2bool, nargs="?", const=True, default=False)
+parser.add_argument("--selectafew", type=str2bool, nargs="?", const=True, default=False)
+parser.add_argument("--admin", type=str2bool, nargs="?", const=True, default=False)
 args = parser.parse_args()
 
 if args.base == "local":
     base = "http://127.0.0.1:5000/"
 else:  # "prod"
     base = "https://www.drillbreaker29.com/"
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--forreal", type=str2bool, nargs="?", const=True, default=False)
-parser.add_argument("--ignoretimerestriction", type=str2bool, nargs="?", const=True, default=False)
-parser.add_argument("--selectafew", type=str2bool, nargs="?", const=True, default=False)
-parser.add_argument("--admin", type=str2bool, nargs="?", const=True, default=False)
-args = parser.parse_args()
 
 
 
@@ -79,7 +75,7 @@ payload = {
 }
 
 url = f"{base}campaign/sendLevel1Buyer_sendEmail"
-response = requests.request("GET", url, headers=headers, json=payload)
+# response = requests.request("GET", url, headers=headers, json=payload)
 
 url = f"{base}campaign/sendLevel1_2_Seller_sendEmail"
 response = requests.request("GET", url, headers=headers, json=payload)

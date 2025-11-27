@@ -26,6 +26,10 @@ class Customer(db.Model):
     lot_size = db.Column(db.Integer, nullable=True)
     parkingspaceneeded = db.Column(db.Integer, nullable=True)
 
+    # Seller info
+    seller_streetaddress = db.Column(db.String(255), nullable=True)
+    seller_zpid = db.Column(db.BigInteger, nullable=True)  # Zillow Property ID for seller's property
+
     # Status / associations
     active = db.Column(db.Boolean, nullable=True)
     customer_type_id = db.Column(db.Integer, db.ForeignKey('CustomerType.id'))

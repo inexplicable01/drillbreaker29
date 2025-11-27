@@ -42,6 +42,8 @@ response = requests.request("GET", getcitylisturl,  params=params, headers=heade
 
 
 for i,city in enumerate(response.json()["cities"]):
+    if city!="Seattle":
+        continue
     print(city)
     payload = {'doz': '90',
                'city': city}

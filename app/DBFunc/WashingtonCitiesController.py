@@ -72,7 +72,8 @@ class WashingtonCitiesController():
             .filter(
                 or_(
                     Customer.customer_type_id == 2,
-                    Customer.customer_type_id == 4
+                    Customer.customer_type_id == 4,
+                    Customer.customer_type_id == 6
                 )
             )
             .distinct()

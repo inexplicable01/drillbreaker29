@@ -10,6 +10,7 @@ from app.DBFunc.WashingtonCitiesController import WashingtonCities
 from app.DBFunc.PropertyListingController import PropertyListing
 from app.DBFunc.CustomerTypeController import CustomerType
 from app.DBModels.property_types import PropertyType
+from app.DBModels.SellerPropertyAnalysis import SellerPropertyAnalysis
 from app import db
 
 # Define relationships explicitly
@@ -94,3 +95,7 @@ CustomerType.customers =  db.relationship("Customer", back_populates="customerty
 
 Customer.maincity = db.relationship('WashingtonCities', back_populates='customers')
 WashingtonCities.customers = db.relationship('Customer', back_populates='maincity')
+
+# Customer to SellerPropertyAnalysis
+Customer.seller_analyses = db.relationship('SellerPropertyAnalysis', back_populates='customer', cascade="all, delete")
+SellerPropertyAnalysis.customer = db.relationship('Customer', back_populates='seller_analyses')

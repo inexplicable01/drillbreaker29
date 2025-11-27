@@ -8,7 +8,8 @@ from app.config import Config, SW, RECENTLYSOLD, FOR_SALE
 from app.DBFunc.CustomerTypeController import customertypecontroller
 from app.RouteModel.AreaReportModel import AreaReportModelRun,AreaReportModelRunForSale, StatsModelRun
 from app.RouteModel.EmailModel import (sendLevel1BuyerEmail, sendEmailtimecheck,
-                                       sendunsubscribemeail,sendLevel3BuyerEmail , sendLevel1_2SellerEmail , sendpastcustomerEmail)
+                                       sendunsubscribemeail,sendLevel3BuyerEmail , sendLevel1_2SellerEmail ,
+                                       sendLevel2SellerEmailWithAnalysis, sendpastcustomerEmail)
 from app.RouteModel.AreaReportModel import gatherCustomerData
 # from app.RouteModel.AIModel import AIModel
 # from app.DBFunc.AIListingController import ailistingcontroller
@@ -25,6 +26,8 @@ from datetime import datetime
 from app.RouteModel.BriefListingsVsApi import ZPIDinDBNotInAPI_FORSALE, EmailCustomersIfInterested
 from app.GraphTools.plt_plots import *
 from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
+from app.RouteModel.SellerAnalysisModel import analyze_seller_property_for_customer
+from app.DBFunc.SellerPropertyAnalysisController import sellerpropertyanalysiscontroller
 
 campaignRoute_bp = Blueprint('campaignRoute_bp', __name__, url_prefix='/campaign')
 defaultrecipient = 'waichak.luk@gmail.com'
@@ -189,6 +192,8 @@ def printoutEmailsThatWerentSent(customer):
 
 @campaignRoute_bp.route('/sendLevel1_2_Seller_sendEmail', methods=['GET'])
 def sendLevel1_2_Seller_sendEmail():
+    #Finds ALL Sellers
+
     emailtest=0
     forreal =  request.json.get("forreal", False)
     ignoretimerestriction = request.json.get("ignoretimerestriction", False)
@@ -206,28 +211,87 @@ def sendLevel1_2_Seller_sendEmail():
     for customer in level1_2_seller_customers:
         if customer.dontemail:
             continue
-        # print(customer.name)
         customernames.append(customer.name)
-        # mappng = f"{base}static/maps/citymap_{customer.maincity.City}_{next_thursday}.png"
-        # pricechangepng = f"{base}static/maps/pricechange_{customer.maincity.City}_{next_thursday}.png"
+
         if customercontroller.shouldsendEmail(customer) or ignoretimerestriction:
             if not is_valid_email(customer.email):
                 invalid_emails.append({'name': customer.name, 'email': customer.email})
                 continue
-            wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
-            if wcity:
-                results = washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
+
+            # Determine if this is a Level 2 seller (Type ID = 4)
+            is_level2_seller = customer.customer_type_id == 4
+
+            # Level 2 Seller: Run property analysis if address/zpid is set
+            if is_level2_seller and (customer.seller_zpid or customer.seller_streetaddress):
+                print(f"[Level 2 Seller] Running property analysis for {customer.name}")
+
+                # Check if we should run analysis (weekly)
+                should_analyze = sellerpropertyanalysiscontroller.should_run_analysis(customer.id, days_between_analyses=7)
+
+                analysis_result = None
+                if should_analyze:
+                    try:
+                        analysis_result = analyze_seller_property_for_customer(customer, radius_miles=2.0)
+                        if analysis_result['success']:
+                            print(f"Analysis complete: Predicted price ${analysis_result['predicted_price']:,}")
+                        else:
+                            print(f"Analysis failed: {analysis_result['error']}")
+                    except Exception as e:
+                        print(f"Error running analysis for customer {customer.id}: {e}")
+                        analysis_result = None
+                else:
+                    # Get most recent analysis
+                    latest_analysis = sellerpropertyanalysiscontroller.get_latest_analysis_for_customer(customer.id)
+                    if latest_analysis:
+                        analysis_result = {
+                            'success': True,
+                            'analysis_id': latest_analysis.id,
+                            'predicted_price': latest_analysis.predicted_price,
+                            'confidence_lower': latest_analysis.confidence_lower,
+                            'confidence_upper': latest_analysis.confidence_upper,
+                            'price_per_sqft': latest_analysis.price_per_sqft,
+                            'r_squared': latest_analysis.r_squared,
+                            'num_comps': latest_analysis.num_comps,
+                            'median_comp_price': latest_analysis.median_comp_price,
+                            'avg_days_on_market': latest_analysis.avg_days_on_market,
+                            'week_over_week_change_pct': latest_analysis.week_over_week_change_pct,
+                            'week_over_week_change_dollars': latest_analysis.week_over_week_change_dollars
+                        }
+                        print(f"Using cached analysis from {latest_analysis.analysis_date}")
+
+                # Get zone data for general market stats
+                wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
+                if wcity:
+                    results = washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
+                else:
+                    results = washingtonzonescontroller.getzonebyName(customer.maincity.City)
+                zone_ids = [result.id for result in results]
+
+                soldhomes = brieflistingcontroller.get_recent_listings(customer, zone_ids, homestatus=RECENTLYSOLD)
+                stats = StatsModelRun(zone_ids, customer.email_cadence_days, 7)
+
+                # Send email with analysis data
+                emailsentsuccessfull = sendLevel2SellerEmailWithAnalysis(
+                    customer, soldhomes, stats, analysis_result, forreal
+                )
+
+            # Level 1 or Level 3 Seller: Send regular seller email
             else:
-                results = washingtonzonescontroller.getzonebyName(customer.maincity.City)
-            zone_ids = []
-            for result in results:
-                zone_ids.append(result.id)
+                wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
+                if wcity:
+                    results = washingtonzonescontroller.getZoneListbyCity_id(wcity.city_id)
+                else:
+                    results = washingtonzonescontroller.getzonebyName(customer.maincity.City)
+                zone_ids = []
+                for result in results:
+                    zone_ids.append(result.id)
 
-            soldhomes = brieflistingcontroller.get_recent_listings(customer, zone_ids, homestatus=RECENTLYSOLD)
-            stats = StatsModelRun(zone_ids, customer.email_cadence_days , 7)
-            # print(stats)
-            emailsentsuccessfull =sendLevel1_2SellerEmail(customer,  soldhomes, stats, forreal)
+                soldhomes = brieflistingcontroller.get_recent_listings(customer, zone_ids, homestatus=RECENTLYSOLD)
+                stats = StatsModelRun(zone_ids, customer.email_cadence_days , 7)
 
+                emailsentsuccessfull = sendLevel1_2SellerEmail(customer, soldhomes, stats, forreal)
+
+            # Handle email send status
             if emailsentsuccessfull and forreal and not ignoretimerestriction:
                 customercontroller.update_last_email_sent_at(customer)
                 print(f"Email sent to {customer.email}; next due {customer.next_email_due_at:%Y-%m-%d %H:%M:%S}")
@@ -235,9 +299,15 @@ def sendLevel1_2_Seller_sendEmail():
                 print(f"[TEST] Email sent to {defaultrecipient} (customer {customer.id} / {customer.email})")
             else:
                 print(f"[FAIL] Email not sent for customer {customer.id} / {customer.email}")
-        # print(f"Prepared email for {customer.email} with images: {mappng}")
+
             if admin and forreal:
-                emailsentsuccessfull = sendLevel1_2SellerEmail(customer, soldhomes, stats, forreal, admin)
+                if is_level2_seller and (customer.seller_zpid or customer.seller_streetaddress):
+                    emailsentsuccessfull = sendLevel2SellerEmailWithAnalysis(
+                        customer, soldhomes, stats, analysis_result, forreal, admin
+                    )
+                else:
+                    emailsentsuccessfull = sendLevel1_2SellerEmail(customer, soldhomes, stats, forreal, admin)
+
             if selectafew:
                 if emailtest > 1:
                     break
@@ -322,38 +392,6 @@ def pastcustomer_sendEmail():
         'status': 'success',
     }), 200
 
-
-def get_dummy_metrics(group: int) -> dict:
-    # group: 1=cold buyers, 2=hot buyers, 3=sellers
-    base = {
-        "market_snapshot": {
-            "median_price": "$725,000",
-            "price_per_sqft": "$525",
-            "days_on_market": 18,
-            "inventory_mom": "+3%",
-        },
-        "rates": {"30yr_fixed": "6.6%", "5/6 ARM": "5.9%"},
-    }
-    if group == 1:  # cold buyers
-        base["handpicked"] = [
-            {"addr": "Tacoma – Lincoln Dist.", "price": "$489k", "beds": 3, "baths": 1.75, "link": "#"},
-            {"addr": "Burien – Lakeview",      "price": "$615k", "beds": 3, "baths": 2.0,  "link": "#"},
-        ]
-        base["protip"] = "Reply with 'update my prefs' and your ideal price/area; I’ll re-target listings within 24h."
-    elif group == 2:  # hot buyers
-        base["handpicked"] = [
-            {"addr": "West Seattle – Gatewood", "price": "$799k", "beds": 3, "baths": 2.25, "link": "#"},
-            {"addr": "Shoreline – Meridian Pk", "price": "$735k", "beds": 4, "baths": 2.0,  "link": "#"},
-        ]
-        base["protip"] = "We can beat similar offers with a seller-paid buydown; ask me for a 1-page scenario."
-    else:  # sellers
-        base["seller_stats"] = {
-            "buyer_traffic_wow": "+4%",
-            "avg_list_to_sale": "98.5%",
-            "new_listings_in_zip": 12,
-        }
-        base["protip"] = "Two low-lift wins: front entry refresh + scent-neutral clean. Converts more showings to offers."
-    return base
 
 @campaignRoute_bp.route('/unsubscribe')
 def unsubscribe():

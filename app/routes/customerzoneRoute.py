@@ -1,7 +1,7 @@
 # email_bp.py
 from datetime import datetime
 import pytz
-
+import time
 from app.DBFunc.WashingtonZonesController import WashingtonZonesController, washingtonzonescontroller
 from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
 from flask import flash,Blueprint, render_template, redirect, url_for, request,jsonify
@@ -259,11 +259,12 @@ def save_customer_zpid_interest():
     for customerzpid in customer.customerzpid_array:
         if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
             customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data()
-
+    now_ts = int(time.time())
     return jsonify({"message": message,
         "html": render_template('components/Customer_Interest_Track.html',
                                 customer=customer,
-        customerzpid_array=customer.customerzpid_array
+        customerzpid_array=customer.customerzpid_array,
+                                now_ts=now_ts
                                 )})
 
 
@@ -373,8 +374,7 @@ def displayCustomerInterest():
             # If you want more fields, add them here
         })
 
-
-
+    now_ts = int(time.time())
     return render_template('InterestReport/NeighbourhoodInterest.html',
                            customer=customer,
                            Webpage=True,
@@ -396,7 +396,8 @@ def displayCustomerInterest():
                            customerzpid_map_data=customerzpid_map_data,
                            ai_suggestion_map_data=ai_suggestion_map_data,
                            zpidlist=zpidlist,
-                           active_tab=active_tab
+                           active_tab=active_tab,
+                           now_ts=now_ts
                            )
 
 
