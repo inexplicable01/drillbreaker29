@@ -40,7 +40,7 @@
                 </td>
                 {% with showScheduleButton=(home.homeStatus=="FOR_SALE") , showTrackButton = False %}
                     <td>
-                        {% include "components/neighbourhood_details_card_mini.html" %}
+                        {% include "components/neighbourhood_details_card_mini_custtrack.html" %}
                     </td>
                     <td>
                         {% if customerzpid.brief_listing.property_listing.json_data.get('priceHistory') %}
