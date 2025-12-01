@@ -26,7 +26,9 @@ from datetime import datetime
 from app.RouteModel.BriefListingsVsApi import ZPIDinDBNotInAPI_FORSALE, EmailCustomersIfInterested
 from app.GraphTools.plt_plots import *
 from app.DBFunc.WashingtonZonesController import washingtonzonescontroller
-from app.RouteModel.SellerAnalysisModel import analyze_seller_property_for_customer
+from app.RouteModel.SellerAnalysisModel import (analyze_seller_property_for_customer,
+                                                 generate_seller_price_trend_chart,
+                                                 get_seller_chart_url)
 from app.DBFunc.SellerPropertyAnalysisController import sellerpropertyanalysiscontroller
 
 campaignRoute_bp = Blueprint('campaignRoute_bp', __name__, url_prefix='/campaign')
@@ -243,9 +245,14 @@ def sendLevel1_2_Seller_sendEmail():
                     # Get most recent analysis
                     latest_analysis = sellerpropertyanalysiscontroller.get_latest_analysis_for_customer(customer.id)
                     if latest_analysis:
+                        # Reconstruct property_data from stored fields or customer record
+                        from app.RouteModel.SellerAnalysisModel import get_seller_property_data
+                        property_data = get_seller_property_data(customer)
+
                         analysis_result = {
                             'success': True,
                             'analysis_id': latest_analysis.id,
+                            'property_data': property_data,
                             'predicted_price': latest_analysis.predicted_price,
                             'confidence_lower': latest_analysis.confidence_lower,
                             'confidence_upper': latest_analysis.confidence_upper,
@@ -451,3 +458,80 @@ def unsubscribe():
 #         'next_report_date': next_thursday,
 #         'uniquecities':uniquecities
 #     }), 200
+
+
+@campaignRoute_bp.route('/seller_price_chart/<int:customer_id>', methods=['GET'])
+def seller_price_chart(customer_id):
+    """
+    Generate and display price trend chart for a Level 2 seller.
+    Optional query param: weeks (default 12)
+    """
+    weeks = request.args.get('weeks', 12, type=int)
+
+    # Generate the chart
+    chart_path = generate_seller_price_trend_chart(customer_id, weeks=weeks)
+
+    if chart_path:
+        chart_url = get_seller_chart_url(customer_id)
+        return jsonify({
+            'status': 'success',
+            'customer_id': customer_id,
+            'chart_path': chart_path,
+            'chart_url': chart_url,
+            'weeks': weeks
+        }), 200
+    else:
+        return jsonify({
+            'status': 'error',
+            'message': 'No analysis data available for this customer',
+            'customer_id': customer_id
+        }), 404
+
+
+@campaignRoute_bp.route('/seller_charts/generate_all', methods=['GET'])
+def generate_all_seller_charts():
+    """
+    Generate price trend charts for all Level 2 sellers who have analysis data.
+    """
+    level2_seller_type = customertypecontroller.get_customer_type_by_id(4)
+
+    if not level2_seller_type:
+        return jsonify({
+            'status': 'error',
+            'message': 'Level 2 seller type not found'
+        }), 404
+
+    generated = []
+    skipped = []
+
+    for customer in level2_seller_type.customers:
+        # Check if customer has any analyses
+        latest = sellerpropertyanalysiscontroller.get_latest_analysis_for_customer(customer.id)
+        if latest:
+            chart_path = generate_seller_price_trend_chart(customer.id)
+            if chart_path:
+                generated.append({
+                    'customer_id': customer.id,
+                    'name': customer.name,
+                    'chart_path': chart_path
+                })
+            else:
+                skipped.append({
+                    'customer_id': customer.id,
+                    'name': customer.name,
+                    'reason': 'Chart generation failed'
+                })
+        else:
+            skipped.append({
+                'customer_id': customer.id,
+                'name': customer.name,
+                'reason': 'No analysis data'
+            })
+
+    return jsonify({
+        'status': 'success',
+        'generated': len(generated),
+        'skipped': len(skipped),
+        'charts': generated,
+        'skipped_customers': skipped
+    }), 200

@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from io import BytesIO
 import io
 from datetime import datetime, timedelta
 import base64
+import numpy as np
 
 def createPriceChangevsDays2PendingPlot(soldhomes, savefilepath=None):
     plt.figure()
@@ -54,7 +56,10 @@ def createPriceChangevsDays2PendingPlot(soldhomes, savefilepath=None):
     if savefilepath:
         plt.savefig(savefilepath, format='png', dpi=300)
 
-    return base64.b64encode(buf.read()).decode('utf-8')
+    result = base64.b64encode(buf.read()).decode('utf-8')
+    buf.close()
+    plt.close()
+    return result
 
 def createPricevsDays2PendingPlot(soldhomes, savefig=False):
     plt.figure()
@@ -96,7 +101,10 @@ def createPricevsDays2PendingPlot(soldhomes, savefig=False):
     plt.savefig(buf2, format='png')
     buf2.seek(0)
 
-    return base64.b64encode(buf2.read()).decode('utf-8')
+    result = base64.b64encode(buf2.read()).decode('utf-8')
+    buf2.close()
+    plt.close()
+    return result
 
 def createBarGraph(results, ylabel, title):
     data = {(year, month): count for year, month, count in results}
@@ -181,3 +189,86 @@ def createBarGraphWeekly(results, ylabel, title):
     plt.close(fig)
     return chart_data
 
+
+def createSellerPriceTrendPlot(analyses, customer_name, savefilepath=None):
+    """
+    Create a price trend chart showing predicted prices over time with confidence intervals.
+
+    Args:
+        analyses: List of SellerPropertyAnalysis objects ordered by date (oldest to newest)
+        customer_name: Name of the customer for the chart title
+        savefilepath: Optional path to save the chart as PNG
+
+    Returns:
+        base64 encoded image string
+    """
+    if not analyses or len(analyses) == 0:
+        return None
+
+    # Extract data from analyses
+    dates = [a.analysis_date for a in analyses]
+    predicted_prices = [a.predicted_price for a in analyses if a.predicted_price]
+    confidence_lower = [a.confidence_lower for a in analyses if a.confidence_lower]
+    confidence_upper = [a.confidence_upper for a in analyses if a.confidence_upper]
+
+    if len(predicted_prices) == 0:
+        return None
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Plot predicted price line
+    ax.plot(dates, predicted_prices, marker='o', linewidth=2,
+            color='#1a73e8', label='Predicted Price', markersize=8)
+
+    # Plot confidence interval as shaded area
+    if len(confidence_lower) == len(predicted_prices) and len(confidence_upper) == len(predicted_prices):
+        ax.fill_between(dates, confidence_lower, confidence_upper,
+                        alpha=0.2, color='#1a73e8', label='95% Confidence Interval')
+
+    # Format y-axis as currency
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x/1000:.0f}K'))
+
+    # Format x-axis as dates
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d'))
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    fig.autofmt_xdate()
+
+    # Add grid
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.3)
+
+    # Labels and title
+    ax.set_xlabel('Analysis Date', fontsize=12)
+    ax.set_ylabel('Estimated Price', fontsize=12)
+    ax.set_title(f'Property Value Trend - {customer_name}', fontsize=14, fontweight='bold')
+    ax.legend(loc='best')
+
+    # Add trend annotation if we have multiple points
+    if len(predicted_prices) >= 2:
+        price_change = predicted_prices[-1] - predicted_prices[0]
+        price_change_pct = (price_change / predicted_prices[0]) * 100
+
+        trend_color = '#27ae60' if price_change >= 0 else '#e74c3c'
+        trend_symbol = 'up' if price_change >= 0 else 'down'
+
+        ax.text(0.02, 0.98,
+                f'{trend_symbol} ${abs(price_change):,.0f} ({abs(price_change_pct):.1f}%) overall',
+                transform=ax.transAxes, fontsize=11, verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor=trend_color, alpha=0.2))
+
+    plt.tight_layout()
+
+    # Save to file if specified
+    if savefilepath:
+        fig.savefig(savefilepath, format='png', dpi=300, bbox_inches='tight')
+        print(f"Chart saved to {savefilepath}")
+
+    # Convert to base64
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight')
+    buf.seek(0)
+    chart_data = base64.b64encode(buf.getvalue()).decode()
+    buf.close()
+    plt.close(fig)
+
+    return chart_data

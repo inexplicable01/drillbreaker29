@@ -4,11 +4,8 @@ import sys
 import json
 import os
 import argparse
-# base = os.getenv("BASE")
-from dotenv import load_dotenv
-# Load API key
-load_dotenv()
-base = os.getenv("BASE")
+
+
 
 
 

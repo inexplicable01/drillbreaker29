@@ -18,6 +18,8 @@ from app.DBFunc.CustomerController import Customer, customercontroller
 from app.ZillowAPI.ZillowAPICall import SearchZillowByAddress
 from app.config import RECENTLYSOLD
 from app.extensions import db
+from app.GraphTools.plt_plots import createSellerPriceTrendPlot
+from pathlib import Path
 
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 
@@ -86,25 +88,106 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return R * c
 
 
+def calculate_comp_similarity_score(
+    comp: BriefListing,
+    subject_beds: float,
+    subject_baths: float,
+    subject_sqft: float,
+    subject_year_built: int = None,
+    subject_parking: int = None,
+    subject_lot_size: float = None
+) -> float:
+    """
+    Calculate similarity score between a comp and the subject property.
+    Lower score = more similar.
+
+    Weights (can be adjusted):
+    - Bedrooms: 20%
+    - Bathrooms: 15%
+    - Square footage: 35%
+    - Year built: 20%
+    - Parking: 5%
+    - Lot size: 5%
+    """
+    score = 0.0
+
+    # Bedroom difference (weight: 20%)
+    if comp.bedrooms:
+        bed_diff = abs(float(comp.bedrooms) - subject_beds) / max(subject_beds, 1)
+        score += bed_diff * 20
+
+    # Bathroom difference (weight: 15%)
+    if comp.bathrooms:
+        bath_diff = abs(float(comp.bathrooms) - subject_baths) / max(subject_baths, 1)
+        score += bath_diff * 15
+
+    # Square footage difference (weight: 35%)
+    if comp.livingArea and subject_sqft:
+        sqft_diff = abs(float(comp.livingArea) - subject_sqft) / subject_sqft
+        score += sqft_diff * 35
+
+    # Year built difference (weight: 20%)
+    if subject_year_built and comp.yearBuilt:
+        try:
+            year_diff = abs(int(comp.yearBuilt) - subject_year_built) / 100.0  # Normalize to ~1 for 100 year difference
+            score += year_diff * 20
+        except (ValueError, TypeError):
+            pass
+
+    # Parking spaces difference (weight: 5%)
+    if subject_parking is not None and comp.parkingSpaces:
+        try:
+            parking_diff = abs(int(comp.parkingSpaces) - subject_parking) / max(subject_parking, 1)
+            score += parking_diff * 5
+        except (ValueError, TypeError):
+            pass
+
+    # Lot size difference (weight: 5%)
+    if subject_lot_size and comp.lotAreaValue:
+        try:
+            lot_diff = abs(float(comp.lotAreaValue) - subject_lot_size) / max(subject_lot_size, 1)
+            score += lot_diff * 5
+        except (ValueError, TypeError):
+            pass
+
+    return score
+
+
 def find_comps_within_radius(
     center_lat: float,
     center_lon: float,
     property_type: str,
+    subject_beds: float = None,
+    subject_baths: float = None,
+    subject_sqft: float = None,
+    subject_year_built: int = None,
+    subject_parking: int = None,
+    subject_lot_size: float = None,
     radius_miles: float = 2.0,
-    max_days_old: int = 180
+    max_days_old: int = 180,
+    max_comps: int = 20,
+    use_similarity_ranking: bool = True
 ) -> List[BriefListing]:
     """
-    Find comparable properties within a radius, filtered by property type.
+    Find comparable properties within a radius, with similarity ranking.
 
     Args:
         center_lat: Center latitude
         center_lon: Center longitude
         property_type: Property type to filter (e.g., 'SINGLE_FAMILY', 'TOWNHOUSE')
+        subject_beds: Subject property bedrooms (for similarity scoring)
+        subject_baths: Subject property bathrooms (for similarity scoring)
+        subject_sqft: Subject property square footage (for similarity scoring)
+        subject_year_built: Subject property year built (optional)
+        subject_parking: Subject property parking spaces (optional)
+        subject_lot_size: Subject property lot size (optional)
         radius_miles: Search radius in miles (default 2.0)
         max_days_old: Maximum age of sold listings in days (default 180)
+        max_comps: Maximum number of comps to return (default 20)
+        use_similarity_ranking: Whether to rank by similarity (default True)
 
     Returns:
-        List of BriefListing objects within radius
+        List of BriefListing objects, optionally ranked by similarity
     """
     # Calculate date cutoff
     cutoff_timestamp = int((datetime.utcnow() - timedelta(days=max_days_old)).timestamp())
@@ -120,8 +203,8 @@ def find_comps_within_radius(
         BriefListing.longitude.isnot(None)
     ).all()
 
-    # Filter by distance
-    comps_within_radius = []
+    # Filter by distance and collect comps with similarity scores
+    comps_with_scores = []
     for comp in all_comps:
         try:
             distance = haversine_distance(
@@ -129,12 +212,45 @@ def find_comps_within_radius(
                 float(comp.latitude), float(comp.longitude)
             )
             if distance <= radius_miles:
-                comps_within_radius.append(comp)
+                # Calculate similarity score if we have subject property data
+                if use_similarity_ranking and subject_beds and subject_baths and subject_sqft:
+                    similarity_score = calculate_comp_similarity_score(
+                        comp=comp,
+                        subject_beds=subject_beds,
+                        subject_baths=subject_baths,
+                        subject_sqft=subject_sqft,
+                        subject_year_built=subject_year_built,
+                        subject_parking=subject_parking,
+                        subject_lot_size=subject_lot_size
+                    )
+                    comps_with_scores.append((comp, similarity_score, distance))
+                else:
+                    comps_with_scores.append((comp, 0, distance))
         except (TypeError, ValueError) as e:
             print(f"Error calculating distance for zpid {comp.zpid}: {e}")
             continue
 
-    print(f"Found {len(comps_within_radius)} comps within {radius_miles} miles")
+    # Sort by similarity score (lower is better)
+    if use_similarity_ranking and subject_beds and subject_baths and subject_sqft:
+        comps_with_scores.sort(key=lambda x: x[1])  # Sort by similarity score
+        print(f"Found {len(comps_with_scores)} comps within {radius_miles} miles, ranked by similarity")
+    else:
+        comps_with_scores.sort(key=lambda x: x[2])  # Sort by distance
+        print(f"Found {len(comps_with_scores)} comps within {radius_miles} miles, sorted by distance")
+
+    # Limit to max_comps
+    comps_with_scores = comps_with_scores[:max_comps]
+
+    # Extract just the BriefListing objects
+    comps_within_radius = [comp for comp, score, dist in comps_with_scores]
+
+    # Log the top 5 comps for debugging
+    if comps_with_scores and use_similarity_ranking:
+        print("\nTop 5 most similar comps:")
+        for i, (comp, score, dist) in enumerate(comps_with_scores[:5]):
+            print(f"  {i+1}. {comp.pleasant_address()} - Score: {score:.2f}, Distance: {dist:.2f}mi, "
+                  f"Beds: {comp.bedrooms}, Baths: {comp.bathrooms}, Sqft: {comp.livingArea}")
+
     return comps_within_radius
 
 
@@ -391,12 +507,17 @@ def analyze_seller_property_for_customer(customer: Customer, radius_miles: float
 
     print(f"Using property data from {property_data['source']}: {property_data['address']}")
 
-    # Step 2: Find comps within radius
+    # Step 2: Find comps within radius using similarity ranking
     comps = find_comps_within_radius(
-        property_data['latitude'],
-        property_data['longitude'],
-        property_data['property_type'],
-        radius_miles
+        center_lat=property_data['latitude'],
+        center_lon=property_data['longitude'],
+        property_type=property_data['property_type'],
+        subject_beds=property_data['bedrooms'],
+        subject_baths=property_data['bathrooms'],
+        subject_sqft=property_data['living_area'],
+        subject_lot_size=property_data.get('lot_area'),
+        radius_miles=radius_miles,
+        use_similarity_ranking=True
     )
 
     if len(comps) < 5:
@@ -476,124 +597,68 @@ def analyze_seller_property_for_customer(customer: Customer, radius_miles: float
         'week_over_week_change_dollars': analysis.week_over_week_change_dollars
     }
 
-
-def analyze_seller_property(
-    customer_id: int,
-    seller_address: str,
-    property_type: str,
-    living_area: float,
-    bedrooms: float,
-    bathrooms: float,
-    lot_area: float = 0.0,
-    radius_miles: float = 2.0
-) -> Dict:
+def generate_seller_price_trend_chart(customer_id: int, weeks: int = 12) -> Optional[str]:
     """
-    Complete analysis workflow for a Level 2 seller's property.
+    Generate and save a price trend chart for a Level 2 seller.
 
     Args:
         customer_id: Customer ID
-        seller_address: Full property address
-        property_type: Property type (SINGLE_FAMILY, TOWNHOUSE, etc.)
-        living_area: Square footage
-        bedrooms: Number of bedrooms
-        bathrooms: Number of bathrooms
-        lot_area: Lot size (optional)
-        radius_miles: Comp search radius (default 2.0 miles)
+        weeks: Number of weeks of history to plot (default 12)
 
     Returns:
-        Dictionary with complete analysis results
+        Path to the saved chart file, or None if no data available
     """
-    # Step 1: Geocode the address
-    coords = geocode_address(seller_address)
-    if not coords:
-        return {
-            'success': False,
-            'error': f'Failed to geocode address: {seller_address}'
-        }
+    # Get customer info
+    customer = customercontroller.getCustomerByID(customer_id)
+    if not customer:
+        print(f"Customer {customer_id} not found")
+        return None
 
-    lat, lon = coords
-    print(f"Geocoded {seller_address} to ({lat}, {lon})")
+    # Get historical analyses
+    analyses = sellerpropertyanalysiscontroller.get_historical_trend(customer_id, weeks=weeks)
 
-    # Step 2: Find comps within radius
-    comps = find_comps_within_radius(lat, lon, property_type, radius_miles)
+    if not analyses or len(analyses) == 0:
+        print(f"No analysis data found for customer {customer_id}")
+        return None
 
-    if len(comps) < 5:
-        return {
-            'success': False,
-            'error': f'Not enough comps found (found {len(comps)}, need at least 5)',
-            'latitude': lat,
-            'longitude': lon,
-            'num_comps': len(comps)
-        }
+    # Create output directory if it doesn't exist
+    output_dir = Path("app/static/seller_analysis_charts")
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Step 3: Run regression on comps
-    regression_result = run_regression_analysis(comps)
+    # Generate filename
+    filename = f"seller_trend_{customer_id}.png"
+    filepath = output_dir / filename
 
-    if not regression_result['success']:
-        return {
-            'success': False,
-            'error': regression_result['error'],
-            'latitude': lat,
-            'longitude': lon,
-            'num_comps': len(comps)
-        }
-
-    # Step 4: Predict price for this property
-    prediction = predict_price_for_property(
-        regression_result,
-        living_area,
-        bedrooms,
-        bathrooms,
-        lot_area
+    # Create the chart
+    customer_name = f"{customer.name} {customer.lastname or ''}".strip()
+    chart_data = createSellerPriceTrendPlot(
+        analyses=analyses,
+        customer_name=customer_name,
+        savefilepath=str(filepath)
     )
 
-    if not prediction['success']:
-        return {
-            'success': False,
-            'error': prediction['error'],
-            'latitude': lat,
-            'longitude': lon
-        }
+    if chart_data:
+        print(f"Price trend chart generated for customer {customer_id}: {filepath}")
+        return str(filepath)
+    else:
+        print(f"Failed to generate chart for customer {customer_id}")
+        return None
 
-    # Step 5: Save to database
-    analysis = sellerpropertyanalysiscontroller.create_analysis(
-        customer_id=customer_id,
-        seller_address=seller_address,
-        latitude=lat,
-        longitude=lon,
-        property_type=property_type,
-        num_comps=regression_result['num_comps'],
-        comp_zpids=regression_result['comp_zpids'],
-        predicted_price=prediction['predicted_price'],
-        price_per_sqft=prediction['price_per_sqft'],
-        confidence_lower=prediction['confidence_lower'],
-        confidence_upper=prediction['confidence_upper'],
-        r_squared=prediction['r_squared'],
-        median_comp_price=regression_result['median_comp_price'],
-        avg_comp_sqft=regression_result['avg_comp_sqft'],
-        avg_days_on_market=regression_result['avg_days_on_market'],
-        median_price_per_sqft=regression_result['median_price_per_sqft'],
-        model_features={
-            'living_area': living_area,
-            'bedrooms': bedrooms,
-            'bathrooms': bathrooms,
-            'lot_area': lot_area
-        }
-    )
 
-    return {
-        'success': True,
-        'analysis_id': analysis.id,
-        'predicted_price': prediction['predicted_price'],
-        'confidence_lower': prediction['confidence_lower'],
-        'confidence_upper': prediction['confidence_upper'],
-        'price_per_sqft': prediction['price_per_sqft'],
-        'r_squared': prediction['r_squared'],
-        'num_comps': regression_result['num_comps'],
-        'median_comp_price': regression_result['median_comp_price'],
-        'avg_days_on_market': regression_result['avg_days_on_market'],
-        'week_over_week_change_pct': analysis.week_over_week_change_pct,
-        'week_over_week_change_dollars': analysis.week_over_week_change_dollars,
-        'latitude': lat,
-        'longitude': lon
-    }
+def get_seller_chart_url(customer_id: int, base_url: str = "https://www.drillbreaker29.com") -> Optional[str]:
+    """
+    Get the public URL for a seller's price trend chart.
+
+    Args:
+        customer_id: Customer ID
+        base_url: Base URL of the application
+
+    Returns:
+        Public URL to the chart image, or None if chart doesn't exist
+    """
+    chart_path = Path(f"app/static/seller_analysis_charts/seller_trend_{customer_id}.png")
+
+    if chart_path.exists():
+        return f"{base_url}/static/seller_analysis_charts/seller_trend_{customer_id}.png"
+    else:
+        return None

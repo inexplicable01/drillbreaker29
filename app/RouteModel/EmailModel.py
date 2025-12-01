@@ -45,13 +45,12 @@ def sendEmailtimecheck(message=None):
     <html>
         <body>
             <p>The email was sent on {formatted_time} (Seattle Time).</p>
-            <p>Here is the rest of your email content.</p>
             <p>{message}</p>
         </body>
     </html>
     """
     # html_content=''
-    send_email(subject='NewListing',
+    send_email(subject=message,
                html_content=html_content,
                recipient =defaultrecipient)
 
