@@ -41,7 +41,7 @@ response = requests.request("GET", url, headers=headers, data=payload)
 level3_buyer = response.json()['level3_buyer']
 
 for customer in level3_buyer:
-    print(customer)
+    # print(customer)
 
     url = f"{base}maintanance/clients_listing_Recommendation?customer_id={customer['id']}"
     response = requests.request("PATCH", url, headers=headers, data=payload)

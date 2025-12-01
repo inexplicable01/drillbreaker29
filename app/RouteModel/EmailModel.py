@@ -658,3 +658,42 @@ def sendunsubscribemeail(customer):
 
 
 
+
+
+def send_new_listing_alert(listing, customer, score, reason, send_to_client=False):
+    """
+    Send email alert for a new high-scoring listing.
+
+    Args:
+        listing: BriefListing object
+        customer: Customer object
+        score: AI likelihood score (0-100)
+        reason: AI reasoning for the score
+        send_to_client: If True, send to customer; if False, send to admin
+    """
+    # Determine recipient
+    if send_to_client:
+        recipient = customer.email
+        subject = f"New Listing Match: {listing.streetAddress}"
+    else:
+        recipient = defaultrecipient  # Send to admin for testing
+        subject = f"[ADMIN TEST] New Listing for {customer.name}: {listing.streetAddress}"
+
+    # Render HTML template
+    html_content = render_template(
+        'EmailCampaignTemplate/email_new_listing_alert.html',
+        listing=listing,
+        customer=customer,
+        score=score,
+        reason=reason
+    )
+
+    try:
+        send_email(
+            subject=subject,
+            html_content=html_content,
+            recipient=recipient
+        )
+        print(f"Email alert sent to {recipient} for listing {listing.zpid} (score: {score})")
+    except Exception as e:
+        print(f"Error sending email alert: {e}")

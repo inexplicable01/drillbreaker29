@@ -370,8 +370,24 @@ def clients_listing_Recommendation():
     ).all()
 
     updated_count = 0
+    new_high_scoring_listings = []
+
+    # Configuration: set to True to send alerts to clients instead of admin
+    SEND_TO_CLIENT = False
+    HIGH_SCORE_THRESHOLD = 70
+
+    # Get customer's zone interests
+    customer_zone_ids = [cz.zone_id for cz in customer.zones] if customer.zones else []
+    customer_zone_names = [cz.zone.zonename() for cz in customer.zones] if customer.zones else []
+
+    # Track skipped listings for reporting
+    skipped_count = 0
 
     for forsale_bl in forsalehomes:
+        # Check if this is a new listing (never evaluated before)
+        previous_eval = ailistingcontroller.get_latest_evaluation(customer_id, forsale_bl.zpid)
+        is_new_listing = previous_eval is None
+
         # Skip if nothing changed that matters (price)
         if not ailistingcontroller.should_re_evaluate(customer_id, forsale_bl):
             continue
@@ -379,7 +395,37 @@ def clients_listing_Recommendation():
         propertydata = forsale_bl.getPropertyData()
         brieflistingcontroller.updateBriefListing(forsale_bl)
 
-        ai_response = AIModel(forsale_bl, customer, propertydata)
+        # Check if listing is in customer's interested zones
+        is_in_preferred_zone = forsale_bl.zone_id in customer_zone_ids if forsale_bl.zone_id else False
+        listing_zone_name = forsale_bl.zone.zonename() if forsale_bl.zone else "Unknown"
+
+        # PRE-FILTER: Skip AI evaluation if listing is NOT in preferred zone AND fails basic criteria
+        if not is_in_preferred_zone and customer_zone_ids:  # Only apply zone filter if customer has zone preferences
+            # Check basic price fit
+            price_in_range = True
+            if customer.minprice and customer.maxprice and forsale_bl.price:
+                price_in_range = customer.minprice <= forsale_bl.price <= customer.maxprice
+
+            # Check basic size fit
+            size_in_range = True
+            if customer.minsqft and customer.maxsqft and forsale_bl.livingArea:
+                size_in_range = customer.minsqft <= forsale_bl.livingArea <= customer.maxsqft
+
+            # Skip if both price AND size are out of range
+            if not price_in_range and not size_in_range:
+                skipped_count += 1
+                print(f"Skipped {forsale_bl.zpid} - wrong zone + price/size mismatch")
+                continue
+
+        # Passed pre-filter, send to AI for evaluation
+        ai_response = AIModel(
+            forsale_bl,
+            customer,
+            propertydata,
+            customer_zone_names=customer_zone_names,
+            listing_zone_name=listing_zone_name,
+            is_in_preferred_zone=is_in_preferred_zone
+        )
         likelihood_score = ai_response.get("likelihood_score", 0)
         ai_comment = ai_response.get("reason", "")
 
@@ -396,7 +442,32 @@ def clients_listing_Recommendation():
 
         updated_count += 1
 
-    return {"Updated Recommendations": updated_count}, 200
+        # Track new high-scoring listings for email alerts
+        if is_new_listing and likelihood_score >= HIGH_SCORE_THRESHOLD:
+            new_high_scoring_listings.append({
+                'listing': forsale_bl,
+                'score': likelihood_score,
+                'reason': ai_comment,
+                'customer': customer
+            })
+
+    # Send email alerts for new high-scoring listings
+    if new_high_scoring_listings:
+        from app.RouteModel.EmailModel import send_new_listing_alert
+        for item in new_high_scoring_listings:
+            send_new_listing_alert(
+                listing=item['listing'],
+                customer=item['customer'],
+                score=item['score'],
+                reason=item['reason'],
+                send_to_client=SEND_TO_CLIENT
+            )
+
+    return {
+        "Updated Recommendations": updated_count,
+        "New High-Scoring Listings": len(new_high_scoring_listings),
+        "Skipped (zone + criteria mismatch)": skipped_count
+    }, 200
 
 @maintanance_bp.route('/updateathing', methods=['post'])
 def updateathing():
