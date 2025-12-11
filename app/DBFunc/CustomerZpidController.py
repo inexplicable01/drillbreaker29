@@ -23,7 +23,7 @@ class CustomerZpidController():
             print_and_log(f"Error retrieving all CustomerZpids: {str(e)}")
             return []
 
-    def getAllCustomerzpids(self):
+    def getAllZPIDS_Customerzpids(self):
         try:
             zpids=[]
             for customerzpid  in self.CustomerZpid.query.all():
@@ -113,6 +113,42 @@ class CustomerZpidController():
         except Exception as e:
             self.db.session.rollback()
             print_and_log(f"Error saving CustomerZpid: {str(e)}")
+            return False
+
+    def update_listing_snapshot(self, customerzpid, listing, changes_detected=None):
+        """
+        Update the snapshot for a customer's tracked listing.
+        Handles the database commit.
+
+        :param customerzpid: CustomerZpid object
+        :param listing: BriefListing object with current state
+        :param changes_detected: Optional list of change descriptions
+        :return: True if successful, False otherwise
+        """
+        try:
+            customerzpid.update_snapshot(listing, changes_detected)
+            self.db.session.commit()
+            return True
+        except Exception as e:
+            self.db.session.rollback()
+            print_and_log(f"Error updating snapshot for customer {customerzpid.customer_id}, zpid {customerzpid.zpid}: {str(e)}")
+            return False
+
+    def mark_listing_alerted(self, customerzpid):
+        """
+        Mark that an alert was sent for this customer's tracked listing.
+        Handles the database commit.
+
+        :param customerzpid: CustomerZpid object
+        :return: True if successful, False otherwise
+        """
+        try:
+            customerzpid.mark_alerted()
+            self.db.session.commit()
+            return True
+        except Exception as e:
+            self.db.session.rollback()
+            print_and_log(f"Error marking alerted for customer {customerzpid.customer_id}, zpid {customerzpid.zpid}: {str(e)}")
             return False
 
 

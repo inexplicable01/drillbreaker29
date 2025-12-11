@@ -72,7 +72,7 @@ payload = {
 }
 
 url = f"{base}campaign/sendLevel1Buyer_sendEmail"
-# response = requests.request("GET", url, headers=headers, json=payload)
+response = requests.request("GET", url, headers=headers, json=payload)
 
 url = f"{base}campaign/sendLevel1_2_Seller_sendEmail"
 response = requests.request("GET", url, headers=headers, json=payload)

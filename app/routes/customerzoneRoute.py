@@ -296,20 +296,40 @@ from pathlib import Path
 import os
 @customer_interest_bp.route('/all', methods=['GET','POST'])
 def displayCustomerInterest():
+    start_time = time.time()
+    print(f"\n{'='*60}")
+    print(f"[TIMING] displayCustomerInterest START")
+
     # Fetch precomputed city stats from the cache
     # Mock data for the example
     customer_id = request.args.get("customer_id", type=int, default=None)
     selected_doz=30
+
+    # Flag to skip plotting since sold house tab is commented out in template
+    skip_plotting = True
+
+    t1 = time.time()
     (customer, locations, locationzonenames, customerlistings,housesoldpriceaverage, plot_url,
      plot_url2,
      soldhomes, forsalebrieflistings,
      selectedaicomments,ai_comment_zpid , ai_suggestion_map_data)\
-        = gatherCustomerData(customer_id, selected_doz)
+        = gatherCustomerData(customer_id, selected_doz, skip_plotting=skip_plotting)
+    print(f"[TIMING] gatherCustomerData: {time.time() - t1:.2f}s")
 
     aicomments=[]
     selectedhomes=[]
     homes_with_comments=[]
+
+    t2 = time.time()
     WA_geojson_features = washingtonzonescontroller.getallGeoJson()
+    print(f"[TIMING] Load WA GeoJSON: {time.time() - t2:.2f}s")
+
+    # Pre-serialize GeoJSON to avoid slow Jinja2 tojson filter
+    t2b = time.time()
+    import json
+    from markupsafe import Markup
+    geojson_features_json = Markup(json.dumps(WA_geojson_features))
+    print(f"[TIMING] Serialize GeoJSON to JSON: {time.time() - t2b:.2f}s")
 
     # Define file paths
     output_dir = Path("app/static/maps")
@@ -320,33 +340,42 @@ def displayCustomerInterest():
 
 
 
-    brieflistings_SoldHomes_dict=[]
-    for brieflisting in soldhomes:
-        if brieflisting.fsbo_status is None: # don't want to include fsbos cause it causes an error
-            # hard code out for now.
-            brieflistings_SoldHomes_dict.append(
-               brieflisting.to_dict()
-            )
+    # REMOVED: brieflistings_SoldHomes_dict conversion (was taking 20+ seconds and not used in template)
+    brieflistings_SoldHomes_dict = []  # Keep variable for compatibility but don't populate it
 
+    t4 = time.time()
     zpidlist = []
+    api_calls_made = 0
     for customerzpid in customer.customerzpid_array:
         if propertylistingcontroller.get_property(customerzpid.brief_listing.zpid) is None:
             propertydata = SearchZillowByZPID(customerzpid.brief_listing.zpid)
             propertylistingcontroller.create_property(customerzpid.brief_listing.zpid, propertydata)
+            api_calls_made += 1
+    print(f"[TIMING] Check/create PropertyListings ({api_calls_made} API calls): {time.time() - t4:.2f}s")
 
+    t5 = time.time()
     customer = customerzonecontroller.get_customer_zone(customer_id)
-    for customerzpid in customer.customerzpid_array:
-        zpidlist.append(customerzpid.brief_listing.zpid)
-        if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
-            customerzpid.brief_listing.getPropertyData()# Update in case status has changed
-            brieflistingcontroller.updateBriefListing(customerzpid.brief_listing)## Commit
+    print(f"[TIMING] Refetch customer (2nd time): {time.time() - t5:.2f}s")
+
+    t6 = time.time()
+    refresh_calls_made = 0
+    # for customerzpid in customer.customerzpid_array:
+    #     zpidlist.append(customerzpid.brief_listing.zpid)
+    #     if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
+    #         customerzpid.brief_listing.getPropertyData()# Update in case status has changed
+    #         brieflistingcontroller.updateBriefListing(customerzpid.brief_listing)## Commit
+    #         refresh_calls_made += 1
+    print(f"[TIMING] Refresh {refresh_calls_made} property data (likely API calls): {time.time() - t6:.2f}s")
 
 
+    t7 = time.time()
     customer = customerzonecontroller.get_customer_zone(customer_id)
+    print(f"[TIMING] Refetch customer (3rd time): {time.time() - t7:.2f}s")
+
+    t8 = time.time()
     for customerzpid in customer.customerzpid_array:
         customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data() # Retrieve Data
-
-
+    print(f"[TIMING] Load JSON data for {len(customer.customerzpid_array)} properties: {time.time() - t8:.2f}s")
 
     print("Turning For Sale into to_dict")
     forsalehomes_dict = []
@@ -355,11 +384,9 @@ def displayCustomerInterest():
             # print(brieflisting)
             # forsalehomes_dict.append(brieflisting.to_dict())
     print("Turning For Sale into to_dict - Done")
-    if len(zpidlist)>0:
-        active_tab='available'
-    else:
-        active_tab='hotness'
 
+    active_tab = 'available'
+    t9 = time.time()
     customerzpid_map_data = []
     for idx, cz in enumerate(customer.customerzpid_array, start=1):
         home = cz.brief_listing  # assuming relationship .brief_listing is loaded
@@ -373,14 +400,25 @@ def displayCustomerInterest():
             "price": getattr(home, "price", None),
             # If you want more fields, add them here
         })
+    print(f"[TIMING] Build map data: {time.time() - t9:.2f}s")
 
     now_ts = int(time.time())
-    return render_template('InterestReport/NeighbourhoodInterest.html',
+
+    # Prepare template data
+    print(f"[TIMING] Preparing template data:")
+    print(f"  - soldhomes: {len(soldhomes)} items")
+    print(f"  - geojson_features: {len(WA_geojson_features)} items")
+    print(f"  - customerzpid_array: {len(customer.customerzpid_array)} items")
+    print(f"  - selectedaicomments: {len(selectedaicomments)} items")
+
+    t10 = time.time()
+    result = render_template('InterestReport/NeighbourhoodInterest.html',
                            customer=customer,
                            Webpage=True,
                            locations=locations,
                            locationzonenames= locationzonenames,
-                           geojson_features= WA_geojson_features,
+                           geojson_features= WA_geojson_features,  # Keep for backward compatibility
+                           geojson_features_json= geojson_features_json,  # Pre-serialized JSON
                            homes_with_comments=homes_with_comments,
                            url_image_path=url_image_path,
                            plot_url=plot_url,
@@ -399,6 +437,10 @@ def displayCustomerInterest():
                            active_tab=active_tab,
                            now_ts=now_ts
                            )
+    print(f"[TIMING] Render template: {time.time() - t10:.2f}s")
+    print(f"[TIMING] TOTAL displayCustomerInterest: {time.time() - start_time:.2f}s")
+    print(f"{'='*60}\n")
+    return result
 
 
 

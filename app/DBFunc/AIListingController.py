@@ -1,5 +1,5 @@
 from sqlalchemy.sql import func
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, joinedload
 from app.extensions import db
 # # from app.DB
 # from datetime import datetime, timedelta
@@ -101,6 +101,7 @@ class AIListingController:
                 (self.AIListingComments.created_at == latest_subquery.c.latest_created_at)
             )
             .filter(self.AIListingComments.customer_id == customer_id)
+            .options(joinedload(self.AIListingComments.listing))  # Eager load listing to avoid N+1
             .order_by(self.AIListingComments.likelihood_score.desc())
             .all()
         )

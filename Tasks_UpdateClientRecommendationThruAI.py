@@ -19,6 +19,7 @@ if args.base == "local":
 else:  # "prod"
     base = "https://www.drillbreaker29.com/"
 
+# from the project
 
 getcitylisturl = base + "maintanance/getCityList"
 url3 = base + "maintanance/listingscheck"

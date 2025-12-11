@@ -73,6 +73,7 @@ def cityList():
 
 from app.DBFunc.CustomerZpidController import customerzpidcontroller
 from app.RouteModel.EmailModel import sendEmailListingChange
+from app.useful_func import print_and_log
 
 
 @maintanance_bp.route('/checkInterestedListingsChange', methods=['GET'])
@@ -89,6 +90,106 @@ def checkInterestedListingsChange():
             sendEmailListingChange(message, title, brieflisting.hdpUrl)
 
     return {"changed and alerted": "changed"}, 200
+
+
+from app.DBFunc.CustomerController import customercontroller
+
+
+@maintanance_bp.route('/checkCustomerTrackedListings', methods=['GET'])
+def checkCustomerTrackedListings():
+    """
+    Check all customer-tracked listings for changes since last check.
+    Sends email alerts when changes are detected.
+    Uses CustomerZpid table directly for tracking.
+    """
+    stats = {
+        'total_tracked': 0,
+        'checked': 0,
+        'changes_detected': 0,
+        'alerts_sent': 0,
+        'errors': 0
+    }
+
+    # Get all active customer-listing pairs
+    customerzpids = customerzpidcontroller.getAllCustomerzpids()
+
+    for customerzpid in customerzpids:
+        stats['total_tracked'] += 1
+
+        # Skip retired interests
+        if customerzpid.is_retired:
+            continue
+
+        try:
+            # Get current listing state
+            current_listing = brieflistingcontroller.get_listing_by_zpid(customerzpid.zpid)
+            if not current_listing:
+                customer_name = f"{customerzpid.customer.name} {customerzpid.customer.lastname}" if customerzpid.customer else "Unknown"
+                print_and_log(f"[ERROR] Customer {customerzpid.customer_id} ({customer_name}), zpid {customerzpid.zpid} - listing not found in database")
+                stats['errors'] += 1
+                continue
+
+            stats['checked'] += 1
+
+            # Check if this is first time checking (no snapshot yet)
+            if customerzpid.last_price is None and customerzpid.last_home_status is None:
+                # First time - create initial snapshot
+                customerzpidcontroller.update_listing_snapshot(customerzpid, current_listing)
+                customer_name = f"{customerzpid.customer.name} {customerzpid.customer.lastname}" if customerzpid.customer else "Unknown"
+                print_and_log(f"[NEW] Customer {customerzpid.customer_id} ({customer_name}), zpid {customerzpid.zpid} - initial snapshot created (${current_listing.price:,}, {current_listing.homeStatus})")
+            else:
+                # Compare current state to last known state
+                change_result = customerzpid.detect_changes(current_listing)
+
+                if change_result['has_changes']:
+                    stats['changes_detected'] += 1
+                    changes_list = change_result['changes']
+
+                    customer_name = f"{customerzpid.customer.name} {customerzpid.customer.lastname}" if customerzpid.customer else "Unknown"
+                    print_and_log(f"[CHANGE] Customer {customerzpid.customer_id} ({customer_name}), zpid {customerzpid.zpid} - {'; '.join(changes_list)}")
+
+                    # Get customer info
+                    customer = customercontroller.getCustomerByID(customerzpid.customer_id)
+
+                    if customer:
+                        # Build change message
+                        message = f"Property Update: {current_listing.streetAddress}, {current_listing.city}\n\n"
+                        message += "Changes:\n" + "\n".join(f"- {change}" for change in changes_list)
+
+                        title = f"Listing Update: {current_listing.streetAddress}"
+
+                        # Send email alert (using your email for testing)
+                        sendEmailListingChange(
+                            message=message,
+                            title=title,
+                            hdpUrl=current_listing.hdpUrl,
+                            customer=customer
+                        )
+
+                        stats['alerts_sent'] += 1
+
+                        # Mark that we sent an alert
+                        customerzpidcontroller.mark_listing_alerted(customerzpid)
+
+                    # Update snapshot with new state
+                    customerzpidcontroller.update_listing_snapshot(customerzpid, current_listing, changes_detected=changes_list)
+                else:
+                    # No changes, just update the last_checked timestamp
+                    customer_name = f"{customerzpid.customer.name} {customerzpid.customer.lastname}" if customerzpid.customer else "Unknown"
+                    print_and_log(f"[OK] Customer {customerzpid.customer_id} ({customer_name}), zpid {customerzpid.zpid} - no changes (${current_listing.price:,}, {current_listing.homeStatus})")
+                    customerzpidcontroller.update_listing_snapshot(customerzpid, current_listing)
+
+        except Exception as e:
+            customer_name = f"{customerzpid.customer.name} {customerzpid.customer.lastname}" if customerzpid.customer else "Unknown"
+            print_and_log(f"[ERROR] Customer {customerzpid.customer_id} ({customer_name}), zpid {customerzpid.zpid}: {e}")
+            stats['errors'] += 1
+            continue
+
+    return jsonify({
+        'status': 'success',
+        'stats': stats,
+        'message': f"Checked {stats['checked']} listings, detected {stats['changes_detected']} changes, sent {stats['alerts_sent']} alerts"
+    }), 200
 
 
 @maintanance_bp.route('/maintainSoldListings', methods=['PATCH'])
@@ -108,7 +209,7 @@ def maintainSoldListings():
             solddb = brieflistingcontroller.SoldHomesinSearch_Neigh(search_neigh=city, days_ago=doz)
             solddb_ids = [listing.zpid for listing in solddb]
             newsoldbriefs = []
-            zpidofinterest = customerzpidcontroller.getAllCustomerzpids()
+            zpidofinterest = customerzpidcontroller.getAllZPIDS_Customerzpids()
             for ccc, brieflisting in enumerate(soldbrieflistingarr):
                 if brieflisting.zpid in solddb_ids:
                     ##code to remove brieflisting from soldbriefarr
@@ -170,7 +271,7 @@ def maintainPendingListings():
 
         city = request.form.get('city')
         brieflistingpendingdb = brieflistingcontroller.getallPendings(city)
-        zpidofinterest = customerzpidcontroller.getAllCustomerzpids()
+        zpidofinterest = customerzpidcontroller.getAllZPIDS_Customerzpids()
         for brieflistingdb in brieflistingpendingdb:
             try:
                 propertydata = loadPropertyDataFromBrief(brieflistingdb)
@@ -228,7 +329,7 @@ def maintainForSaleListings():
             newsalebriefs = []
             for_sale_DB = brieflistingcontroller.forSaleInSearchNeigh(city)
             forsaledb_ids = [brieflist.zpid for brieflist in for_sale_DB]
-            zpidofinterest = customerzpidcontroller.getAllCustomerzpids()
+            zpidofinterest = customerzpidcontroller.getAllZPIDS_Customerzpids()
             for api_zpid, brieflisting in forsaleAPIbrief_dict.items():  ##LOOP THROUGH API
                 count += 1
                 print(count)
@@ -375,6 +476,7 @@ def clients_listing_Recommendation():
     # Configuration: set to True to send alerts to clients instead of admin
     SEND_TO_CLIENT = False
     HIGH_SCORE_THRESHOLD = 70
+    EXCELLENT_SCORE_THRESHOLD = 90  # For priority alerts
 
     # Get customer's zone interests
     customer_zone_ids = [cz.zone_id for cz in customer.zones] if customer.zones else []
@@ -452,20 +554,28 @@ def clients_listing_Recommendation():
             })
 
     # Send email alerts for new high-scoring listings
+    excellent_matches = 0
     if new_high_scoring_listings:
         from app.RouteModel.EmailModel import send_new_listing_alert
         for item in new_high_scoring_listings:
+            # Check if this is an excellent match (90+)
+            is_excellent = item['score'] >= EXCELLENT_SCORE_THRESHOLD
+            if is_excellent:
+                excellent_matches += 1
+
             send_new_listing_alert(
                 listing=item['listing'],
                 customer=item['customer'],
                 score=item['score'],
                 reason=item['reason'],
-                send_to_client=SEND_TO_CLIENT
+                send_to_client=SEND_TO_CLIENT,
+                is_excellent_match=is_excellent
             )
 
     return {
         "Updated Recommendations": updated_count,
         "New High-Scoring Listings": len(new_high_scoring_listings),
+        "Excellent Matches (90+)": excellent_matches,
         "Skipped (zone + criteria mismatch)": skipped_count
     }, 200
 

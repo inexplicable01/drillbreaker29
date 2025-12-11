@@ -454,9 +454,15 @@ def displayModel(neighbourhoods, selectedhometypes):
     return base64.b64encode(buf2.read()).decode('utf-8')
 
 
-def gatherCustomerData(customer_id, selected_doz):
+def gatherCustomerData(customer_id, selected_doz, skip_plotting=False):
+    import time
+    t_start = time.time()
+    print(f"[GATHER TIMING] gatherCustomerData START (skip_plotting={skip_plotting})")
+
+    t1 = time.time()
     customer = customerzonecontroller.get_customer_zone(customer_id)
     # customer = customerzonecontroller.get_customer(customer_id)
+    print(f"[GATHER TIMING] Get customer: {time.time() - t1:.2f}s")
 
     if not customer:
         return None, None, None
@@ -469,6 +475,7 @@ def gatherCustomerData(customer_id, selected_doz):
 
     #Main City Function this is for customers that we don't have a lot of info on yet.
     ## if zone len is zero that means we only know their main city but not the details.
+    t2 = time.time()
     zones=[]
     if len(customer.zones) ==0:
         wcity = washingtoncitiescontroller.getCity(customer.maincity.City)
@@ -479,7 +486,9 @@ def gatherCustomerData(customer_id, selected_doz):
     else:
         for customerzone in customer.zones:
             zones.append(washingtonzonescontroller.getZonebyID(customerzone.zone_id))
+    print(f"[GATHER TIMING] Get {len(zones)} zones: {time.time() - t2:.2f}s")
 
+    t3 = time.time()
     for zone in zones:
         # city_name = area["city"]  # Assuming `city` is in the returned dictionary
         print(zone.__str__())
@@ -504,13 +513,17 @@ def gatherCustomerData(customer_id, selected_doz):
             area["forsaleadded7_TCA"] = zonestats.forsaleadded7_TCA
             area["sold"] = zonestats.sold
             locations.append(area)
+    print(f"[GATHER TIMING] Process {len(zones)} zones & stats: {time.time() - t3:.2f}s")
 
+    t4 = time.time()
     aicomments = ailistingcontroller.retrieve_ai_evaluation(customer_id)
+    print(f"[GATHER TIMING] Retrieve {len(aicomments)} AI comments: {time.time() - t4:.2f}s")
     customerlistings=[]
     selectedaicomments=[]
     ai_comment_zpid=[]
     ai_suggestion_map_data = []
 
+    t5 = time.time()
     for (idx,aicomment) in enumerate(aicomments, start=1):
         print(aicomment.listing.homeStatus)
         if aicomment.listing.homeStatus !=FOR_SALE:
@@ -529,19 +542,32 @@ def gatherCustomerData(customer_id, selected_doz):
         })
         if selectedaicomments.__len__()>10:
             break
+    print(f"[GATHER TIMING] Process AI comments: {time.time() - t5:.2f}s")
 
     print("Running Area Sold Report")
+    t6 = time.time()
     housesoldpriceaverage, soldhomes = AreaReportModelRun(locationzonenames,
                                                                                [SW.TOWNHOUSE, SW.SINGLE_FAMILY], selected_doz)
+    print(f"[GATHER TIMING] AreaReportModelRun (sold): {time.time() - t6:.2f}s, {len(soldhomes)} homes")
 
-    plot_url = createPriceChangevsDays2PendingPlot(soldhomes)
-    plot_url2= createPricevsDays2PendingPlot(soldhomes)
+    t7 = time.time()
+    if skip_plotting:
+        # Skip plotting to save time (~10s) - sold house tab is hidden
+        plot_url = None
+        plot_url2 = None
+        print(f"[GATHER TIMING] Skipped plotting (sold tab hidden)")
+    else:
+        plot_url = createPriceChangevsDays2PendingPlot(soldhomes)
+        plot_url2= createPricevsDays2PendingPlot(soldhomes)
+        print(f"[GATHER TIMING] Create 2 plots: {time.time() - t7:.2f}s")
 
     print("Running Area Sale Report")
+    t8 = time.time()
     asdf, forsalebrieflistings = AreaReportModelRunForSale(locationzonenames, [SW.TOWNHOUSE, SW.SINGLE_FAMILY],
                                                                             365)
+    print(f"[GATHER TIMING] AreaReportModelRunForSale: {time.time() - t8:.2f}s, {len(forsalebrieflistings)} homes")
 
-
+    print(f"[GATHER TIMING] gatherCustomerData TOTAL: {time.time() - t_start:.2f}s")
 
     return (customer, locations , locationzonenames , customerlistings , housesoldpriceaverage,
             plot_url, plot_url2, soldhomes , forsalebrieflistings,

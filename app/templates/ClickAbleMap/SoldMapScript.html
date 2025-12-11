@@ -35,7 +35,7 @@
         });
     }
 
-    var geojson_features = {{ geojson_features | tojson }};
+    var geojson_features = {{ geojson_features_json | default(geojson_features | tojson, true) }};
 
     var selectionEnabled = false;
     var selectedZones = {{ selected_zones | tojson }};

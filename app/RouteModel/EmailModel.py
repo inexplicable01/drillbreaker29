@@ -660,7 +660,7 @@ def sendunsubscribemeail(customer):
 
 
 
-def send_new_listing_alert(listing, customer, score, reason, send_to_client=False):
+def send_new_listing_alert(listing, customer, score, reason, send_to_client=False, is_excellent_match=False):
     """
     Send email alert for a new high-scoring listing.
 
@@ -670,14 +670,21 @@ def send_new_listing_alert(listing, customer, score, reason, send_to_client=Fals
         score: AI likelihood score (0-100)
         reason: AI reasoning for the score
         send_to_client: If True, send to customer; if False, send to admin
+        is_excellent_match: If True, marks as excellent match (90+ score)
     """
-    # Determine recipient
+    # Determine recipient and subject
     if send_to_client:
         recipient = customer.email
-        subject = f"New Listing Match: {listing.streetAddress}"
+        if is_excellent_match:
+            subject = f"EXCELLENT MATCH ({score}/100): {listing.streetAddress}"
+        else:
+            subject = f"New Listing Match ({score}/100): {listing.streetAddress}"
     else:
         recipient = defaultrecipient  # Send to admin for testing
-        subject = f"[ADMIN TEST] New Listing for {customer.name}: {listing.streetAddress}"
+        if is_excellent_match:
+            subject = f"[EXCELLENT - {score}/100] {customer.name}: {listing.streetAddress}"
+        else:
+            subject = f"[Match - {score}/100] {customer.name}: {listing.streetAddress}"
 
     # Render HTML template
     html_content = render_template(
@@ -697,3 +704,191 @@ def send_new_listing_alert(listing, customer, score, reason, send_to_client=Fals
         print(f"Email alert sent to {recipient} for listing {listing.zpid} (score: {score})")
     except Exception as e:
         print(f"Error sending email alert: {e}")
+
+
+def send_land_alert_email(candidates):
+    """
+    Send email alert for high-scoring land/infill property candidates.
+
+    Args:
+        candidates: List of LandAlertCandidate objects
+    """
+    seattle_tz = pytz.timezone('America/Los_Angeles')
+    current_time = datetime.now(seattle_tz)
+    formatted_time = current_time.strftime('%B %d, %Y at %I:%M %p %Z')
+
+    # Sort by score descending
+    sorted_candidates = sorted(candidates, key=lambda c: c.score, reverse=True)
+
+    subject = f"Land/Infill Alert: {len(candidates)} High-Scoring Properties"
+
+    html_content = f"""
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background-color: #f4f4f4;
+                margin: 0;
+                padding: 0;
+            }}
+            .container {{
+                max-width: 800px;
+                margin: 20px auto;
+                background-color: #fff;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }}
+            .header {{
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px 20px;
+                text-align: center;
+            }}
+            .header h1 {{
+                margin: 0 0 10px 0;
+                font-size: 28px;
+            }}
+            .property-card {{
+                border-bottom: 1px solid #eee;
+                padding: 20px;
+            }}
+            .property-card:last-child {{
+                border-bottom: none;
+            }}
+            .score-badge {{
+                display: inline-block;
+                background: #28a745;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 20px;
+                font-weight: bold;
+                float: right;
+            }}
+            .property-title {{
+                font-size: 18px;
+                color: #1a73e8;
+                margin: 0 0 10px 0;
+                font-weight: bold;
+            }}
+            .property-details {{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin: 15px 0;
+                font-size: 14px;
+            }}
+            .detail-item {{
+                color: #666;
+            }}
+            .detail-label {{
+                font-weight: bold;
+                color: #333;
+            }}
+            .reason-box {{
+                background: #f8f9fa;
+                padding: 12px;
+                border-left: 4px solid #1a73e8;
+                margin: 10px 0;
+                font-size: 14px;
+            }}
+            .keywords {{
+                margin-top: 10px;
+            }}
+            .keyword-tag {{
+                display: inline-block;
+                background: #e9ecef;
+                padding: 4px 8px;
+                border-radius: 4px;
+                margin: 2px;
+                font-size: 12px;
+            }}
+            .footer {{
+                text-align: center;
+                padding: 20px;
+                color: #999;
+                font-size: 12px;
+                background: #f9f9f9;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Land/Infill Property Alerts</h1>
+                <p>High-scoring opportunities • {formatted_time}</p>
+            </div>
+    """
+
+    for candidate in sorted_candidates:
+        html_content += f"""
+            <div class="property-card">
+                <span class="score-badge">{candidate.score}</span>
+                <h2 class="property-title">{candidate.street_address}</h2>
+                <p style="color: #666; margin: 0;">{candidate.city}, {candidate.state} {candidate.zipcode}</p>
+
+                <div class="property-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Price:</span> ${candidate.price:,}
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Lot Size:</span> {candidate.lot_area_value:,.0f} sqft
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Zone ID:</span> {candidate.zone_id or 'N/A'}
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span> {candidate.home_status}
+                    </div>
+                </div>
+
+                <div class="reason-box">
+                    <strong>Why this scores well:</strong><br>
+                    {candidate.reason}
+                </div>
+        """
+
+        if candidate.matched_keywords:
+            html_content += """
+                <div class="keywords">
+                    <strong>Keywords:</strong><br>
+            """
+            for kw in candidate.matched_keywords[:8]:
+                html_content += f'<span class="keyword-tag">{kw}</span>'
+            html_content += "</div>"
+
+        # Add view link
+        html_content += f"""
+                <p style="margin-top: 15px;">
+                    <a href="https://www.zillow.com/homes/{candidate.zpid}_zpid/"
+                       style="color: #1a73e8; text-decoration: none; font-weight: bold;">
+                        View on Zillow →
+                    </a>
+                </p>
+            </div>
+        """
+
+    html_content += f"""
+            <div class="footer">
+                <p>Wayber Real Estate Analytics - Land/Infill Alert System</p>
+                <p>You received {len(candidates)} high-scoring properties</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    try:
+        send_email(
+            subject=subject,
+            html_content=html_content,
+            recipient=defaultrecipient
+        )
+        print(f"Land alert email sent with {len(candidates)} properties")
+    except Exception as e:
+        print(f"Error sending land alert email: {e}")

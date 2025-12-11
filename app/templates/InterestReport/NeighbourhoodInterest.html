@@ -215,8 +215,8 @@
         <div class="tab {% if active_tab == 'available' %}active{% endif %}" onclick="showTab('available')">Available
             Homes
         </div>
-        <div class="tab {% if active_tab == 'hotness' %}active{% endif %}" onclick="showTab('hotness')">Market Hotness
-        </div>
+{#        <div class="tab {% if active_tab == 'hotness' %}active{% endif %}" onclick="showTab('hotness')">Market Hotness#}
+{#        </div>#}
     </div>
 
     <!-- Tab Content -->
@@ -242,28 +242,28 @@
         <div id="customer_interest">
             {% include "components/Customer_Interest_Track.html" with context %}
         </div>
-        {% include "InterestReport/InterestTable.html" with context %}
+{#        {% include "InterestReport/InterestTable.html" with context %}#}
     </div>
-    <div id="hotness" class="tab-content {% if active_tab == 'hotness' %}active{% endif %}">
-        <h1>Market Analysis of Sold Properties</h1>
-        <div class="content-wrapper">
-            <div class="map-box">
-                <div id="map_Sold"></div>
-                {% include "ClickAbleMap/SoldMapScript.html" with context %}
-                {% include "InterestReport/SoldMapLegend.html" with context %}
-            </div>
-            <div class="forsale-box ">
-                <div style="text-align: center;">
-                    <h2>Sold Houses in the last {{ selected_doz }} days</h2>
-                    <img id="graphImage" src="data:image/png;base64,{{ plot_url }}"
-                         alt="House Price vs. Days to Pending">
-                </div>
-            </div>
-        </div>
-        {% include 'ClickAbleMap/data_table.html' %}
-        <div id="details-container"></div>
-
-    </div>
+{#    <div id="hotness" class="tab-content {% if active_tab == 'hotness' %}active{% endif %}">#}
+{#        <h1>Market Analysis of Sold Properties</h1>#}
+{#        <div class="content-wrapper">#}
+{#            <div class="map-box">#}
+{#                <div id="map_Sold"></div>#}
+{#                {% include "ClickAbleMap/SoldMapScript.html" with context %}#}
+{#                {% include "InterestReport/SoldMapLegend.html" with context %}#}
+{#            </div>#}
+{#            <div class="forsale-box ">#}
+{#                <div style="text-align: center;">#}
+{#                    <h2>Sold Houses in the last {{ selected_doz }} days</h2>#}
+{#                    <img id="graphImage" src="data:image/png;base64,{{ plot_url }}"#}
+{#                         alt="House Price vs. Days to Pending">#}
+{#                </div>#}
+{#            </div>#}
+{#        </div>#}
+{#        {% include 'ClickAbleMap/data_table.html' %}#}
+{#        <div id="details-container"></div>#}
+{##}
+{#    </div>#}
 
 
 </div>

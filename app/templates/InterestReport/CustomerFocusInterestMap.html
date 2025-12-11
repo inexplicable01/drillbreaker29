@@ -78,8 +78,8 @@
         });
     }
 
-    // Convert GeoJSON data
-    var geojson_features = {{ geojson_features | tojson }};
+    // Convert GeoJSON data (use pre-serialized version if available)
+    var geojson_features = {{ geojson_features_json | default(geojson_features | tojson, true) }};
     {#var neighbourhoodsSubs = {{ neighbourhoods_subs | tojson }};#}
     {#var cities = {{ cities | tojson }};#}
     var locationzonenames = {{ locationzonenames | tojson }}
@@ -163,15 +163,8 @@
         }
     });
 
-    // Adjust map view based on bounds (only for orange areas)
-    if (bounds.isValid()) {
-        map_forsale.fitBounds(bounds, {
-            padding: [40, 40],   // a bit more margin
-            maxZoom: 11          // cap zoom so it doesn't go to 14–18
-        });
-    } else {
-        map_forsale.setView([47.6062, -122.3321], 10); // Default to Seattle if no orange areas
-    }
+    // Always frame to King County
+    map_forsale.setView([47.5, -121.8], 9); // King County view
 
     function getCustomIcon(color) {
         return L.icon({
