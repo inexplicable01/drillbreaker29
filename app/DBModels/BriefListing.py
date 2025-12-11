@@ -327,6 +327,8 @@ class BriefListing(db.Model):
             new_listing.hdpUrl = briefhomedata.get('hdpUrl', 'Missing')
             new_listing.pricedelta = safe_int_conversion(briefhomedata.get('pricedelta', 0))
 
+
+
             listing_time = datetime.utcnow() - timedelta(seconds=safe_int_conversion(briefhomedata.get('timeOnZillow', 0))/1000)
             new_listing.listtime = int(listing_time.timestamp())
             new_listing.soldBy = "AGENT"
@@ -360,6 +362,11 @@ class BriefListing(db.Model):
             new_listing.homeStatusForHDP = propertydata.get('homeStatusForHDP', 'Missing')
             new_listing.homeType = propertydata.get('homeType', 'Missing')
             new_listing.imgSrc = propertydata.get('imgSrc', 'Missing')
+            if new_listing.imgSrc=='Missing':
+                try:
+                    new_listing.imgSrc = propertydata.get('desktopWebHdpImageLink', 'Missing')
+                except:
+                    print('cant find imgSrc')
             new_listing.description = propertydata.get('description', 'Missing')
             new_listing.isFeatured = propertydata.get('isFeatured', False)
             # new_listing.isNonOwnerOccupied = propertydata.get('isNonOwnerOccupied', False)
@@ -396,6 +403,7 @@ class BriefListing(db.Model):
             new_listing.hasDrivewayParking =hasDrivewayParkingFromPropertyData(propertydata)
             listing_time = datetime.utcnow() - timedelta(seconds=safe_int_conversion(propertydata.get('timeOnZillow', 0))/1000)
             new_listing.listtime = int(listing_time.timestamp())
+            new_listing.NWMLS_id = propertydata['attributionInfo']['mlsId']
             new_listing.soldBy = "AGENT"
 
             return new_listing

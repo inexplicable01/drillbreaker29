@@ -139,6 +139,27 @@
 
 <hr>
 
+<h2>BriefListing Repair Tool</h2>
+<div id="repair-tool">
+    <input
+        type="text"
+        id="repair-zpid"
+        style="width: 40%; padding: 6px;"
+        placeholder="Enter zpid (e.g., 12345678)"
+    />
+    <button id="repair-btn" style="padding: 6px 12px; margin-left: 4px;">
+        Repair BriefListing
+    </button>
+
+    <div id="repair-status" style="margin-top: 10px; font-weight: bold;"></div>
+
+    <pre id="repair-result"
+         style="text-align: left; margin: 10px auto; width: 80%; max-height: 300px; overflow: auto; border: 1px solid #ccc; padding: 8px;">
+    </pre>
+</div>
+
+<hr>
+
 <h2>Zillow Address Tester</h2>
 <div id="zillow-tester">
     <input
@@ -160,6 +181,50 @@
 
 <script>
     $(function () {
+        // BriefListing Repair Tool
+        $("#repair-btn").on("click", function () {
+            const zpid = $("#repair-zpid").val().trim();
+            if (!zpid) {
+                $("#repair-status").text("Please enter a zpid.");
+                $("#repair-result").text("");
+                return;
+            }
+
+            $("#repair-status").text("Repairing...");
+            $("#repair-result").text("");
+
+            $.ajax({
+                url: "/maintanance/repairBriefListing",
+                method: "POST",
+                contentType: "application/json",
+                dataType: "json",
+                data: JSON.stringify({ zpid: zpid }),
+                success: function (data) {
+                    if (data.status === "success") {
+                        $("#repair-status").text("✓ Success! BriefListing repaired.");
+                        $("#repair-result").text(JSON.stringify(data, null, 2));
+                    } else {
+                        $("#repair-status").text("⚠ " + data.message);
+                        $("#repair-result").text(JSON.stringify(data, null, 2));
+                    }
+                },
+                error: function (xhr) {
+                    let msg = "Error repairing BriefListing";
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        if (resp.message) {
+                            msg += ": " + resp.message;
+                        }
+                    } catch (e) {
+                        // ignore parse errors
+                    }
+                    $("#repair-status").text(msg);
+                    $("#repair-result").text(xhr.responseText || "");
+                }
+            });
+        });
+
+        // Zillow Address Tester
         $("#zillow-search-btn").on("click", function () {
             const address = $("#zillow-address").val().trim();
             if (!address) {

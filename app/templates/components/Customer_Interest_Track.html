@@ -42,50 +42,67 @@
                     <td>
                         {% include "components/neighbourhood_details_card_mini_custtrack.html" %}
                     </td>
-                    <td>
+                    <td style="vertical-align: top;">
                         {% if customerzpid.brief_listing.property_listing.json_data.get('priceHistory') %}
-                            <table border="1">
-                                <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Event</th>
-                                    <th>Price</th>
-                                    <th>Price Change Rate</th>
-                                    <th>Price/Sqft</th>
-                                    <th>Source</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for history in customerzpid.brief_listing.property_listing.json_data['priceHistory'] %}
+                            <button
+                                onclick="togglePriceHistory(this)"
+                                style="
+                                    background-color: #4CAF50;
+                                    color: white;
+                                    border: none;
+                                    padding: 4px 8px;
+                                    margin-bottom: 5px;
+                                    border-radius: 3px;
+                                    font-size: 12px;
+                                    cursor: pointer;
+                                "
+                            >
+                                Expand
+                            </button>
+                            <div class="price-history-container" style="height: 150px; overflow-y: auto; overflow-x: auto; display: block;">
+                                <table border="1" style="width: 100%; border-collapse: collapse;">
+                                    <thead style="position: sticky; top: 0; background-color: #f0f0f0;">
                                     <tr>
-                                        <td>{{ history.date }}</td>
-                                        <td>{{ history.event }}</td>
-                                        <td>
-                                            {% if history.price is not none %}
-                                                ${{ "{:,.0f}".format(history.price) }}
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if history.priceChangeRate is not none %}
-                                                {{ "{:.2%}".format(history.priceChangeRate) }}
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if history.pricePerSquareFoot is not none %}
-                                                ${{ history.pricePerSquareFoot }}/sqft
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ history.source }}</td>
+                                        <th style="padding: 4px;">Date</th>
+                                        <th style="padding: 4px;">Event</th>
+                                        <th style="padding: 4px;">Price</th>
+                                        <th style="padding: 4px;">Price Change Rate</th>
+                                        <th style="padding: 4px;">Price/Sqft</th>
+                                        <th style="padding: 4px;">Source</th>
                                     </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                    {% for history in customerzpid.brief_listing.property_listing.json_data['priceHistory'] %}
+                                        <tr>
+                                            <td style="padding: 4px;">{{ history.date }}</td>
+                                            <td style="padding: 4px;">{{ history.event }}</td>
+                                            <td style="padding: 4px;">
+                                                {% if history.price is not none %}
+                                                    ${{ "{:,.0f}".format(history.price) }}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 4px;">
+                                                {% if history.priceChangeRate is not none %}
+                                                    {{ "{:.2%}".format(history.priceChangeRate) }}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 4px;">
+                                                {% if history.pricePerSquareFoot is not none %}
+                                                    ${{ history.pricePerSquareFoot }}/sqft
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 4px;">{{ history.source }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         {% else %}
                             <p>No price history available.</p>
                         {% endif %}
@@ -112,3 +129,23 @@
         </tbody>
     </table>
 </div>
+
+<script>
+function togglePriceHistory(button) {
+    // Find the container div that's the next sibling of the button
+    const container = button.nextElementSibling;
+
+    // Check if currently collapsed (height is 150px)
+    if (container.style.height === '150px') {
+        // Expand: set height to auto to show full content
+        container.style.height = 'auto';
+        button.textContent = 'Collapse';
+        button.style.backgroundColor = '#f44336'; // Red color for collapse
+    } else {
+        // Collapse: set height back to 150px
+        container.style.height = '150px';
+        button.textContent = 'Expand';
+        button.style.backgroundColor = '#4CAF50'; // Green color for expand
+    }
+}
+</script>

@@ -782,3 +782,76 @@ def updateathing5():
 #         except Exception as e:
 #             # If the function fails, return a failure message with details
 #             return jsonify({'status': 'failure', 'message': 'Data gathering failed.', 'details': str(e)}), 500
+
+
+@maintanance_bp.route('/repairBriefListing', methods=['POST', 'GET'])
+def repairBriefListing():
+    """
+    Repair/refresh a BriefListing by fetching fresh data from Zillow API.
+
+    Usage:
+        POST /maintanance/repairBriefListing
+        Body: {"zpid": "12345678"}
+
+        OR
+
+        GET /maintanance/repairBriefListing?zpid=12345678
+
+    Returns:
+        Success: {"status": "success", "message": "BriefListing repaired", "zpid": "12345678"}
+        Error: {"status": "error", "message": "Error message", "zpid": "12345678"}
+    """
+    try:
+        # Get zpid from POST body or GET query parameter
+        if request.method == 'POST':
+            data = request.get_json()
+            zpid = data.get('zpid') if data else None
+        else:  # GET
+            zpid = request.args.get('zpid')
+
+        if not zpid:
+            return jsonify({
+                'status': 'error',
+                'message': 'zpid is required (provide via POST body or GET query parameter)'
+            }), 400
+
+        # Fetch fresh property data from Zillow API
+        print(f"[REPAIR] Fetching fresh data for zpid {zpid}...")
+        propertydata = SearchZillowByZPID(zpid)
+
+        if not propertydata:
+            return jsonify({
+                'status': 'error',
+                'message': f'Failed to fetch property data from Zillow API',
+                'zpid': zpid
+            }), 404
+
+        # Create/update BriefListing using the fresh data
+        print(f"[REPAIR] Updating BriefListing for zpid {zpid}...")
+        brieflisting = brieflistingcontroller.CreateBriefListingFromPropertyData(propertydata)
+
+        if not brieflisting:
+            return jsonify({
+                'status': 'error',
+                'message': f'Failed to create BriefListing from property data',
+                'zpid': zpid
+            }), 500
+
+        # Save the updated listing
+        brieflistingcontroller.updateBriefListing(brieflisting)
+
+        print(f"[REPAIR] Successfully repaired zpid {zpid}")
+        return jsonify({
+            'status': 'success',
+            'message': f'BriefListing repaired successfully',
+            'zpid': zpid,
+            'address': f"{brieflisting.streetAddress}, {brieflisting.city}" if brieflisting else None
+        }), 200
+
+    except Exception as e:
+        print(f"[REPAIR ERROR] Failed to repair zpid {zpid}: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Repair failed: {str(e)}',
+            'zpid': zpid if 'zpid' in locals() else None
+        }), 500

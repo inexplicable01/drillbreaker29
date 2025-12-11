@@ -91,9 +91,11 @@ def save_zpid():
     if not brieflisting:
         if NWMLS_id:
             print(f"Listing with NWMLS_id '{NWMLS_id}' not found, attempting to fetch via Zillow API...")
-            zpid = SearchZilowByMLSID(NWMLS_id)  # Attempt API lookup with MLS ID
+            zpid, propertydata = SearchZilowByMLSID(NWMLS_id)  # Attempt API lookup with MLS ID
             if zpid:
-                propertydata = SearchZillowByZPID(zpid)
+                # Only fetch propertydata if not already returned (avoids duplicate API call)
+                if not propertydata:
+                    propertydata = SearchZillowByZPID(zpid)
                 brieflisting = brieflistingcontroller.CreateBriefListingFromPropertyData(propertydata)
                 brieflistingcontroller.updateBriefListing(brieflisting)
         elif zpid:
@@ -144,12 +146,17 @@ def save_customer_nwmls_id_interest():
     else:
         if nwmls_id:
             print(f"Listing with NWMLS_id '{nwmls_id}' not found, attempting to fetch via Zillow API...")
-            zpid = SearchZilowByMLSID(nwmls_id)  # Attempt API lookup with MLS ID
+            zpid, propertydata = SearchZilowByMLSID(nwmls_id)  # Attempt API lookup with MLS ID
             if zpid:
-                propertydata = SearchZillowByZPID(zpid)
+                # Only fetch propertydata if not already returned (avoids duplicate API call)
+                if not propertydata:
+                    propertydata = SearchZillowByZPID(zpid)
                 brieflisting = brieflistingcontroller.CreateBriefListingFromPropertyData(propertydata)
-                propertylistingcontroller.create_property(zpid, propertydata)
-                brieflistingcontroller.updateBriefListing(brieflisting)
+                brieflistingcontroller.updateBriefListing(brieflisting)  # Save BriefListing first (for foreign key)
+
+                # Only create PropertyListing if it doesn't already exist
+                if propertylistingcontroller.get_property(zpid) is None:
+                    propertylistingcontroller.create_property(zpid, propertydata)  # Then PropertyListing
             else:
                 # If neither NWMLS_id nor ZPID exists, don't proceed with saving
                 print("Can;t listing based on nwmls id ", nwmls_id)
@@ -174,10 +181,12 @@ def save_customer_nwmls_id_interest():
         if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
             customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data()
 
+    now_ts = int(time.time())
     return jsonify({"message": message,
         "html": render_template('components/Customer_Interest_Track.html',
                                 customer=customer,
-        customerzpid_array=customer.customerzpid_array
+        customerzpid_array=customer.customerzpid_array,
+                                now_ts=now_ts
                                 )})
 
 @customer_interest_bp.route('/refreshcustomerinterest', methods=['POST'])
@@ -196,10 +205,12 @@ def refreshcustomerinterest():
         if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
             customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data()
 
+    now_ts = int(time.time())
     return jsonify({"message": 'Entry succesfully removed',
         "html": render_template('components/Customer_Interest_Track.html',
                                 customer=customer,
-        customerzpid_array=customer.customerzpid_array
+        customerzpid_array=customer.customerzpid_array,
+                                now_ts=now_ts
                                 )})
 
 @customer_interest_bp.route('/remove_customer_interest', methods=['POST'])
@@ -221,10 +232,12 @@ def remove_customer_interest():
         if customerzpid.brief_listing and customerzpid.brief_listing.property_listing:
             customerzpid.brief_listing.property_listing.json_data = customerzpid.brief_listing.property_listing.get_data()
 
+    now_ts = int(time.time())
     return jsonify({"message": 'Entry succesfully removed',
         "html": render_template('components/Customer_Interest_Track.html',
                                 customer=customer,
-        customerzpid_array=customer.customerzpid_array
+        customerzpid_array=customer.customerzpid_array,
+                                now_ts=now_ts
                                 )})
 
 

@@ -48,16 +48,29 @@ def SearchZillowByZPID(ZPID):
         return None
 
 def SearchZilowByMLSID(MLSID):
+    """
+    Search for a property by MLS ID and return the zpid and property data (if fetched).
+
+    Returns:
+        tuple: (zpid, propertydata) where:
+            - zpid (str): The Zillow property ID for the WA property, or None if not found
+            - propertydata (dict): Full property details if we had to fetch them (for blank addresses),
+                                   or None if we found a WA property using address (no fetch needed)
+
+    Note: If propertydata is not None, caller can skip calling SearchZillowByZPID again.
+    """
     querystring = {"mls": MLSID}
     url = "https://zillow56.p.rapidapi.com/search_mls"
     response = requests.get(url, headers=headers, params=querystring)
     time.sleep(0.5)
     try:
         data = response.json()
+        properties_with_blank_address = []
 
-        # Iterate through response data to find the zpid for WA
+        # First pass: Check properties with valid addresses (fast)
         for property_data in data['data']:
-            if "address" in property_data:
+            if "address" in property_data and property_data["address"]:
+                # Address is present and not blank
                 # Extract and split the address to validate state
                 address_parts = property_data["address"].split(",")  # Split address by commas
 
@@ -66,13 +79,32 @@ def SearchZilowByMLSID(MLSID):
 
                     # Validate state as "WA" (strict match)
                     if state_zip.startswith("WA "):  # Handle cases like "WA 98937"
-                        return property_data["zpid"]
+                        return property_data["zpid"], None  # Return zpid only, no propertydata fetched
+            elif "zpid" in property_data:
+                # Address is blank - save for later checking
+                properties_with_blank_address.append(property_data["zpid"])
+
+        # Second pass: Only if no WA property found with address, check blank addresses by zpid
+        for zpid in properties_with_blank_address:
+            try:
+                property_details = SearchZillowByZPID(zpid)
+
+                # Check if the property is in WA
+                if property_details and 'address' in property_details:
+                    address_info = property_details['address']
+                    if address_info.get('state') == 'WA':
+                        # Return both zpid AND property_details we just fetched (saves duplicate API call)
+                        return zpid, property_details
+            except Exception as e:
+                warn(f"Failed to fetch property details for zpid {zpid}: {e}")
+                continue
+
         warn(f"No property in WA found for MLSID {MLSID}.")
-        return None
+        return None, None
 
     except Exception as e:
         warn(f"Search Zillow zpid {MLSID} failed due to an exception: {e}")
-        return None
+        return None, None
 
 
 
