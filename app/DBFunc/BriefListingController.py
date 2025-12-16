@@ -91,6 +91,20 @@ class BriefListingController():
             print_and_log(f"Error during update or insert: {str(e)}")
             self.db.session.rollback()
 
+    def deleteBriefListing(self, brieflisting: BriefListing):
+        """
+        Delete a BriefListing and all related records.
+        SQLAlchemy will handle cascade deletes if relationships are configured properly.
+        """
+        try:
+            print_and_log(f'Deleting listing for ZPID {brieflisting.zpid}: {brieflisting.ref_address()}')
+            self.db.session.delete(brieflisting)
+            self.db.session.commit()
+            print_and_log(f'Successfully deleted listing {brieflisting.zpid}')
+        except Exception as e:
+            print_and_log(f"Error deleting listing {brieflisting.zpid}: {str(e)}")
+            self.db.session.rollback()
+
     def SaveBriefListingArr(self, brieflistingarr):
         changebrieflistingarr = []
         oldbrieflistingarr = []
@@ -166,7 +180,7 @@ class BriefListingController():
         unfiltered = BriefListing.query.filter(
             BriefListing.search_neigh == search_neigh,
             BriefListing.homeStatus == "FOR_SALE",
-            BriefListing.homeType.in_(Config.HOMETYPES)
+            BriefListing.homeType.in_(Config.HOMETYPES + ['MULTI_FAMILY'])
 
         ).all()
 
@@ -297,15 +311,12 @@ class BriefListingController():
 
     def setZoneForBriefListing(self, brieflisting: BriefListing, zonepolygons):
         try:
-            cityname=None
-            neighbourhood= None
+            zone=None
             for polygon in zonepolygons:
                 if polygon["geom"].contains(Point(brieflisting.longitude, brieflisting.latitude)):
                     zone = polygon["zone"]
-                    cityname = zone.City
-                    neighbourhood = zone.neighbourhood
                     break
-            if cityname is None and neighbourhood is None:
+            if zone is None:
                 brieflisting.outsideZones = True
                 brieflisting.zone_id = None
                 return
@@ -609,10 +620,10 @@ class BriefListingController():
             # Query for listings where zone_id is NULL and dateSold is greater than 1730400000000,'Bellevue','Shoreline','Bothell','Redmond','Kenmore'
             first_ten_listings = (self.BriefListing.query
                                   .filter(self.BriefListing.search_neigh.in_(citylist))
-                                  .filter(self.BriefListing.homeStatus == RECENTLYSOLD)
+                                  .filter(self.BriefListing.zone_id == None)
                                   # .filter(self.BriefListing.city==1)
                                   # .filter(self.BriefListing.pricedelta== 0)
-                                  .filter(self.BriefListing.soldtime > fromdays_ago)
+                                  # .filter(self.BriefListing.soldtime > fromdays_ago)
                                   .limit(X)  # Limit to 10 instead of 100
                                   .all())
             return first_ten_listings

@@ -98,67 +98,67 @@ def autocomplete():
     response = requests.get(url)
     return jsonify(response.json())
 
-from app.MapTools.MappingTools import generateMap
-@hothomes_bp.route('/forsale', methods=['GET','POST'])
-def forsalehomes():
-    # cities=['Seattle']
-    selectedhometypes=['SINGLE_FAMILY', 'TOWNHOUSE','CONDO' ]
-
-    cities = washingtoncitiescontroller.getallcities()
-    if request.method == 'POST':
-        selectedhometypes = request.form.getlist('home_type')
-        selectedCity = request.form.get('selected_city')
-        address =  request.form.get('address')
-        address_coords = None
-        geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address= {address}&key={WC_Wayber_GOOGLE_API_KEY}"
-        response = requests.get(geocode_url)
-        geocode_data = response.json()
-        interetedbrieflisting=None
-        if geocode_data['status'] == 'OK':
-            location = geocode_data['results'][0]['geometry']['location']
-            address_coords = (location['lat'], location['lng'])
-            address_components = geocode_data['results'][0]['address_components']
-            for component in address_components:
-                if 'locality' in component['types']:
-                    selectedCity = component['long_name']### selected City is over writting is USer is looking in a different city that's not selected
-                    break
-            homeForSale, zpid = isHomeForSale(address)
-            if homeForSale:
-                interetedbrieflisting = brieflistingcontroller.get_listing_by_zpid(zpid)
-                if interetedbrieflisting is None:
-                    forsalerawdata = SearchZillowBriefListingByAddress(address)
-                    brieflistingcontroller.SaveBriefListingArr(
-                        [BriefListing.CreateBriefListing(forsalerawdata, None, None, selectedCity)])
-                    interetedbrieflisting = brieflistingcontroller.get_listing_by_zpid(zpid)
-                address_coords=(interetedbrieflisting.latitude, interetedbrieflisting.longitude)
-                selectedCity = interetedbrieflisting.city
-        else:
-
-            print(f"Geocoding API error: {geocode_data['status']}")
-
-
-        # Process the selections as needed
-    elif request.method == 'GET':
-        selectedCity = 'Seattle'
-        selectedhometypes = Config.HOMETYPES
-        address_coords = None
-
-        zpid=None
-        interetedbrieflisting=None
-
-    unfiltered_forsale = brieflistingcontroller.ForSaleListingsByCitiesAndHomeTypes([selectedCity], selectedhometypes)
-
-
-
-    return render_template('ForSale.html',
-                           m=generatethisMap(brieflistings=unfiltered_forsale,neighbourhoods=[],
-                                                             showneighbounds=False, address_coords=address_coords,
-                                             interetedbrieflisting=interetedbrieflisting),
-                           selectedCity=selectedCity,
-                           cityoptions = cities,
-                           HOMETYPES=Config.HOMETYPES,
-                           selectedhometypes=selectedhometypes,
-    )
+# from app.MapTools.MappingTools import generateMap
+# @hothomes_bp.route('/forsale', methods=['GET','POST'])
+# def forsalehomes():
+#     # cities=['Seattle']
+#     selectedhometypes=['SINGLE_FAMILY', 'TOWNHOUSE','CONDO' ]
+#
+#     cities = washingtoncitiescontroller.getallcities()
+#     if request.method == 'POST':
+#         selectedhometypes = request.form.getlist('home_type')
+#         selectedCity = request.form.get('selected_city')
+#         address =  request.form.get('address')
+#         address_coords = None
+#         geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address= {address}&key={WC_Wayber_GOOGLE_API_KEY}"
+#         response = requests.get(geocode_url)
+#         geocode_data = response.json()
+#         interetedbrieflisting=None
+#         if geocode_data['status'] == 'OK':
+#             location = geocode_data['results'][0]['geometry']['location']
+#             address_coords = (location['lat'], location['lng'])
+#             address_components = geocode_data['results'][0]['address_components']
+#             for component in address_components:
+#                 if 'locality' in component['types']:
+#                     selectedCity = component['long_name']### selected City is over writting is USer is looking in a different city that's not selected
+#                     break
+#             homeForSale, zpid = isHomeForSale(address)
+#             if homeForSale:
+#                 interetedbrieflisting = brieflistingcontroller.get_listing_by_zpid(zpid)
+#                 if interetedbrieflisting is None:
+#                     forsalerawdata = SearchZillowBriefListingByAddress(address)
+#                     brieflistingcontroller.SaveBriefListingArr(
+#                         [BriefListing.CreateBriefListing(forsalerawdata, None, None, selectedCity)])
+#                     interetedbrieflisting = brieflistingcontroller.get_listing_by_zpid(zpid)
+#                 address_coords=(interetedbrieflisting.latitude, interetedbrieflisting.longitude)
+#                 selectedCity = interetedbrieflisting.city
+#         else:
+#
+#             print(f"Geocoding API error: {geocode_data['status']}")
+#
+#
+#         # Process the selections as needed
+#     elif request.method == 'GET':
+#         selectedCity = 'Seattle'
+#         selectedhometypes = Config.HOMETYPES
+#         address_coords = None
+#
+#         zpid=None
+#         interetedbrieflisting=None
+#
+#     unfiltered_forsale = brieflistingcontroller.ForSaleListingsByCitiesAndHomeTypes([selectedCity], selectedhometypes)
+#
+#
+#
+#     return render_template('ForSale.html',
+#                            m=generatethisMap(brieflistings=unfiltered_forsale,neighbourhoods=[],
+#                                                              showneighbounds=False, address_coords=address_coords,
+#                                              interetedbrieflisting=interetedbrieflisting),
+#                            selectedCity=selectedCity,
+#                            cityoptions = cities,
+#                            HOMETYPES=Config.HOMETYPES,
+#                            selectedhometypes=selectedhometypes,
+#     )
 
 import folium
 from shapely.geometry import shape, Point

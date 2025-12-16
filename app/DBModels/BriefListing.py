@@ -34,7 +34,19 @@ def hasDrivewayParkingFromPropertyData(propertydata):
             return hasDrivewayParking
     return hasDrivewayParking
 
+def get_in(d, path, default=None):
+    cur = d
+    for k in path:
+        if not isinstance(cur, dict) or k not in cur:
+            return default
+        cur = cur[k]
+    return cur
 
+def to_decimal(v, default="0"):
+    try:
+        return decimal.Decimal(str(v))
+    except Exception:
+        return decimal.Decimal(default)
 
 class BriefListing(db.Model):
     __tablename__= 'BriefListing'
@@ -185,10 +197,11 @@ class BriefListing(db.Model):
         except Exception as e:
             print(e, self, 'Failed to get parking spaces')
 
-        if self.soldprice is not None:
-            self.soldprice = propertydata['lastSoldPrice']
         try:
-            self.NWMLS_id = propertydata['attributionInfo']['mlsId']
+            if type(propertydata['attributionInfo']['mlsId']) == str:
+                self.NWMLS_id = int(propertydata['attributionInfo']['mlsId'])
+            else:
+                self.NWMLS_id = propertydata['attributionInfo']['mlsId']
             print(propertydata['attributionInfo']['mlsName'])
             if "RMLS (OR)"==propertydata['attributionInfo']['mlsName']:
                 self.waybercomments = "RMLS (OR)"
@@ -198,6 +211,15 @@ class BriefListing(db.Model):
 
             if "Zillow Rentals" == propertydata['attributionInfo']['mlsName']:
                 self.waybercomments = "Zillow Rentals"
+
+            if "FSBO-Online.com" == propertydata['attributionInfo']['mlsName']:
+                self.waybercomments = "FSBO-Online.com"
+
+            if "Auction.com 2" == propertydata['attributionInfo']['mlsName']:
+                self.waybercomments = "Auction.com 2"
+
+            if 'Habitat for Humanity Seattle' == propertydata['attributionInfo']['mlsName']:
+                self.waybercomments = 'Habitat for Humanity Seattle'
 
             if self.NWMLS_id is None:
                 # if propertydata['attributionInfo']:
@@ -232,112 +254,135 @@ class BriefListing(db.Model):
         gapis_neighbourhood = get_neighborhood(newBrieflisting.latitude, newBrieflisting.longitude)
         newBrieflisting.gapis_neighbourhood = gapis_neighbourhood
 
+        # Attributes to skip when checking for updates
+        skip_attrs = {'_sa_instance_state', 'daysOnZillow', 'yearBuiltEffective'}
+
+        # ", 'yearBuilt', 'description', 'hdpUrl',
+        #                  'parkingSpaces', 'hasDrivewayParking', 'NWMLS_id'"
+
         for attr in vars(newBrieflisting):
-            if attr == '_sa_instance_state':
+            if attr in skip_attrs:
                 continue
-            if attr == 'daysOnZillow':
+
+            if not hasattr(self, attr):
                 continue
+
+            existing_value = getattr(self, attr)
+            new_value = getattr(newBrieflisting, attr)
+
+            # Special handling for listtime with tolerance
             if attr == 'listtime':
-                if not is_equal_with_tolerance(existing_value, new_value, 100):
-                    needs_update = True
-                    updatereason = updatereason + ',' + attr + ' value update'
-                    break
+                if existing_value is not None and new_value is not None:
+                    if not is_equal_with_tolerance(existing_value, new_value, 100):
+                        needs_update = True
+                        updatereason = updatereason + ',' + attr + ' value update'
+                        break
                 continue
-            if hasattr(self, attr):
-                existing_value = getattr(self, attr)
-                new_value = getattr(newBrieflisting, attr)
-                if isinstance(existing_value, decimal.Decimal) and isinstance(new_value, decimal.Decimal):
-                    # For float values, use the tolerance-based comparison
-                    if not is_equal_with_tolerance(existing_value, new_value):
-                        needs_update = True
-                        updatereason = updatereason + ',' + attr + ' value update'
-                        break
-                elif isinstance(existing_value, float) and isinstance(new_value, float):
-                    # For float values, use the tolerance-based comparison
-                    if not is_equal_with_tolerance(existing_value, new_value, 0.1):
-                        needs_update = True
-                        updatereason = updatereason + ',' + attr + ' value update'
-                        break
 
-                elif attr == 'homeStatus':
-                    if not existing_value == new_value:
-                        needs_update = True
-                        updatereason = updatereason + ',' + attr + 'from ' + self.__str__() + ' to ' + new_value
-                elif existing_value != new_value:
-                    # For all other data types, use standard comparison
+            # Decimal comparison with tolerance
+            if isinstance(existing_value, decimal.Decimal) and isinstance(new_value, decimal.Decimal):
+                if not is_equal_with_tolerance(existing_value, new_value):
                     needs_update = True
                     updatereason = updatereason + ',' + attr + ' value update'
                     break
+
+            # Float comparison with tolerance
+            elif isinstance(existing_value, float) and isinstance(new_value, float):
+                if not is_equal_with_tolerance(existing_value, new_value, 0.1):
+                    needs_update = True
+                    updatereason = updatereason + ',' + attr + ' value update'
+                    break
+
+            # Special handling for homeStatus
+            elif attr == 'homeStatus':
+                if existing_value != new_value:
+                    needs_update = True
+                    updatereason = updatereason + ',' + attr + ' from ' + str(existing_value) + ' to ' + str(new_value)
+
+            # Standard comparison for all other types
+            elif existing_value != new_value:
+                needs_update = True
+                updatereason = updatereason + ',' + attr + ' value update'
+                break
+
         return needs_update, updatereason
-
-
-
 
     @classmethod
     def CreateBriefListing(cls, briefhomedata, neighbourhood, zillowapi_neighbourhood, search_neigh):
-        try:
-            new_listing = cls()
-            new_listing.zpid = briefhomedata.get('zpid')
-            new_listing.neighbourhood = neighbourhood
-            new_listing.zillowapi_neighbourhood = zillowapi_neighbourhood
-            new_listing.search_neigh = search_neigh
-            new_listing.bathrooms = safe_float_conversion(briefhomedata.get('bathrooms', 1.0))
-            new_listing.bedrooms = safe_float_conversion(briefhomedata.get('bedrooms', 1.0))
-            new_listing.city = briefhomedata.get('city', 'Missing')
-            new_listing.country = briefhomedata.get('country', 'Missing')
-            # new_listing.currency = briefhomedata.get('currency', 'Missing')
-            new_listing.livingArea=safe_float_conversion(briefhomedata.get('livingArea', 1.0))
-            new_listing.dateSold = safe_int_conversion(
-                briefhomedata.get('dateSold', 0))  # Consider datetime conversion if necessary
-            new_listing.soldtime = safe_int_conversion(
-                briefhomedata.get('dateSold', 0))/1000
-            new_listing.daysOnZillow = safe_int_conversion(briefhomedata.get('daysOnZillow', 0))
-            new_listing.homeStatus = briefhomedata.get('homeStatus', 'Missing')
-            new_listing.homeStatusForHDP = briefhomedata.get('homeStatusForHDP', 'Missing')
-            new_listing.homeType = briefhomedata.get('homeType', 'Missing')
-            new_listing.imgSrc = briefhomedata.get('imgSrc', 'Missing')
-            new_listing.isFeatured = briefhomedata.get('isFeatured', False)
-            # new_listing.isNonOwnerOccupied = briefhomedata.get('isNonOwnerOccupied', False)
-            new_listing.isPreforeclosureAuction = briefhomedata.get('isPreforeclosureAuction', False)
-            new_listing.isPremierBuilder = briefhomedata.get('isPremierBuilder', False)
-            new_listing.isShowcaseListing = briefhomedata.get('isShowcaseListing', False)
-            new_listing.isUnmappable = briefhomedata.get('isUnmappable', False)
-            new_listing.isZillowOwned = briefhomedata.get('isZillowOwned', False)
-            new_listing.latitude = decimal.Decimal(briefhomedata.get('latitude', '0.0000000'))
-            new_listing.longitude = decimal.Decimal(briefhomedata.get('longitude', '0.0000000'))
-            new_listing.price = safe_int_conversion(briefhomedata.get('price', 0))
-            new_listing.state = briefhomedata.get('state', 'Missing')
-            new_listing.streetAddress = briefhomedata.get('streetAddress', 'Missing')
-            new_listing.zipcode = briefhomedata.get('zipcode', 'Missing')
-            new_listing.list2penddays = safe_int_conversion(briefhomedata.get('list2penddays', 0))
-            new_listing.list2solddays = safe_int_conversion(briefhomedata.get('list2solddays', 0))
-            new_listing.listprice = safe_int_conversion(briefhomedata.get('listprice', 0))
-            new_listing.zestimate = safe_int_conversion(briefhomedata.get('zestimate', 0))
-            new_listing.taxAssessedValue = safe_float_conversion(briefhomedata.get('taxAssessedValue', 0.0))
-            new_listing.lotAreaUnit = briefhomedata.get('lotAreaUnit', 'Missing')
-            new_listing.lotAreaValue = safe_float_conversion(briefhomedata.get('lotAreaValue', 0.0))
-            # Assuming `listing_sub_type` is passed as a dictionary and directly assignable
-            new_listing.listing_sub_type = briefhomedata.get('listing_sub_type', {})
-            new_listing.rentZestimate = safe_int_conversion(briefhomedata.get('rentZestimate', 0))
-            # Assuming that for optional fields without defaults you want to use None or a sentinel value
-            new_listing.unit = briefhomedata.get('unit', None)  # Handling for 'unit' as optional
-            new_listing.videoCount = briefhomedata.get('videoCount', '0')  # Assuming '0' as default for missing
-            # new_listing.isRentalWithBasePrice = briefhomedata.get('isRentalWithBasePrice', False)
-            new_listing.newConstructionType = briefhomedata.get('newConstructionType', 'Missing')
-            new_listing.hdpUrl = briefhomedata.get('hdpUrl', 'Missing')
-            new_listing.pricedelta = safe_int_conversion(briefhomedata.get('pricedelta', 0))
+        new_listing = cls()
+
+        # IDs / tags
+        new_listing.zpid = safe_int_conversion(briefhomedata.get("zpid", 0)) or None
+        new_listing.neighbourhood = neighbourhood
+        new_listing.zillowapi_neighbourhood = zillowapi_neighbourhood
+        new_listing.search_neigh = search_neigh
+
+        # Core facts
+        new_listing.bathrooms = safe_float_conversion(briefhomedata.get("bathrooms", 1.0))
+        new_listing.bedrooms = safe_float_conversion(briefhomedata.get("bedrooms", 1.0))
+        new_listing.livingArea = safe_float_conversion(briefhomedata.get("livingArea", 0.0))
+
+        # Prefer nested address.* but fall back to top-level duplicates
+        new_listing.city = get_in(briefhomedata, ["address", "city"], briefhomedata.get("city"))
+        new_listing.state = get_in(briefhomedata, ["address", "state"], briefhomedata.get("state"))
+        new_listing.streetAddress = get_in(briefhomedata, ["address", "streetAddress"],
+                                           briefhomedata.get("streetAddress"))
+        new_listing.zipcode = get_in(briefhomedata, ["address", "zipcode"], briefhomedata.get("zipcode"))
+        new_listing.country = briefhomedata.get("country")
+
+        # Geo (Numeric(10,7) prefers Decimal)
+        new_listing.latitude = to_decimal(briefhomedata.get("latitude", "0"))
+        new_listing.longitude = to_decimal(briefhomedata.get("longitude", "0"))
+
+        # Status / type / image
+        new_listing.homeStatus = briefhomedata.get("homeStatus")
+        new_listing.homeStatusForHDP = briefhomedata.get("homeStatusForHDP")  # may be missing in this payload
+        new_listing.homeType = briefhomedata.get("homeType")
+        new_listing.imgSrc = briefhomedata.get("imgSrc")
+        new_listing.isFeatured = bool(briefhomedata.get("isFeatured", False))
+        new_listing.isPreforeclosureAuction = bool(briefhomedata.get("isPreforeclosureAuction", False))
+        new_listing.isPremierBuilder = bool(briefhomedata.get("isPremierBuilder", False))
+        new_listing.isShowcaseListing = bool(briefhomedata.get("isShowcaseListing", False))
+        new_listing.isUnmappable = bool(briefhomedata.get("isUnmappable", False))
+        new_listing.isZillowOwned = bool(get_in(briefhomedata, ["zillowOwnedProperty", "isZillowOwned"], False))
+
+        # Prices
+        new_listing.price = safe_int_conversion(briefhomedata.get("price", 0))
+        new_listing.listprice = safe_int_conversion(briefhomedata.get("listprice", 0))
+        new_listing.zestimate = safe_int_conversion(
+            briefhomedata.get("zestimate", get_in(briefhomedata, ["estimates", "zestimate"], 0)))
+        new_listing.rentZestimate = safe_int_conversion(get_in(briefhomedata, ["estimates", "rentZestimate"], 0))
+        new_listing.taxAssessedValue = safe_float_conversion(briefhomedata.get("taxAssessedValue", 0.0))
+        new_listing.pricedelta = safe_int_conversion(briefhomedata.get("pricedelta", 0))
+
+        # Time on Zillow / listing time
+        new_listing.daysOnZillow = safe_int_conversion(briefhomedata.get("daysOnZillow", 0))
+
+        # If Zillow gives a listing timestamp (ms), store it as seconds
+        ldtz_ms = briefhomedata.get("listingDateTimeOnZillow")
+        if ldtz_ms:
+            new_listing.listtime = int(safe_int_conversion(ldtz_ms) / 1000)
+
+        # Sold time (ms -> seconds)
+        if new_listing.homeStatus==RECENTLYSOLD:
+            if "lastSoldDate" in briefhomedata:
+                new_listing.soldtime = int(safe_int_conversion(briefhomedata.get("lastSoldDate", 0)) / 1000)
+            else:
+                raise ValueError("Cannot locate lastSoldDate timestamp in payload.")
+        else:
+            new_listing.soldtime = None
+
+        # URL (nested in hdpView)
+        new_listing.hdpUrl = get_in(briefhomedata, ["hdpView", "hdpUrl"])
+
+        # Other optional model fields you *can* fill from this payload
+        new_listing.yearBuilt = safe_int_conversion(briefhomedata.get("yearBuilt", 0)) or None
+        # parkingSpaces not in your sample payload; skip unless present
+
+        new_listing.soldBy = "AGENT"
+        return new_listing
 
 
-
-            listing_time = datetime.utcnow() - timedelta(seconds=safe_int_conversion(briefhomedata.get('timeOnZillow', 0))/1000)
-            new_listing.listtime = int(listing_time.timestamp())
-            new_listing.soldBy = "AGENT"
-
-            return new_listing
-
-        except Exception as e:
-            print('Create Listing Error', e)
-            return None
 
     @classmethod
     def CreateBriefListingFromPropertyData(cls, propertydata,neighbourhood, zillowapi_neighbourhood, search_neigh):

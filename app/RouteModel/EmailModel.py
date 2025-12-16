@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 import os
 from flask import render_template, flash
 from app.config import Config
-from app.NewListing import NewListing,NewListingForEmail
+# from app.NewListing import NewListing,NewListingForEmail
 from app.EmailHelper.EmailSender import send_email , send_emailforOpenHouse
 from app.ZillowAPI.ZillowDataProcessor import loadPropertyDataFromBrief
 from app.DBFunc.ZoneStatsCacheController import zonestatscachecontroller
@@ -26,13 +26,13 @@ from app.Models.Rates import *
 # from app.ZillowAPI.ZillowDataProcessor import ZillowSearchForForSaleHomes,
 defaultrecipient = 'waichak.luk@gmail.com'
 mo_email = 'mohamedzabuzaid@gmail.com'
-def sendEmailwithNewListing():
-    # subject, body, recipient = defaultrecipient, html_content = None
-    html_content = NewListingForEmail('Seattle', 1)
-    # html_content=''
-    send_email(subject='NewListing',
-               html_content=html_content,
-               recipient =defaultrecipient)
+# def sendEmailwithNewListing():
+#     # subject, body, recipient = defaultrecipient, html_content = None
+#     html_content = NewListingForEmail('Seattle', 1)
+#     # html_content=''
+#     send_email(subject='NewListing',
+#                html_content=html_content,
+#                recipient =defaultrecipient)
 
 def sendEmailtimecheck(message=None):
     # subject, body, recipient = defaultrecipient, html_content = None

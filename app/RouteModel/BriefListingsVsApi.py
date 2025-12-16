@@ -5,10 +5,17 @@ from datetime import datetime
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing
 from app.RouteModel.EmailModel import sendEmailListingChange
 
-def ZPIDinDBNotInAPI_FORSALE(zpid, doz, mismanagedcount):
+def ZPIDinDBNotInAPI_FORSALE(zpid, doz, mismanageddict):
     try:
         brieflist = brieflistingcontroller.get_listing_by_zpid(zpid)
         propertydetail = SearchZillowByZPID(zpid)
+
+        if not propertydetail:
+            # Property not found in API, delete from database
+            print(f"ZPID {zpid} not found in API, deleting from database: {brieflist.ref_address()}")
+            brieflistingcontroller.deleteBriefListing(brieflist)
+            return mismanageddict
+
         if propertydetail['homeStatus'] == 'PENDING':
             print(
                 f" brieflist status {brieflist.homeStatus} , propertydetail status {propertydetail['homeStatus']}")
@@ -24,11 +31,11 @@ def ZPIDinDBNotInAPI_FORSALE(zpid, doz, mismanagedcount):
                 f" brieflist status {brieflist.homeStatus} , propertydetail status {propertydetail['homeStatus']}")
             print(brieflist)
             brieflist.homeStatus = 'RECENTLY_SOLD'
-            brieflist.dateSold = int(propertydetail['homeStatus'] / 1000)
+
             listresults = ListingLengthbyBriefListing(propertydetail)
+            brieflist.dateSold = listresults['solddate'].timestamp()
             brieflist.updateListingLength(listresults)
             brieflistingcontroller.updateBriefListing(brieflist)
-
         else:
 
             # print(brieflist)
@@ -38,26 +45,29 @@ def ZPIDinDBNotInAPI_FORSALE(zpid, doz, mismanagedcount):
                     try:
                         if int(days) > doz:
                             print(f"Listing {brieflist} has been on the market for {days} days — flag it.")
-                            return mismanagedcount
+                            return mismanageddict
                     except (TypeError, ValueError):
                         print(f"Warning: Could not parse daysOnZillow for listing {brieflist}")
                 print(
                     f" brieflist status {brieflist.homeStatus} , propertydetail status {propertydetail['homeStatus']}")
                 print(f"Not sure how we got here.  Need to continue to monitor.zpid : {propertydetail['zpid']}")
-                mismanagedcount[brieflist.zpid]=propertydetail
+                mismanageddict[brieflist.zpid]=propertydetail
                 brieflist.getPropertyData()
+
                 brieflistingcontroller.updateBriefListing(brieflist)
-                return mismanagedcount
-            brieflist.homeStatus = propertydetail['homeStatus']
-            brieflistingcontroller.updateBriefListing(brieflist)  ###This ONLY updates home status, does not update price
-            print(brieflist)
-        # print(propertydetail)
+                return mismanageddict
+            else:
+                print(brieflist)
+                print(f"Home status shown here should not be pending, sold or for sale.  {propertydetail['homeStatus']} zpid : {propertydetail['zpid']}")
+                brieflist.homeStatus = propertydetail['homeStatus']
+                brieflistingcontroller.updateBriefListing(brieflist)  ###This ONLY updates home status, does not update price
+
 
     except Exception as e:
         print(e,
               f'Error produced when trying to updating the status of {brieflist} for sale unit.  This is for_sale in DB but not '
               'found anymore on api, so likely pending or sold or taken off market')
-    return mismanagedcount
+    return mismanageddict
 
 
 

@@ -1,6 +1,6 @@
 # email_bp.py
 from flask import Blueprint, redirect, url_for, jsonify, request, current_app
-from app.RouteModel.EmailModel import (sendEmailwithNewListing,sendAppointmentEmail,sendEmailtimecheck,
+from app.RouteModel.EmailModel import (sendAppointmentEmail,sendEmailtimecheck,
                                        sendEmailpending)
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Tuple
@@ -35,7 +35,7 @@ email_bp = Blueprint('email', __name__, url_prefix='/email')
 @email_bp.route('/send-updates', methods=['POST'])
 def sendEmailUpdates():
     # Assuming sendEmailwithNewListing() is a function that sends an email with new listings.
-    sendEmailwithNewListing()
+    # sendEmailwithNewListing()
     return redirect(url_for('main.index'))
 
 @email_bp.route('/email_healthcheck', methods=['POST'])

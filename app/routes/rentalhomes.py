@@ -5,7 +5,7 @@ from app.DBFunc.BriefListingController import brieflistingcontroller
 from app.MapTools.MappingTools import generateMap
 from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
     loadPropertyDataFromBrief, ListingStatus
-from app.ZillowAPI.ZillowAPICall import RentEstimateBriefListing
+
 
 
 

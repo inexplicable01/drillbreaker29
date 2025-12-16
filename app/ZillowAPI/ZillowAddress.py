@@ -22,7 +22,7 @@ class ZillowAddress():
                  isIncomeRestricted=None,
                  isListedByOwner=None,
                  keystoneHomeStatus=None,
-                 lastSoldPrice=None,
+                 # lastSoldPrice=None,
                  latitude=None,
                  listPriceLow=None,
                  listingMetadata=None,
@@ -79,7 +79,7 @@ class ZillowAddress():
         self.isIncomeRestricted = isIncomeRestricted
         self.isListedByOwner = isListedByOwner
         self.keystoneHomeStatus = keystoneHomeStatus
-        self.lastSoldPrice = lastSoldPrice
+        # self.lastSoldPrice = lastSoldPrice
         self.latitude = latitude
         self.listPriceLow = listPriceLow
         self.listingMetadata = listingMetadata
@@ -141,7 +141,7 @@ class ZillowAddress():
                    isIncomeRestricted=propertydata['isIncomeRestricted'],
                    isListedByOwner=propertydata['isListedByOwner'],
                    keystoneHomeStatus=propertydata['keystoneHomeStatus'],
-                   lastSoldPrice=propertydata['lastSoldPrice'],
+                   # lastSoldPrice=propertydata['lastSoldPrice'],
                    latitude=propertydata['latitude'],
                    listPriceLow=propertydata['listPriceLow'],
                    listingMetadata=propertydata['listingMetadata'],

@@ -6,10 +6,8 @@ from app.config import Config
 
 HousePicsDIR = "C:/Users/waich/Dropbox/EstateFlow/DrillBreaker29/HousePics"
 from Download_Image import download_image
-from app.ZillowAPI.ZillowAPICall import SearchZillowNewListingByLocation,\
-    SearchZillowByZPID , \
+from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID , \
     SearchZillowByAddress , \
-    SearchZillowNewListingByInterest,\
     SearchZillowHomesByLocation
 
 # from app.DBModels.BriefListing import BriefListing
@@ -203,19 +201,19 @@ def ListingStatus(brieflisting):
     return propertydetails['homeStatus']
 
 
-def loadPropertyDataFromAddress(fileaddress):
-    filepath = os.path.join(os.getenv('ADDRESSJSON'), fileaddress + '.txt')
-    if not os.path.exists(filepath):
-        propertydata = SearchZillowByAddress(fileaddress)
-        json_string = json.dumps(propertydata, indent=4)
-        with open(filepath, 'w') as f:
-            f.write(json_string)
-    else:
-        with open(filepath, 'r') as file:
-            # Read the content of the file
-            text_content = file.read()
-            propertydata = json.loads(text_content)
-    return propertydata
+# def loadPropertyDataFromAddress(fileaddress):
+#     filepath = os.path.join(os.getenv('ADDRESSJSON'), fileaddress + '.txt')
+#     if not os.path.exists(filepath):
+#         propertydata = SearchZillowByAddress(fileaddress)
+#         json_string = json.dumps(propertydata, indent=4)
+#         with open(filepath, 'w') as f:
+#             f.write(json_string)
+#     else:
+#         with open(filepath, 'r') as file:
+#             # Read the content of the file
+#             text_content = file.read()
+#             propertydata = json.loads(text_content)
+#     return propertydata
 
 
 def savePropertyData(propertydata):
