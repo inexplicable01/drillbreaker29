@@ -147,16 +147,20 @@ def sendEmailListingChange(message=None, title=None, hdpUrl=None, customer=None)
       </body>
     </html>
     """
-    # send_email(
-    #     subject=title,
-    #     html_content=html_content,
-    #     recipient=customer_email
-    # )
+    # Send email to customer
     send_email(
         subject=title,
         html_content=html_content,
-        recipient='waichak.luk@gmail.com'
+        recipient=recipient
     )
+
+    # Also send a copy to admin if sending to customer
+    if customer and customer_email and customer_email != defaultrecipient:
+        send_email(
+            subject=f"[COPY] {title}",
+            html_content=html_content,
+            recipient=defaultrecipient
+        )
 
 
 
