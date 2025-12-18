@@ -81,6 +81,15 @@ def AIModel(brieflisting, customer, propertydata, customer_zone_names=None, list
         else:
             size_fit = "Within size range"
 
+    # Helper function to format numbers with None handling
+    def fmt(value, prefix="", suffix=""):
+        if value is None:
+            return "Not specified"
+        try:
+            return f"{prefix}{value:,}{suffix}"
+        except:
+            return str(value)
+
     # Prepare improved prompt with scoring rubric
     prompt = f"""
 You are evaluating how well this listing matches a buyer's preferences. Score from 0-100 using this rubric:
@@ -93,29 +102,29 @@ SCORING GUIDE:
 - 81-100: Excellent match (hits ideal preferences, great value, perfect fit)
 
 CUSTOMER PREFERENCES:
-- Budget: ${customer.minprice:,} to ${customer.maxprice:,} (Ideal: ${customer.idealprice:,})
+- Budget: {fmt(customer.minprice, "$")} to {fmt(customer.maxprice, "$")} (Ideal: {fmt(customer.idealprice, "$")})
   → Budget Fit: {budget_fit}
-- Square Footage: {customer.minsqft:,} to {customer.maxsqft:,} sqft (Ideal: {customer.idealsqft:,})
+- Square Footage: {fmt(customer.minsqft)} to {fmt(customer.maxsqft)} sqft (Ideal: {fmt(customer.idealsqft)} sqft)
   → Size Fit: {size_fit}
-- Parking Spaces Needed: {customer.parkingspaceneeded}
+- Parking Spaces Needed: {customer.parkingspaceneeded if customer.parkingspaceneeded else 'Not specified'}
 - Preferred Zones/Neighborhoods: {', '.join(customer_zone_names) if customer_zone_names else 'No specific zone preferences'}
 - Additional Preferences: {customer_description_text}
 
 LISTING DETAILS:
-- Price: ${brieflisting.price:,}
-- Zestimate: ${brieflisting.zestimate:,}
+- Price: {fmt(brieflisting.price, "$")}
+- Zestimate: {fmt(brieflisting.zestimate, "$")}
   → Market Position: {price_positioning}
-- Square Footage: {brieflisting.livingArea:,} sqft
-- Location: {brieflisting.city}, {brieflisting.state} {brieflisting.zipcode}
+- Square Footage: {fmt(brieflisting.livingArea)} sqft
+- Location: {brieflisting.city or 'Unknown'}, {brieflisting.state or 'Unknown'} {brieflisting.zipcode or ''}
 - Zone/Neighborhood: {listing_zone_name}
   → Zone Match: {zone_match_status}
-- Bedrooms: {brieflisting.bedrooms} | Bathrooms: {brieflisting.bathrooms}
-- Home Type: {brieflisting.homeType}
-- Lot Size: {brieflisting.lotAreaValue} {brieflisting.lotAreaUnit}
-- Year Built: {brieflisting.yearBuilt}
-- Parking: {brieflisting.parkingSpaces} garage/covered spaces, Driveway: {brieflisting.hasDrivewayParking}
-- Days on Market: {brieflisting.daysOnZillow} days
-- Internal Notes: {brieflisting.waybercomments}
+- Bedrooms: {brieflisting.bedrooms if brieflisting.bedrooms is not None else 'N/A'} | Bathrooms: {brieflisting.bathrooms if brieflisting.bathrooms is not None else 'N/A'}
+- Home Type: {brieflisting.homeType or 'Not specified'}
+- Lot Size: {brieflisting.lotAreaValue or 'N/A'} {brieflisting.lotAreaUnit or ''}
+- Year Built: {brieflisting.yearBuilt if brieflisting.yearBuilt else 'Not specified'}
+- Parking: {brieflisting.parkingSpaces if brieflisting.parkingSpaces is not None else 'N/A'} garage/covered spaces, Driveway: {brieflisting.hasDrivewayParking if brieflisting.hasDrivewayParking is not None else 'Unknown'}
+- Days on Market: {brieflisting.daysOnZillow if brieflisting.daysOnZillow is not None else 'N/A'} days
+- Internal Notes: {brieflisting.waybercomments or 'None'}
 
 EVALUATION CRITERIA:
 1. Price fit (20 pts): How well does price match budget? Is it a good deal vs Zestimate?

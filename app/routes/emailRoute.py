@@ -51,6 +51,182 @@ def sendEmailPending():
     sendEmailpending()
     return jsonify({"message": "Viewing request submitted successfully!"}), 200
 
+@email_bp.route('/send_recommendation_summary', methods=['POST'])
+def send_recommendation_summary():
+    """
+    Send final summary email after processing all customer recommendations.
+    Called by Tasks_UpdateClientRecommendationThruAI.py
+    """
+    from app.RouteModel.EmailModel import send_email, defaultrecipient
+    import pytz
+
+    try:
+        data = request.get_json()
+        totals = data.get('totals', {})
+        timestamp = data.get('timestamp', datetime.now().isoformat())
+
+        seattle_tz = pytz.timezone('America/Los_Angeles')
+        current_time = datetime.fromisoformat(timestamp).astimezone(seattle_tz)
+        formatted_time = current_time.strftime('%B %d, %Y at %I:%M %p %Z')
+
+        # Build customer details table if there are matches
+        customer_details_html = ""
+        if totals.get('customer_details'):
+            customer_details_html = """
+            <h3 style="color: #1a73e8; margin-top: 30px;">Customers with Matches:</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr style="background-color: #f0f0f0;">
+                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Customer</th>
+                        <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">ID</th>
+                        <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">High-Scoring (70+)</th>
+                        <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Excellent (90+)</th>
+                    </tr>
+                </thead>
+                <tbody>
+            """
+            for customer in totals['customer_details']:
+                customer_details_html += f"""
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;">{customer['name']}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">{customer['id']}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #ddd; font-weight: bold; color: #1a73e8;">{customer['high_scoring']}</td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #ddd; font-weight: bold; color: #28a745;">{customer['excellent']}</td>
+                    </tr>
+                """
+            customer_details_html += """
+                </tbody>
+            </table>
+            """
+
+        summary_html = f"""
+        <html>
+        <head>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                }}
+                .container {{
+                    max-width: 700px;
+                    margin: 20px auto;
+                    padding: 20px;
+                    background-color: #f9f9f9;
+                    border-radius: 8px;
+                }}
+                h2 {{
+                    color: #1a73e8;
+                    margin-top: 0;
+                    border-bottom: 3px solid #1a73e8;
+                    padding-bottom: 10px;
+                }}
+                .stat-grid {{
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 15px;
+                    margin: 20px 0;
+                }}
+                .stat-card {{
+                    padding: 15px;
+                    background-color: white;
+                    border-left: 4px solid #1a73e8;
+                    border-radius: 4px;
+                }}
+                .stat-card.excellent {{
+                    border-left-color: #28a745;
+                }}
+                .stat-card.warning {{
+                    border-left-color: #ffc107;
+                }}
+                .stat-card.error {{
+                    border-left-color: #dc3545;
+                }}
+                .stat-label {{
+                    font-size: 12px;
+                    color: #666;
+                    text-transform: uppercase;
+                    margin-bottom: 5px;
+                }}
+                .stat-value {{
+                    font-size: 28px;
+                    font-weight: bold;
+                    color: #1a73e8;
+                }}
+                .stat-card.excellent .stat-value {{
+                    color: #28a745;
+                }}
+                .stat-card.warning .stat-value {{
+                    color: #ffc107;
+                }}
+                .stat-card.error .stat-value {{
+                    color: #dc3545;
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    padding-top: 20px;
+                    border-top: 2px solid #ddd;
+                    font-size: 12px;
+                    color: #666;
+                    text-align: center;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>🎯 Customer Recommendation Run Complete</h2>
+                <p><strong>Completed:</strong> {formatted_time}</p>
+
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Customers Processed</div>
+                        <div class="stat-value">{totals.get('customers_processed', 0)}</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-label">Customers with Matches</div>
+                        <div class="stat-value">{totals.get('customers_with_matches', 0)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Listings Evaluated</div>
+                        <div class="stat-value">{totals.get('total_evaluated', 0)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">High-Scoring Listings (70+)</div>
+                        <div class="stat-value">{totals.get('total_high_scoring', 0)}</div>
+                    </div>
+                    <div class="stat-card excellent">
+                        <div class="stat-label">Excellent Matches (90+)</div>
+                        <div class="stat-value">{totals.get('total_excellent', 0)}</div>
+                    </div>
+                    <div class="stat-card {'error' if totals.get('errors', 0) > 0 else ''}">
+                        <div class="stat-label">Errors</div>
+                        <div class="stat-value">{totals.get('errors', 0)}</div>
+                    </div>
+                </div>
+
+                {customer_details_html}
+
+                <div class="footer">
+                    <p>Wayber Real Estate Analytics - AI Recommendation System</p>
+                    <p>This summary covers all customers processed in this batch</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        send_email(
+            subject=f"AI Recommendations Complete: {totals.get('customers_processed', 0)} customers, {totals.get('total_high_scoring', 0)} matches",
+            html_content=summary_html,
+            recipient=defaultrecipient
+        )
+
+        return jsonify({"status": "success", "message": "Summary email sent"}), 200
+
+    except Exception as e:
+        print(f"Error sending recommendation summary email: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 

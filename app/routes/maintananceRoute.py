@@ -764,92 +764,74 @@ def clients_listing_Recommendation():
     customer_id = request.args.get("customer_id", type=int, default=None)
     customer = customerzonecontroller.get_customer(customer_id)
 
+    # Query already filters by customer's zone preferences
     forsalehomes = brieflistingcontroller.getListingByCustomerPreference(
         customer, FOR_SALE, 90
     ).all()
 
     updated_count = 0
     new_high_scoring_listings = []
+    all_evaluated_listings = []  # Track ALL evaluated listings for top 5
 
     # Configuration: set to True to send alerts to clients instead of admin
     SEND_TO_CLIENT = False
     HIGH_SCORE_THRESHOLD = 70
     EXCELLENT_SCORE_THRESHOLD = 90  # For priority alerts
 
-    # Get customer's zone interests
-    customer_zone_ids = [cz.zone_id for cz in customer.zones] if customer.zones else []
-    customer_zone_names = [cz.zone.zonename() for cz in customer.zones] if customer.zones else []
-
-    # Track skipped listings for reporting
-    skipped_count = 0
+    # Get listings already being tracked by customer
+    customer_tracked_listings = customerzpidcontroller.getlistingsofCustomerByCustomerID(customer_id) or []
+    tracked_zpids = set([cz.zpid for cz in customer_tracked_listings])
 
     for forsale_bl in forsalehomes:
-        # Check if this is a new listing (never evaluated before)
+        # Check if this listing has been evaluated before
         previous_eval = ailistingcontroller.get_latest_evaluation(customer_id, forsale_bl.zpid)
         is_new_listing = previous_eval is None
 
-        # Skip if nothing changed that matters (price)
-        if not ailistingcontroller.should_re_evaluate(customer_id, forsale_bl):
-            continue
+        if is_new_listing:
+            # New listing - run AI evaluation
+            propertydata = forsale_bl.getPropertyData()
+            brieflistingcontroller.updateBriefListing(forsale_bl)
 
-        propertydata = forsale_bl.getPropertyData()
-        brieflistingcontroller.updateBriefListing(forsale_bl)
+            ai_response = AIModel(
+                forsale_bl,
+                customer,
+                propertydata
+            )
+            likelihood_score = ai_response.get("likelihood_score", 0)
+            ai_comment = ai_response.get("reason", "")
+            current_price = forsale_bl.price
 
-        # Check if listing is in customer's interested zones
-        is_in_preferred_zone = forsale_bl.zone_id in customer_zone_ids if forsale_bl.zone_id else False
-        listing_zone_name = forsale_bl.zone.zonename() if forsale_bl.zone else "Unknown"
+            ailistingcontroller.save_ai_evaluation(
+                customer_id=customer_id,
+                zpid=forsale_bl.zpid,
+                ai_comment=ai_comment,
+                likelihood_score=likelihood_score,
+                listing_price=current_price,
+            )
 
-        # PRE-FILTER: Skip AI evaluation if listing is NOT in preferred zone AND fails basic criteria
-        if not is_in_preferred_zone and customer_zone_ids:  # Only apply zone filter if customer has zone preferences
-            # Check basic price fit
-            price_in_range = True
-            if customer.minprice and customer.maxprice and forsale_bl.price:
-                price_in_range = customer.minprice <= forsale_bl.price <= customer.maxprice
+            updated_count += 1
 
-            # Check basic size fit
-            size_in_range = True
-            if customer.minsqft and customer.maxsqft and forsale_bl.livingArea:
-                size_in_range = customer.minsqft <= forsale_bl.livingArea <= customer.maxsqft
+            # Track new high-scoring listings for email alerts
+            if likelihood_score >= HIGH_SCORE_THRESHOLD:
+                new_high_scoring_listings.append({
+                    'listing': forsale_bl,
+                    'score': likelihood_score,
+                    'reason': ai_comment,
+                    'customer': customer
+                })
+        else:
+            # Already evaluated - use existing evaluation
+            likelihood_score = previous_eval.likelihood_score
+            ai_comment = previous_eval.ai_comment
 
-            # Skip if both price AND size are out of range
-            if not price_in_range and not size_in_range:
-                skipped_count += 1
-                print(f"Skipped {forsale_bl.zpid} - wrong zone + price/size mismatch")
-                continue
-
-        # Passed pre-filter, send to AI for evaluation
-        ai_response = AIModel(
-            forsale_bl,
-            customer,
-            propertydata,
-            customer_zone_names=customer_zone_names,
-            listing_zone_name=listing_zone_name,
-            is_in_preferred_zone=is_in_preferred_zone
-        )
-        likelihood_score = ai_response.get("likelihood_score", 0)
-        ai_comment = ai_response.get("reason", "")
-
-        # Use BriefListing.price directly
-        current_price = forsale_bl.price
-
-        ailistingcontroller.save_ai_evaluation(
-            customer_id=customer_id,
-            zpid=forsale_bl.zpid,
-            ai_comment=ai_comment,
-            likelihood_score=likelihood_score,
-            listing_price=current_price,
-        )
-
-        updated_count += 1
-
-        # Track new high-scoring listings for email alerts
-        if is_new_listing and likelihood_score >= HIGH_SCORE_THRESHOLD:
-            new_high_scoring_listings.append({
-                'listing': forsale_bl,
-                'score': likelihood_score,
-                'reason': ai_comment,
-                'customer': customer
-            })
+        # Track ALL listings (new + existing) for comprehensive top 5
+        all_evaluated_listings.append({
+            'listing': forsale_bl,
+            'score': likelihood_score,
+            'reason': ai_comment,
+            'is_tracked': forsale_bl.zpid in tracked_zpids,
+            'is_new': is_new_listing
+        })
 
     # Send email alerts for new high-scoring listings
     excellent_matches = 0
@@ -870,11 +852,57 @@ def clients_listing_Recommendation():
                 is_excellent_match=is_excellent
             )
 
+    # Send comprehensive summary email to admin
+    from app.RouteModel.EmailModel import send_email, defaultrecipient
+    import pytz
+    from datetime import datetime
+
+    seattle_tz = pytz.timezone('America/Los_Angeles')
+    current_time = datetime.now(seattle_tz)
+    formatted_time = current_time.strftime('%B %d, %Y at %I:%M %p %Z')
+
+    # Get top 5 untracked listings sorted by score
+    untracked_listings = [item for item in all_evaluated_listings if not item['is_tracked']]
+    top_5_untracked = sorted(untracked_listings, key=lambda x: x['score'], reverse=True)[:5]
+
+    # Prepare summary data for all listings
+    all_listings_summary = sorted(all_evaluated_listings, key=lambda x: x['score'], reverse=True)
+    all_listings_summary_data = [{
+        'address': f"{item['listing'].streetAddress}, {item['listing'].city}",
+        'price': item['listing'].price,
+        'score': item['score'],
+        'is_tracked': item['is_tracked']
+    } for item in all_listings_summary]
+
+    # Render comprehensive email template
+    summary_html = render_template(
+        'EmailCampaignTemplate/email_comprehensive_recommendation_summary.html',
+        customer=customer,
+        formatted_time=formatted_time,
+        updated_count=updated_count,
+        new_high_scoring_count=len(new_high_scoring_listings),
+        excellent_matches=excellent_matches,
+        top_listings=top_5_untracked,
+        all_listings_summary=all_listings_summary_data,
+        send_to_client=SEND_TO_CLIENT
+    )
+
+    try:
+        send_email(
+            subject=f"🎯 AI Recommendations: {customer.name} - {updated_count} new evaluations, {len(new_high_scoring_listings)} high-scoring",
+            html_content=summary_html,
+            recipient=defaultrecipient
+        )
+        print(f"Comprehensive summary email sent for customer {customer.id}")
+    except Exception as e:
+        print(f"Error sending summary email: {e}")
+
     return {
-        "Updated Recommendations": updated_count,
+        "Total Listings Reviewed": len(all_evaluated_listings),
+        "New Evaluations": updated_count,
         "New High-Scoring Listings": len(new_high_scoring_listings),
         "Excellent Matches (90+)": excellent_matches,
-        "Skipped (zone + criteria mismatch)": skipped_count
+        "Top 5 Untracked": len(top_5_untracked)
     }, 200
 
 @maintanance_bp.route('/updateathing', methods=['post'])

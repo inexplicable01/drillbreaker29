@@ -40,19 +40,63 @@ def sendEmailtimecheck(message=None):
     current_time = datetime.now(seattle_tz)
     formatted_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z')
 
+    # Extract subject from first line of message or use default
+    if message:
+        lines = message.split('\n', 1)
+        subject = lines[0][:100] if lines else "Task Update"  # Limit subject to 100 chars
+        message_body = lines[1] if len(lines) > 1 else message
+    else:
+        subject = "Task Update"
+        message_body = ""
+
+    # Format message for HTML (preserve line breaks)
+    message_html = message_body.replace('\n', '<br>') if message_body else ""
+
     # Prepare the email content
     html_content = f"""
     <html>
+        <head>
+            <style>
+                body {{
+                    font-family: 'Courier New', monospace;
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                }}
+                .container {{
+                    max-width: 900px;
+                    margin: 0 auto;
+                    background-color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }}
+                .header {{
+                    color: #1a73e8;
+                    border-bottom: 2px solid #1a73e8;
+                    padding-bottom: 10px;
+                    margin-bottom: 20px;
+                }}
+                .content {{
+                    white-space: pre-wrap;
+                    font-size: 13px;
+                    line-height: 1.4;
+                }}
+            </style>
+        </head>
         <body>
-            <p>The email was sent on {formatted_time} (Seattle Time).</p>
-            <p>{message}</p>
+            <div class="container">
+                <div class="header">
+                    <h2>{subject}</h2>
+                    <p style="color: #666; font-size: 12px;">Sent on {formatted_time} (Seattle Time)</p>
+                </div>
+                <div class="content">{message_html}</div>
+            </div>
         </body>
     </html>
     """
-    # html_content=''
-    send_email(subject=message,
+    send_email(subject=subject,
                html_content=html_content,
-               recipient =defaultrecipient)
+               recipient=defaultrecipient)
 
 def sendEmailListingChange(message=None, title=None, hdpUrl=None):
     # subject, body, recipient = defaultrecipient, html_content = None
@@ -700,12 +744,24 @@ def send_new_listing_alert(listing, customer, score, reason, send_to_client=Fals
     )
 
     try:
+        # Send email to primary recipient (customer or admin)
         send_email(
             subject=subject,
             html_content=html_content,
             recipient=recipient
         )
         print(f"Email alert sent to {recipient} for listing {listing.zpid} (score: {score})")
+
+        # If sending to customer, also send copy to admin
+        if send_to_client and customer.email and customer.email != defaultrecipient:
+            admin_subject = f"[COPY] " + subject
+            send_email(
+                subject=admin_subject,
+                html_content=html_content,
+                recipient=defaultrecipient
+            )
+            print(f"Copy sent to admin for listing {listing.zpid}")
+
     except Exception as e:
         print(f"Error sending email alert: {e}")
 

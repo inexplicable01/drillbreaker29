@@ -1,12 +1,7 @@
 import requests
 from datetime import datetime
 import sys
-import os
-from dotenv import load_dotenv
-import argparse
-# # Load API key
-# load_dotenv()
-# base = os.getenv("BASE")
+
 
 import argparse
 
