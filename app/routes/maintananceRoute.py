@@ -773,8 +773,9 @@ def clients_listing_Recommendation():
     new_high_scoring_listings = []
     all_evaluated_listings = []  # Track ALL evaluated listings for top 5
 
-    # Configuration: set to True to send alerts to clients instead of admin
-    SEND_TO_CLIENT = False
+    # Configuration: controllable via query parameter
+    # ?send_to_client=true to send to customer, false/omit to send to admin (default)
+    SEND_TO_CLIENT = request.args.get("send_to_client", "false").lower() == "true"
     HIGH_SCORE_THRESHOLD = 70
     EXCELLENT_SCORE_THRESHOLD = 90  # For priority alerts
 

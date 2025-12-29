@@ -11,6 +11,12 @@ parser.add_argument(
     default="local",
     help="Which base URL to use: 'local' or 'prod' (default: local)",
 )
+parser.add_argument(
+    "--send-to-client",
+    action="store_true",
+    default=False,
+    help="Send emails to clients instead of admin (default: False - sends to admin)",
+)
 
 args = parser.parse_args()
 
@@ -18,6 +24,13 @@ if args.base == "local":
     base = "http://127.0.0.1:5000/"
 else:  # "prod"
     base = "https://www.drillbreaker29.com/"
+
+# Display mode
+print("="*50)
+print(f"Running in {'PRODUCTION' if args.send_to_client else 'TESTING'} mode")
+print(f"Emails will go to: {'CLIENTS' if args.send_to_client else 'ADMIN'}")
+print("="*50)
+print()
 
 # from the project
 
@@ -54,7 +67,9 @@ totals = {
 
 for customer in level3_buyer:
     try:
-        url = f"{base}maintanance/clients_listing_Recommendation?customer_id={customer['id']}"
+        # Add send_to_client parameter to URL
+        send_to_client_param = "true" if args.send_to_client else "false"
+        url = f"{base}maintanance/clients_listing_Recommendation?customer_id={customer['id']}&send_to_client={send_to_client_param}"
         response = requests.request("PATCH", url, headers=headers, data=payload)
 
         if response.status_code == 200:

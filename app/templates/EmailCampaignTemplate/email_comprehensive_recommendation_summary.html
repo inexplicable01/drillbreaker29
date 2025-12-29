@@ -103,30 +103,30 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🎯 AI Recommendation Summary</h1>
-            <p style="margin: 5px 0; opacity: 0.9;">Customer: {{ customer.name }} {{ customer.lastname or '' }} (ID: {{ customer.id }})</p>
+            <h1>Wayber Recommendation Summary</h1>
+{#            <p style="margin: 5px 0; opacity: 0.9;">Customer: {{ customer.name }} {{ customer.lastname or '' }} (ID: {{ customer.id }})</p>#}
             <p style="margin: 5px 0; font-size: 14px; opacity: 0.8;">{{ formatted_time }}</p>
         </div>
-
-        <!-- Statistics Grid -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Listings Evaluated</div>
-                <div class="stat-value">{{ updated_count }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">High-Scoring (70+)</div>
-                <div class="stat-value" style="color: #28a745;">{{ new_high_scoring_count }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Excellent (90+)</div>
-                <div class="stat-value" style="color: #ffc107;">{{ excellent_matches }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Skipped</div>
-                <div class="stat-value" style="color: #6c757d;">{{ skipped_count }}</div>
-            </div>
-        </div>
+{##}
+{#        <!-- Statistics Grid -->#}
+{#        <div class="stats-grid">#}
+{#            <div class="stat-card">#}
+{#                <div class="stat-label">Listings Evaluated</div>#}
+{#                <div class="stat-value">{{ updated_count }}</div>#}
+{#            </div>#}
+{#            <div class="stat-card">#}
+{#                <div class="stat-label">High-Scoring (70+)</div>#}
+{#                <div class="stat-value" style="color: #28a745;">{{ new_high_scoring_count }}</div>#}
+{#            </div>#}
+{#            <div class="stat-card">#}
+{#                <div class="stat-label">Excellent (90+)</div>#}
+{#                <div class="stat-value" style="color: #ffc107;">{{ excellent_matches }}</div>#}
+{#            </div>#}
+{#            <div class="stat-card">#}
+{#                <div class="stat-label">Skipped</div>#}
+{#                <div class="stat-value" style="color: #6c757d;">{{ skipped_count }}</div>#}
+{#            </div>#}
+{#        </div>#}
 
         <!-- Top 5 Recommendations -->
         <div class="section">
@@ -207,7 +207,7 @@
         <!-- All Evaluations Table -->
         {% if all_listings_summary %}
         <div class="section" style="background-color: #f9f9f9;">
-            <h2>📊 All Evaluations ({{ all_listings_summary|length }} listings)</h2>
+            <h2>📊 Wayber Evaluations ({{ all_listings_summary|length }} listings)</h2>
             <table class="score-table">
                 <thead>
                     <tr>
