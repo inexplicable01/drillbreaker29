@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>New Listing Alert</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #1a73e8;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .score-section {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .score {
+            font-size: 56px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .score-label {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .ai-reason {
+            background-color: #e8f4fd;
+            padding: 20px;
+            margin: 20px;
+            border-left: 4px solid #1a73e8;
+            border-radius: 4px;
+        }
+        .ai-reason strong {
+            color: #1a73e8;
+            font-size: 16px;
+        }
+        .listing-details {
+            padding: 20px;
+        }
+        .listing-details h2 {
+            margin: 0 0 5px 0;
+            color: #1a73e8;
+            font-size: 24px;
+        }
+        .location {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        .detail-row {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .detail-value {
+            color: #333;
+            text-align: right;
+        }
+        .cta-section {
+            text-align: center;
+            padding: 30px 20px;
+            background-color: #f9f9f9;
+        }
+        .cta {
+            background-color: #1a73e8;
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .cta:hover {
+            background-color: #1557b0;
+        }
+        .customer-prefs {
+            margin: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border-top: 1px solid #ddd;
+        }
+        .customer-prefs h3 {
+            margin: 0 0 15px 0;
+            color: #555;
+            font-size: 16px;
+        }
+        .customer-prefs p {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>New Listing Alert!</h1>
+            <p>Customer: {{ customer.name }} {{ customer.lastname or '' }}</p>
+        </div>
+
+        <div class="score-section">
+            <div class="score-label">AI Match Score</div>
+            <div class="score">{{ score }}/100</div>
+        </div>
+
+        <!-- Property Image -->
+        {% if listing.imgSrc %}
+        <div style="width: 100%; height: 400px; overflow: hidden;">
+            <img src="{{ listing.imgSrc }}" alt="{{ listing.streetAddress }}" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        {% endif %}
+
+        <div class="ai-reason">
+            <strong>AI Analysis:</strong><br>
+            {{ reason }}
+        </div>
+
+        <div class="listing-details">
+            <h2>{{ listing.streetAddress }}</h2>
+            <p class="location">{{ listing.city }}, {{ listing.state }} {{ listing.zipcode }}</p>
+
+            <div class="detail-row">
+                <span class="detail-label">Price</span>
+                <span class="detail-value">${{ '{:,.0f}'.format(listing.price) if listing.price else 'N/A' }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Bedrooms</span>
+                <span class="detail-value">{{ listing.bedrooms or 'N/A' }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Bathrooms</span>
+                <span class="detail-value">{{ listing.bathrooms or 'N/A' }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Square Feet</span>
+                <span class="detail-value">{{ '{:,.0f}'.format(listing.livingArea) if listing.livingArea else 'N/A' }} sqft</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Home Type</span>
+                <span class="detail-value">{{ listing.homeType.replace('_', ' ').title() if listing.homeType else 'N/A' }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Days on Market</span>
+                <span class="detail-value">{{ listing.daysOnZillow or 'N/A' }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Year Built</span>
+                <span class="detail-value">{{ listing.yearBuilt or 'N/A' }}</span>
+            </div>
+
+            {% if listing.parkingSpaces %}
+            <div class="detail-row">
+                <span class="detail-label">Parking Spaces</span>
+                <span class="detail-value">{{ listing.parkingSpaces }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="cta-section">
+            <a href="{{ listing.hdpUrl }}" class="cta" target="_blank">
+                View Listing on Zillow
+            </a>
+        </div>
+
+        <div class="customer-prefs">
+            <h3>Customer Preferences</h3>
+            <p><strong>Budget:</strong> ${{ '{:,.0f}'.format(customer.minprice) if customer.minprice else 'N/A' }} - ${{ '{:,.0f}'.format(customer.maxprice) if customer.maxprice else 'N/A' }}</p>
+            <p><strong>Square Feet:</strong> {{ customer.minsqft or 'N/A' }} - {{ customer.maxsqft or 'N/A' }}</p>
+            <p><strong>Parking Spaces Needed:</strong> {{ customer.parkingspaceneeded or 'N/A' }}</p>
+            {% if customer.idealprice %}
+            <p><strong>Ideal Price:</strong> ${{ '{:,.0f}'.format(customer.idealprice) }}</p>
+            {% endif %}
+        </div>
+
+        <div class="footer">
+            <p>Wayber Real Estate Analytics</p>
+            <p>This is an automated alert based on AI analysis</p>
+        </div>
+    </div>
+</body>
+</html>

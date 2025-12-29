@@ -983,7 +983,7 @@ def updateathing5():
     listings = (BriefListing.query.filter(BriefListing.city=="Seattle")
                 .filter(BriefListing.zone_id.is_(None)).all())
 
-    for polygon in zonepolygons:
+    for polygon in zonepolygons[-2:-1]:
         cityname = None
         neighbourhood = None
         zone = 99999
@@ -993,7 +993,7 @@ def updateathing5():
         #                                       ,"Mill Creek East"] :
         # # if polygon["zone"].zonename() not in ["Bothell North"] :
         #     continue
-        for brieflisting in listings[0:100]:
+        for brieflisting in listings:
             print(brieflisting)
             oldzone = brieflisting.zone_id
             if oldzone is None:
@@ -1001,8 +1001,8 @@ def updateathing5():
             # brieflisting.getPropertyData()
             if polygon["geom"].contains(Point(brieflisting.longitude, brieflisting.latitude)):
                 zone = polygon["zone"]
-                cityname = zone.City
-                neighbourhood = zone.neighbourhood
+                # cityname = zone.City
+                # neighbourhood = zone.neighbourhood
                 brieflisting.zone_id = zone.id
                 if brieflisting.zone_id != oldzone:
                     print(f"Zone being Updated! {brieflisting}")

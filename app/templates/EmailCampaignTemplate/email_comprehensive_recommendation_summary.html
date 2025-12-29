@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AI Recommendation Summary - {{ customer.name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 30px;
+            background-color: #f9f9f9;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1a73e8;
+            margin: 10px 0;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .section {
+            padding: 30px;
+        }
+        .section h2 {
+            color: #1a73e8;
+            margin: 0 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1a73e8;
+        }
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .score-table th {
+            background-color: #f0f0f0;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid #ddd;
+        }
+        .score-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .score-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .score-excellent { background-color: #28a745; color: white; }
+        .score-good { background-color: #17a2b8; color: white; }
+        .score-decent { background-color: #ffc107; color: #333; }
+        .score-weak { background-color: #6c757d; color: white; }
+        .footer {
+            background-color: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎯 AI Recommendation Summary</h1>
+            <p style="margin: 5px 0; opacity: 0.9;">Customer: {{ customer.name }} {{ customer.lastname or '' }} (ID: {{ customer.id }})</p>
+            <p style="margin: 5px 0; font-size: 14px; opacity: 0.8;">{{ formatted_time }}</p>
+        </div>
+
+        <!-- Statistics Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Listings Evaluated</div>
+                <div class="stat-value">{{ updated_count }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">High-Scoring (70+)</div>
+                <div class="stat-value" style="color: #28a745;">{{ new_high_scoring_count }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Excellent (90+)</div>
+                <div class="stat-value" style="color: #ffc107;">{{ excellent_matches }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Skipped</div>
+                <div class="stat-value" style="color: #6c757d;">{{ skipped_count }}</div>
+            </div>
+        </div>
+
+        <!-- Top 5 Recommendations -->
+        <div class="section">
+            <h2>🏆 Top Untracked Recommendations</h2>
+            {% if top_listings and top_listings|length > 0 %}
+            <p style="color: #666; margin-bottom: 20px;">These are the {{ top_listings|length }} highest-scoring listings that aren't currently being tracked.</p>
+
+            {% for item in top_listings %}
+            {% set listing = item.listing %}
+            {% set score = item.score %}
+            {% set reason = item.reason %}
+
+            <!-- Listing Card -->
+            <div style="margin: 20px 0; border: 2px solid {% if score >= 90 %}#28a745{% elif score >= 70 %}#1a73e8{% else %}#ffc107{% endif %}; border-radius: 12px; overflow: hidden;">
+                <!-- Score Banner -->
+                <div style="background: {% if score >= 90 %}#28a745{% elif score >= 70 %}#1a73e8{% else %}#ffc107{% endif %}; color: white; padding: 15px; text-align: center;">
+                    <span style="font-size: 24px; font-weight: bold;">{{ score }}/100</span>
+                    <span style="margin-left: 15px; opacity: 0.9;">{% if score >= 90 %}EXCELLENT MATCH{% elif score >= 80 %}VERY GOOD MATCH{% elif score >= 70 %}GOOD MATCH{% else %}DECENT MATCH{% endif %}</span>
+                </div>
+
+                <!-- Property Image -->
+                {% if listing.imgSrc %}
+                <div style="width: 100%; height: 300px; overflow: hidden;">
+                    <img src="{{ listing.imgSrc }}" alt="{{ listing.streetAddress }}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                {% endif %}
+
+                <!-- Listing Details -->
+                <div style="padding: 20px; background-color: white;">
+                    <h3 style="margin: 0 0 10px 0; color: #333; font-size: 20px;">
+                        {{ listing.streetAddress }}
+                    </h3>
+                    <p style="color: #666; margin: 0 0 15px 0;">
+                        {{ listing.city }}, {{ listing.state }} {{ listing.zipcode }}
+                    </p>
+
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 15px 0;">
+                        <div>
+                            <div style="font-size: 12px; color: #666; text-transform: uppercase;">Price</div>
+                            <div style="font-size: 18px; font-weight: bold; color: #1a73e8;">${{ '{:,.0f}'.format(listing.price) if listing.price else 'N/A' }}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #666; text-transform: uppercase;">Beds / Baths</div>
+                            <div style="font-size: 18px; font-weight: bold;">{{ listing.bedrooms or '?' }} / {{ listing.bathrooms or '?' }}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #666; text-transform: uppercase;">Sq Ft</div>
+                            <div style="font-size: 18px; font-weight: bold;">{{ '{:,.0f}'.format(listing.livingArea) if listing.livingArea else 'N/A' }}</div>
+                        </div>
+                    </div>
+
+                    <div style="background-color: #f0f8ff; padding: 15px; border-left: 4px solid #1a73e8; margin: 15px 0;">
+                        <div style="font-weight: bold; color: #1a73e8; margin-bottom: 5px;">AI Analysis:</div>
+                        <div style="color: #333;">{{ reason }}</div>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <a href="{{ listing.hdpUrl }}" target="_blank" style="
+                            display: inline-block;
+                            background-color: #1a73e8;
+                            color: white;
+                            text-decoration: none;
+                            padding: 12px 24px;
+                            border-radius: 6px;
+                            font-weight: bold;
+                        ">View on Zillow →</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="color: #999; font-style: italic; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
+                No untracked listings were evaluated in this run, or all evaluated listings are already being tracked by the customer.
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- All Evaluations Table -->
+        {% if all_listings_summary %}
+        <div class="section" style="background-color: #f9f9f9;">
+            <h2>📊 All Evaluations ({{ all_listings_summary|length }} listings)</h2>
+            <table class="score-table">
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>Price</th>
+                        <th>Score</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in all_listings_summary[:20] %}
+                    <tr>
+                        <td>{{ item.address }}</td>
+                        <td>${{ '{:,.0f}'.format(item.price) if item.price else 'N/A' }}</td>
+                        <td>
+                            <span class="score-badge {% if item.score >= 80 %}score-excellent{% elif item.score >= 70 %}score-good{% elif item.score >= 50 %}score-decent{% else %}score-weak{% endif %}">
+                                {{ item.score }}
+                            </span>
+                        </td>
+                        <td style="font-size: 12px; color: #666;">
+                            {% if item.is_tracked %}Already Tracking{% else %}Not Tracked{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if all_listings_summary|length > 20 %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #666; font-style: italic;">
+                            ... and {{ all_listings_summary|length - 20 }} more listings
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Email Mode:</strong> {{ 'Sending to CUSTOMER' if send_to_client else 'Sending to ADMIN (test mode)' }}</p>
+            <p>Wayber Real Estate Analytics - AI-Powered Listing Recommendations</p>
+            <p style="margin-top: 10px; color: #999;">This email provides comprehensive details about the AI recommendation system's performance.</p>
+        </div>
+    </div>
+</body>
+</html>

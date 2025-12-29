@@ -43,13 +43,15 @@ def sendEmailtimecheck(message=None):
     # Extract subject from first line of message or use default
     if message:
         lines = message.split('\n', 1)
-        subject = lines[0][:100] if lines else "Task Update"  # Limit subject to 100 chars
-        message_body = lines[1] if len(lines) > 1 else message
+        subject = lines[0] if lines else "Task Update"
+        # Keep subject clean and short - remove special chars that cause encoding issues
+        subject = subject[:78]  # Email subject should be under 78 chars for best compatibility
+        message_body = lines[1] if len(lines) > 1 else ""
     else:
         subject = "Task Update"
         message_body = ""
 
-    # Format message for HTML (preserve line breaks)
+    # Format message for HTML (preserve line breaks and spacing)
     message_html = message_body.replace('\n', '<br>') if message_body else ""
 
     # Prepare the email content
@@ -80,6 +82,7 @@ def sendEmailtimecheck(message=None):
                     white-space: pre-wrap;
                     font-size: 13px;
                     line-height: 1.4;
+                    font-family: 'Courier New', monospace;
                 }}
             </style>
         </head>
@@ -191,17 +194,18 @@ def sendEmailListingChange(message=None, title=None, hdpUrl=None, customer=None)
       </body>
     </html>
     """
-    # Send email to customer
+    # Send email to customer (or admin if no customer email)
     send_email(
         subject=title,
         html_content=html_content,
         recipient=recipient
     )
 
-    # Also send a copy to admin if sending to customer
-    if customer and customer_email and customer_email != defaultrecipient:
+    # ALWAYS send a copy to admin (skip if customer email is the same as admin email)
+    if recipient != defaultrecipient:
+        admin_subject = f"[COPY for {customer_name or 'Customer'}] {title}"
         send_email(
-            subject=f"[COPY] {title}",
+            subject=admin_subject,
             html_content=html_content,
             recipient=defaultrecipient
         )
