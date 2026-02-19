@@ -195,10 +195,12 @@ def sendEmailListingChange(message=None, title=None, hdpUrl=None, customer=None)
     </html>
     """
     # Send email to customer (or admin if no customer email)
+    # LEADNURTURING
     send_email(
         subject=title,
         html_content=html_content,
-        recipient=recipient
+        # recipient=recipient,
+        recipient=defaultrecipient
     )
 
     # ALWAYS send a copy to admin (skip if customer email is the same as admin email)

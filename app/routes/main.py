@@ -30,6 +30,7 @@ def api_zillow_search_by_address():
     """
     data = request.get_json(silent=True) or {}
     address = data.get("address")
+    print("Confirmed on this fucking morning ")
 
     if not address:
         return jsonify({"error": "Missing 'address' in JSON body"}), 400
