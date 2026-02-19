@@ -263,7 +263,7 @@ def SearchZillowByAddress(addressStr):
     url = "https://zllw-working-api.p.rapidapi.com/pro/byaddress"
     response = requests.get(url, headers=headers, params=querystring)
     time.sleep(0.5)
-
+    print("print confirmed")
     if response.status_code == 502:
         warn('502 on ' + addressStr)
         return None
