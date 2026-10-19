@@ -162,7 +162,6 @@ def autocomplete():
 
 import folium
 from shapely.geometry import shape, Point
-import fiona
 def isHomeForSale(address):
     addressjson = SearchZillowByAddress(address)
     if addressjson:

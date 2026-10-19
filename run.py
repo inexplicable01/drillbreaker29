@@ -37,6 +37,8 @@
 # # scheduler.add_job(func=check_new_listings, trigger="interval", minutes=1)
 # # scheduler.start()
 #     # app.run()
+import matplotlib
+matplotlib.use("Agg")  # no GUI backend; Tk crashes when used from Flask worker threads
 from app import create_app, db
 import logging
 

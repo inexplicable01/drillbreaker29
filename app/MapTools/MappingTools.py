@@ -1,9 +1,9 @@
 import folium
 from shapely.geometry import shape, Point
-import fiona
 import json
 
 def load_geojson(geojson_path):
+    import fiona
     with fiona.open(geojson_path, 'r') as src:
         features = [feature for feature in src]
     return features
