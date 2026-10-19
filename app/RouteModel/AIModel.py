@@ -1,5 +1,5 @@
 import os
-from openai import OpenAI
+import anthropic
 from flask import Blueprint, request, jsonify
 from dotenv import load_dotenv
 import json
@@ -11,9 +11,18 @@ from app.DBFunc.CustomerDescriptionController import customer_description_contro
 
 # Load API key
 load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_apiKey")
-client = OpenAI(api_key=OPENAI_API_KEY)
-# client = OpenAI()
+client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
+
+# Schema for the listing match score (enforced via structured outputs)
+LIKELIHOOD_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "likelihood_score": {"type": "integer"},
+        "reason": {"type": "string"},
+    },
+    "required": ["likelihood_score", "reason"],
+    "additionalProperties": False,
+}
 
 def AIModel(brieflisting, customer, propertydata, customer_zone_names=None, listing_zone_name=None, is_in_preferred_zone=False):
     """
@@ -143,21 +152,30 @@ Provide your evaluation in this EXACT JSON format:
 Be honest and critical. Use the full 0-100 range. Keep reason brief but informative.
 """
 
-    # Send prompt to OpenAI API with consistency controls
+    # Send prompt to Claude
+    ai_result = None
     try:
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            temperature=0.3,  # Lower temperature for more consistent scoring
-            messages=[
-                {"role": "system", "content": "You are an expert real estate matching AI. You evaluate listings objectively and score them accurately based on buyer preferences. You are concise and honest."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_object"}  # Enforce JSON response
+        message = client.messages.create(
+            model="claude-opus-5-5",
+            max_tokens=16000,
+            system="You are an expert real estate matching AI. You evaluate listings objectively and score them accurately based on buyer preferences. You are concise and honest.",
+            messages=[{"role": "user", "content": prompt}],
+            # SDK 0.72 (last release for Python 3.8) has no output_config/fallbacks params, so send them raw
+            extra_headers={"anthropic-beta": "server-side-fallback-2026-07-01"},
+            extra_body={
+                "output_config": {
+                    "effort": "low",
+                    "format": {"type": "json_schema", "schema": LIKELIHOOD_SCHEMA},
+                },
+                "fallbacks": "default",
+            },
         )
 
-        print(completion.choices[0].message)
+        if message.stop_reason == "refusal":
+            raise ValueError("Claude declined to score this listing")
 
-        ai_result = completion.choices[0].message.content
+        ai_result = "".join(b.text for b in message.content if getattr(b, "type", None) == "text")
+        print(ai_result)
         result = json.loads(ai_result)
 
         # Validate result structure

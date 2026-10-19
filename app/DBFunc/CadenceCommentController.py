@@ -11,6 +11,25 @@ from app.extensions import db
 
 # ----------------------- helpers -----------------------
 
+def _claude_text(prompt: str) -> Optional[str]:
+    """Send a single prompt to Claude and return the text reply, or None if no key / refused."""
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        return None
+    import anthropic
+    client = anthropic.Anthropic()
+    resp = client.messages.create(
+        model="claude-opus-5-5",
+        max_tokens=16000,
+        messages=[{"role": "user", "content": prompt}],
+        # SDK 0.72 (last release for Python 3.8) has no output_config/fallbacks params, so send them raw
+        extra_headers={"anthropic-beta": "server-side-fallback-2026-07-01"},
+        extra_body={"output_config": {"effort": "low"}, "fallbacks": "default"},
+    )
+    if resp.stop_reason == "refusal":
+        return None
+    return "".join(b.text for b in resp.content if getattr(b, "type", None) == "text").strip()
+
+
 def _to_float(x: Any) -> Optional[float]:
     if x is None:
         return None
@@ -320,17 +339,7 @@ class CommentController:
         text_out: Optional[str] = None
 
         try:
-            from openai import OpenAI
-            api_key = os.getenv("OPENAI_apiKey")
-            if api_key:
-                client = OpenAI(api_key=api_key)
-                resp = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.4,
-                    max_tokens=500,
-                )
-                text_out = (resp.choices[0].message.content or "").strip()
+            text_out = _claude_text(prompt)
         except Exception:
             text_out = None
 
@@ -418,17 +427,7 @@ class CommentController:
 
         text_out: Optional[str] = None
         try:
-            from openai import OpenAI
-            api_key = os.getenv("OPENAI_apiKey")
-            if api_key:
-                client = OpenAI(api_key=api_key)
-                resp = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.3,
-                    max_tokens=500,
-                )
-                text_out = (resp.choices[0].message.content or "").strip()
+            text_out = _claude_text(prompt)
         except Exception:
             text_out = None
 
