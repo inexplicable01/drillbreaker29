@@ -16,7 +16,7 @@ from app.ZillowAPI.ZillowDataProcessor import ListingLengthbyBriefListing, \
     loadPropertyDataFromBrief, ListingStatus
 from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID, SearchZillowHomesFSBO, SearchZillowHomesByLocation
 from datetime import datetime
-from app.RouteModel.BriefListingsVsApi import ZPIDinDBNotInAPI_FORSALE, EmailCustomersIfInterested
+from app.RouteModel.BriefListingsVsApi import ZPIDinDBNotInAPI_FORSALE
 from app.config import RECENTLYSOLD, LIKELYSOLDWITHOUTAGENTS, OTHER, AUCTIONITEM, FOR_RENT
 maintanance_bp = Blueprint('maintanance_bp', __name__, url_prefix='/maintanance')
 
@@ -207,7 +207,6 @@ def maintainSoldListings():
                 'new_sold': 0,
                 'pending_to_sold': 0,
                 'forsale_to_sold': 0,
-                'customer_alerts_sent': 0,
                 'errors': 0,
                 'pending_to_sold_list': [],  # List of properties with addresses
                 'forsale_to_sold_list': []   # List of properties with addresses
@@ -224,7 +223,6 @@ def maintainSoldListings():
             solddb = brieflistingcontroller.SoldHomesinSearch_Neigh(search_neigh=city, days_ago=doz)
             solddb_ids = [listing.zpid for listing in solddb]
             newsoldbriefs = []
-            zpidofinterest = customerzpidcontroller.getAllZPIDS_Customerzpids()
 
             for ccc, brieflisting in enumerate(soldbrieflistingarr):
                 # if ccc>10:
@@ -251,10 +249,6 @@ def maintainSoldListings():
                                 'price': brieflisting.price
                             })
 
-                        if brieflisting.zpid in zpidofinterest:
-                            EmailCustomersIfInterested(brieflisting.zpid, brieflisting, brieflistinginDB)
-                            stats['customer_alerts_sent'] += 1
-
                         brieflistinginDB.homeStatus = brieflisting.homeStatus
                         brieflistinginDB.soldprice = brieflisting.price
                         brieflistinginDB.price = brieflisting.price
@@ -262,7 +256,7 @@ def maintainSoldListings():
                         brieflistinginDB.getPropertyData()
                         brieflistinginDB.search_neigh = city
 
-                        brieflistingcontroller.setZoneForBriefListing(brieflisting, zonepolygons)
+                        brieflistingcontroller.setZoneForBriefListing(brieflistinginDB, zonepolygons)
                         if brieflistinginDB.NWMLS_id is None:
                             print(brieflistinginDB)
                         brieflistingcontroller.updateBriefListing(brieflistinginDB)
@@ -312,7 +306,6 @@ def maintainPendingListings():
             'still_pending': 0,
             'pending_to_forsale': 0,
             'pending_to_sold': 0,
-            'customer_alerts_sent': 0,
             'errors': 0,
             'pending_to_forsale_list': [],  # List of properties that went from pending back to for sale
             'pending_to_sold_list': []      # List of properties that went from pending to sold
@@ -320,7 +313,6 @@ def maintainPendingListings():
 
         brieflistingpendingdb = brieflistingcontroller.getallPendings(city)
         stats['total_pending_checked'] = len(brieflistingpendingdb)
-        zpidofinterest = customerzpidcontroller.getAllZPIDS_Customerzpids()
 
         for brieflistingdb in brieflistingpendingdb:
             try:
@@ -342,12 +334,8 @@ def maintainPendingListings():
                         'price': brieflistingapi.price
                     })
 
-                    if brieflistingdb.zpid in zpidofinterest:
-                        EmailCustomersIfInterested(brieflistingdb.zpid, brieflistingapi, brieflistingdb)
-                        stats['customer_alerts_sent'] += 1
-
                     brieflistingdb.homeStatus = status
-                    brieflistingdb.getPropertyData()
+                    brieflistingdb.getPropertyData(propertydata)
                     brieflistingdb.search_neigh = city
                     brieflistingcontroller.updateBriefListing(brieflistingdb)
                     continue
@@ -360,12 +348,8 @@ def maintainPendingListings():
                         'price': brieflistingapi.price
                     })
 
-                    if brieflistingdb.zpid in zpidofinterest:
-                        EmailCustomersIfInterested(brieflistingdb.zpid, brieflistingapi, brieflistingdb)
-                        stats['customer_alerts_sent'] += 1
-
                     brieflistingdb.homeStatus = status
-                    brieflistingdb.getPropertyData()
+                    brieflistingdb.getPropertyData(propertydata)
                     brieflistingdb.search_neigh = city
                     listresults = ListingLengthbyBriefListing(propertydata)
                     brieflistingdb.dateSold = listresults['solddate'].timestamp()
@@ -396,7 +380,6 @@ def maintainForSaleListings():
                 'total_api_results': 0,
                 'new_for_sale': 0,
                 'price_changes': 0,
-                'customer_alerts_sent': 0,
                 'mismanaged': 0,
                 'errors': 0,
                 'new_for_sale_list': [],    # List of new listings that came online
@@ -417,7 +400,6 @@ def maintainForSaleListings():
             for_sale_DB = brieflistingcontroller.forSaleInSearchNeigh(city)
             forsaledb_dict = {brieflist.zpid: brieflist for brieflist in for_sale_DB}
             forsaledb_ids = forsaledb_dict.keys()
-            zpidofinterest = customerzpidcontroller.getAllZPIDS_Customerzpids()
 
             for api_zpid, brieflisting in forsaleAPIbrief_dict.items():
                 count += 1
@@ -434,10 +416,6 @@ def maintainForSaleListings():
                             'old_price': brieflistdb.price,
                             'new_price': brieflisting.price
                         })
-
-                        if api_zpid in zpidofinterest:
-                            EmailCustomersIfInterested(api_zpid, brieflisting, brieflistdb)
-                            stats['customer_alerts_sent'] += 1
 
                         brieflistdb.getPropertyData()
                         brieflistdb.search_neigh = city
@@ -530,7 +508,6 @@ def maintainSoldListingsByZone():
             solddb_ids = [listing.zpid for listing in solddb]
 
             newsoldbriefs = []
-            zpidofinterest = customerzpidcontroller.getAllZPIDS_Customerzpids()
 
             for ccc, brieflisting in enumerate(soldbrieflistingarr):
                 if brieflisting.zpid in solddb_ids:
@@ -544,9 +521,6 @@ def maintainSoldListingsByZone():
                             print(brieflisting.__str__() + ' has changed from Pending to SOLD!!!')
                         elif brieflistinginDB.homeStatus == 'FOR_SALE':
                             print(brieflisting.__str__() + ' has changed from For sale to Sold!!!')
-
-                        if brieflisting.zpid in zpidofinterest:
-                            EmailCustomersIfInterested(brieflisting.zpid, brieflisting, brieflistinginDB)
 
                         brieflistinginDB.homeStatus = brieflisting.homeStatus
                         brieflistinginDB.soldprice = brieflisting.price
@@ -614,7 +588,6 @@ def maintainFORSALEListingsByZone():
                 BriefListing.homeStatus == FOR_SALE
             ).all()
             forsaledb_ids = [brieflist.zpid for brieflist in for_sale_DB]
-            zpidofinterest = customerzpidcontroller.getAllZPIDS_Customerzpids()
 
             for api_zpid, brieflisting in forsaleAPIbrief_dict.items():
                 count += 1
@@ -625,9 +598,6 @@ def maintainFORSALEListingsByZone():
                     if brieflistdb.price != brieflisting.price:
                         print(f"Price Change for {brieflistdb}")
                         print(f"From {brieflistdb.price} to {brieflisting.price}")
-
-                        if api_zpid in zpidofinterest:
-                            EmailCustomersIfInterested(api_zpid, brieflisting, brieflistdb)
 
                         brieflistdb.getPropertyData()
                         brieflistdb.zone_id = zone_id

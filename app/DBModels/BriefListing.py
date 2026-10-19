@@ -177,8 +177,10 @@ class BriefListing(db.Model):
             'zone_id': self.zone_id
         }
 
-    def getPropertyData(self):
-        propertydata = loadPropertyDataFromBrief(self)
+    def getPropertyData(self, propertydata=None):
+        # Pass propertydata when it was already fetched, to skip a second paid API call
+        if propertydata is None:
+            propertydata = loadPropertyDataFromBrief(self)
         listresults = ListingLengthbyBriefListing(propertydata)
         self.updateListingLength(listresults)
         try:

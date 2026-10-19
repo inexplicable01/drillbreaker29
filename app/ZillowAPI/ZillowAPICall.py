@@ -455,7 +455,8 @@ def SearchZillowHomesByLocation(location, status="Sold", soldInLast = "90_days",
     houseresult = []
     print(f'Searching {status} homes in location: {location}')
 
-    interval = 1000
+    # Start with the whole size range in one search; only split when Zillow's 1000-result cap is hit
+    interval = max_sqft
     minhomesize = 0
     maxhomesize = interval + minhomesize
 
@@ -522,8 +523,8 @@ def SearchZillowHomesByLocation(location, status="Sold", soldInLast = "90_days",
                 lastpage += 1
 
                 if maxpage == 0:
-                    maxpage = maxpagebackup
                     print('No results found.')
+                    break  # nothing in this band, don't request page 2
 
                 if totalMatchingCount >= 1000:
                     print("Search too large for interval, reducing...")
@@ -538,10 +539,6 @@ def SearchZillowHomesByLocation(location, status="Sold", soldInLast = "90_days",
         if should_restart:
             continue  # restart outer loop with adjusted interval
 
-        if maxhomesize >= max_sqft:
-            print("All intervals processed.")
-            break
-
         for listing in results_in_this_interval:
             zpid = listing.get('zpid')
             if zpid and zpid not in seen_ids:
@@ -549,7 +546,12 @@ def SearchZillowHomesByLocation(location, status="Sold", soldInLast = "90_days",
                 houseresult.append(listing)
         print(f'Found {len(houseresult)} unique results Cummulatively.')
 
-        # Move to the next range with small overlap
+        if maxhomesize >= max_sqft:
+            print("All intervals processed.")
+            break
+
+        # Move to the next range with small overlap; widen again since larger homes are sparser
+        interval = interval * 2
         minhomesize = maxhomesize
         maxhomesize = min(minhomesize + interval, max_sqft)
 
@@ -645,12 +647,13 @@ def SearchZillowHomesByZone(zone, status="Sold", soldInLast="90_days"):
     houseresult = []
     print(f'Searching {status} homes in zone: {zone.zonename()}')
 
-    interval = 1000
+    max_sqft = 10000
+    # Start with the whole size range in one search; only split when Zillow's 1000-result cap is hit
+    interval = max_sqft
     minhomesize = 0
     maxhomesize = interval + minhomesize
 
     seen_ids = set()
-    max_sqft = 10000
     min_interval = 20
 
     while True:
@@ -712,8 +715,8 @@ def SearchZillowHomesByZone(zone, status="Sold", soldInLast="90_days"):
                 lastpage += 1
 
                 if maxpage == 0:
-                    maxpage = maxpagebackup
                     print('No results found.')
+                    break  # nothing in this band, don't request page 2
 
                 if totalMatchingCount >= 1000:
                     print("Search too large for interval, reducing...")
@@ -729,10 +732,6 @@ def SearchZillowHomesByZone(zone, status="Sold", soldInLast="90_days"):
         if should_restart:
             continue
 
-        if maxhomesize >= max_sqft:
-            print("All intervals processed.")
-            break
-
         for listing in results_in_this_interval:
             zpid = listing.get('zpid')
             if zpid and zpid not in seen_ids:
@@ -740,6 +739,12 @@ def SearchZillowHomesByZone(zone, status="Sold", soldInLast="90_days"):
                 houseresult.append(listing)
         print(f'Found {len(houseresult)} unique results Cummulatively.')
 
+        if maxhomesize >= max_sqft:
+            print("All intervals processed.")
+            break
+
+        # Widen again since larger homes are sparser
+        interval = interval * 2
         minhomesize = maxhomesize
         maxhomesize = min(minhomesize + interval, max_sqft)
 

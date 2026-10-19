@@ -109,7 +109,6 @@ for city_stats in all_stats['sold_details']:
     email_message += f"  New Sold: {city_stats['new_sold']}\n"
     email_message += f"  Pending → Sold: {city_stats['pending_to_sold']}\n"
     email_message += f"  For Sale → Sold: {city_stats['forsale_to_sold']}\n"
-    email_message += f"  Customer Alerts: {city_stats['customer_alerts_sent']}\n"
 
     if city_stats['pending_to_sold_list']:
         email_message += f"\n  Properties that went Pending → Sold:\n"
