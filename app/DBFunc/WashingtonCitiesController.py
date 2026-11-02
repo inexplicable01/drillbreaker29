@@ -37,6 +37,11 @@ class WashingtonCitiesController():
     def get_cities_by_county(self, counties):
         return [c.City for c in self.WashingtonCities.query.filter(self.WashingtonCities.county.in_(counties)).all()]
 
+    def get_cities_excluding_counties(self, counties):
+        # Cities with no county set are kept so they aren't silently dropped
+        county = self.WashingtonCities.county
+        return [c.City for c in self.WashingtonCities.query.filter(or_(county.is_(None), county.notin_(counties))).all()]
+
     # def get_city_names_for_level1_customers(self):
     #
     #     result = (

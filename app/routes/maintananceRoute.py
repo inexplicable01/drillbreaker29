@@ -61,10 +61,13 @@ def updateopenhouse():
 @maintanance_bp.route('/getCityList', methods=['GET'])
 def cityList():
     counties = request.args.getlist('county')  # Get list of counties from query parameters
+    excluded_counties = request.args.getlist('exclude_county')
 
     if counties:
         cities = washingtoncitiescontroller.get_cities_by_county(
             counties)  # Assuming this function filters cities by county
+    elif excluded_counties:
+        cities = washingtoncitiescontroller.get_cities_excluding_counties(excluded_counties)
     else:
         cities = washingtoncitiescontroller.getallcities()
 
@@ -218,7 +221,12 @@ def maintainSoldListings():
             stats['total_api_results'] = len(soldrawdata)
 
             for briefhomedata in soldrawdata:
-                soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+                # Skip a single malformed API record instead of failing the whole search
+                try:
+                    soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+                except Exception as e:
+                    print(e, briefhomedata.get('zpid'), 'Skipping malformed listing')
+                    stats['errors'] += 1
 
             solddb = brieflistingcontroller.SoldHomesinSearch_Neigh(search_neigh=city, days_ago=doz)
             solddb_ids = [listing.zpid for listing in solddb]
@@ -391,7 +399,12 @@ def maintainForSaleListings():
             stats['total_api_results'] = len(forsalerawdata)
 
             for briefhomedata in forsalerawdata:
-                forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+                # Skip a single malformed API record instead of failing the whole search
+                try:
+                    forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, city))
+                except Exception as e:
+                    print(e, briefhomedata.get('zpid'), 'Skipping malformed listing')
+                    stats['errors'] += 1
 
             forsaleAPIbrief_dict = {listing.zpid: listing for listing in forsalebrieflistingarr}
 
@@ -498,7 +511,11 @@ def maintainSoldListingsByZone():
             soldbrieflistingarr = []
             soldrawdata = SearchZillowHomesByZone(zone, status="Sold", soldInLast=soldInLast)
             for briefhomedata in soldrawdata:
-                soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, zone.City))
+                # Skip a single malformed API record instead of failing the whole search
+                try:
+                    soldbrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, zone.City))
+                except Exception as e:
+                    print(e, briefhomedata.get('zpid'), 'Skipping malformed listing')
 
             # Get sold listings from DB for this zone
             solddb = BriefListing.query.filter(
@@ -575,7 +592,11 @@ def maintainFORSALEListingsByZone():
             forsalebrieflistingarr = []
             forsalerawdata = SearchZillowHomesByZone(zone, status="For_Sale", soldInLast="Any")
             for briefhomedata in forsalerawdata:
-                forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, zone.City))
+                # Skip a single malformed API record instead of failing the whole search
+                try:
+                    forsalebrieflistingarr.append(BriefListing.CreateBriefListing(briefhomedata, None, None, zone.City))
+                except Exception as e:
+                    print(e, briefhomedata.get('zpid'), 'Skipping malformed listing')
 
             forsaleAPIbrief_dict = {listing.zpid: listing for listing in forsalebrieflistingarr}
 

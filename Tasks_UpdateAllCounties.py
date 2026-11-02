@@ -12,6 +12,11 @@ parser.add_argument(
     default="local",
     help="Which base URL to use: 'local' or 'prod' (default: local)",
 )
+parser.add_argument(
+    "--any-day",
+    action="store_true",
+    help="Run now instead of only on Thursdays",
+)
 
 args = parser.parse_args()
 
@@ -32,12 +37,13 @@ getpendinglistingsurl = base + "maintanance/maintainPendingListings"
 urlfsbo = f"{base}maintanance/fsbo"
 urlopen = f"{base}maintanance/updateopenhouse"
 
-params = []
+# Tasks_Update3Counties.py already updates these daily
+params = [("exclude_county", "King"), ("exclude_county", "Snohomish"), ("exclude_county", "Skagit")]
 payload = {}
 headers = {}
 
 # Exit early if not Monday or Thursday
-if datetime.today().weekday() not in [3]:
+if not args.any_day and datetime.today().weekday() not in [3]:
     print("Not Thursday. Exiting script.")
     sys.exit()
 
@@ -56,8 +62,8 @@ for i,city in enumerate(response.json()["cities"]):
     files = []
     headers = {}
 
-    # res = requests.request("PATCH", getsoldlistingsurl, headers=headers, data=payload, files=files)
-    # print(res)
+    res = requests.request("PATCH", getsoldlistingsurl, headers=headers, data=payload, files=files)
+    print(res)
     payload = {'doz': '720',
                'city': city}
     res = requests.request("PATCH", getforsalelistingsurl, headers=headers, data=payload, files=files)
