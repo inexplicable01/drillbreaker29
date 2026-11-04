@@ -362,6 +362,7 @@ class GuessGameController():
             'listing_history': listing.history,
             # Public attribution only; agent phone/email stay in the admin views
             'listed_by': {k: listing.agent.get(k) for k in ('agent_name', 'co_agent_name', 'brokerage', 'mls_name', 'mls_id')},
+            'listing_credit': self.listing_credit(listing),
             'photos': listing.photos,
             'guess_count': listing.guesses.count(),
             'final_price': listing.final_price if listing.status == 'sold' else None,
@@ -396,6 +397,19 @@ class GuessGameController():
                 first = e
             newer = current
         return first, pending
+
+    @staticmethod
+    def listing_credit(listing):
+        """Attribution line the Instagram post must carry, e.g. 'Listing courtesy of A, Brokerage. MLS #123.'"""
+        agent = listing.agent
+        names = ' and '.join(n for n in (agent.get('agent_name'), agent.get('co_agent_name')) if n)
+        brokerage = agent.get('brokerage')
+        if not (names or brokerage):
+            return None
+        credit = f"Listing courtesy of {', '.join(x for x in (names, brokerage) if x)}".rstrip('.') + '.'
+        if agent.get('mls_id'):
+            credit += f" MLS #{agent['mls_id']}."
+        return credit
 
     def reel_script(self, listing):
         city = listing.address.split(', ')[1] if ', ' in listing.address else 'Washington'
@@ -436,6 +450,7 @@ class GuessGameController():
             'facts': facts,
             'guess_line': "Guess the sale price in the comments, then lock in your official guess at the link in bio to win.",
             'cta': "Follow Wayber so you catch the reveal when it closes.",
+            'credit': self.listing_credit(listing),
         }
 
     def _package_subject(self, picks):
@@ -473,6 +488,8 @@ class GuessGameController():
   <p><b>Three quick facts:</b></p><ol>{facts}</ol>
   <p><b>Guess:</b> {script['guess_line']}</p>
   <p><b>CTA:</b> {script['cta']}</p>
+  <p style="background:#fff4e5;border:1px solid #f0c36d;border-radius:6px;padding:8px">
+     <b>Listing credit (required in the caption and on screen):</b><br>{script['credit'] or 'Listing agent not available. Check the Zillow page before posting.'}</p>
 </div>""")
         return f"<div style='font-family:Arial,sans-serif;max-width:720px'><h1>Guess the Price: today's homes</h1>{''.join(sections)}</div>"
 

@@ -68,6 +68,7 @@
         <ol>{% for f in script.facts %}<li>{{ f }}</li>{% endfor %}</ol>
         <p>{{ script.guess_line }}</p>
         <p><b>CTA:</b> {{ script.cta }}</p>
+        <p><b>Listing credit (required in the post):</b> {{ script.credit or 'Listing agent not available.' }}</p>
     </div>
 
     <div class="card scroll">
