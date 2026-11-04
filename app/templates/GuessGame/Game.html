@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Guess the Price | Wayber</title>
+    <meta property="og:title" content="Guess the Price: {{ listing.address }}">
+    <meta property="og:description" content="Think you know Washington real estate? Lock in your guess for what this home sold for.">
+    {% if listing.photos %}<meta property="og:image" content="{{ listing.photos[0] }}">{% endif %}
+    <style>
+        :root {
+            --ink: #1b1f24; --muted: #5f6b76; --line: #e3e7eb; --bg: #f6f7f9; --card: #fff;
+            --accent: #0b6e4f; --accent-ink: #fff; --warn: #b42318; --ok-bg: #e7f5ee;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+               color: var(--ink); background: var(--bg); line-height: 1.45; }
+        .wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
+        .brand { font-weight: 700; letter-spacing: .04em; color: var(--accent); font-size: 14px; text-transform: uppercase; }
+        h1 { font-size: 26px; margin: 4px 0 2px; }
+        .address { color: var(--muted); margin: 0 0 14px; }
+        .hero { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 12px; background: #dde2e6; display: block; }
+        .strip { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0 4px; scroll-snap-type: x mandatory; }
+        .strip img { height: 72px; width: 96px; object-fit: cover; border-radius: 8px; cursor: pointer;
+                     scroll-snap-align: start; opacity: .75; border: 2px solid transparent; flex: none; }
+        .strip img.active { opacity: 1; border-color: var(--accent); }
+        .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-top: 14px; }
+        .facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .fact .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+        .fact .value { font-size: 20px; font-weight: 700; }
+        @media (min-width: 560px) { .facts { grid-template-columns: repeat(4, 1fr); } }
+        label { display: block; font-weight: 600; margin: 12px 0 4px; font-size: 14px; }
+        label .opt { font-weight: 400; color: var(--muted); }
+        input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #c9d0d6; border-radius: 8px; background: #fff; }
+        input.bad { border-color: var(--warn); }
+        .field-error { color: var(--warn); font-size: 13px; min-height: 1em; margin-top: 2px; }
+        button { margin-top: 16px; width: 100%; padding: 14px; font-size: 17px; font-weight: 700; border: 0;
+                 border-radius: 10px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+        button[disabled] { opacity: .6; cursor: default; }
+        .msg { margin-top: 12px; padding: 12px; border-radius: 8px; display: none; }
+        .msg.ok { display: block; background: var(--ok-bg); color: var(--accent); font-weight: 600; }
+        .msg.err { display: block; background: #fdecea; color: var(--warn); }
+        .closed { text-align: center; }
+        .closed .big { font-size: 34px; font-weight: 800; color: var(--accent); }
+        .fine { font-size: 12px; color: var(--muted); margin-top: 12px; }
+        footer { text-align: center; color: var(--muted); font-size: 13px; padding: 24px 0; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="brand">Wayber &middot; Guess the Price</div>
+    <h1>What did this home sell for?</h1>
+    <p class="address">{{ listing.address }}</p>
+
+    {% set photos = listing.photos %}
+    {% if photos %}
+        <img class="hero" id="hero" src="{{ photos[0] }}" alt="Photo of {{ listing.address }}">
+        <div class="strip" id="strip">
+            {% for url in photos %}
+                <img src="{{ url }}" alt="Photo {{ loop.index }}" loading="lazy" class="{{ 'active' if loop.first }}">
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="card facts">
+        <div class="fact"><div class="label">List price</div><div class="value">{{ listing.list_price | money }}</div></div>
+        <div class="fact"><div class="label">Beds / Baths</div><div class="value">{{ listing.beds | num }} / {{ listing.baths | num }}</div></div>
+        <div class="fact"><div class="label">Square feet</div><div class="value">{{ '{:,}'.format(listing.sqft) if listing.sqft else 'n/a' }}</div></div>
+        <div class="fact"><div class="label">Pending since</div><div class="value">{{ listing.pending_date.strftime('%b %d') if listing.pending_date else 'n/a' }}</div></div>
+    </div>
+
+    {% if listing.status == 'open' %}
+        <div class="card">
+            <h2 style="margin:0 0 4px;font-size:20px">Lock in your official guess</h2>
+            <div style="color:var(--muted);font-size:14px">The closest guess to the final sale price wins. One guess per email.
+                {% if guess_count %}{{ guess_count }} guess{{ 'es' if guess_count != 1 }} so far.{% endif %}</div>
+            <form id="guess-form" novalidate>
+                <label for="guess">Your guess for the sale price</label>
+                <input id="guess" name="guess" inputmode="numeric" placeholder="$750,000" autocomplete="off" required>
+                <div class="field-error" data-for="guess"></div>
+
+                <label for="name">Name</label>
+                <input id="name" name="name" autocomplete="name" required>
+                <div class="field-error" data-for="name"></div>
+
+                <label for="email">Email <span class="opt">(we&rsquo;ll email you if you win)</span></label>
+                <input id="email" name="email" type="email" autocomplete="email" required>
+                <div class="field-error" data-for="email"></div>
+
+                <label for="instagram">Instagram handle <span class="opt">(optional)</span></label>
+                <input id="instagram" name="instagram" placeholder="@yourhandle" autocomplete="off">
+                <div class="field-error" data-for="instagram"></div>
+
+                <button type="submit" id="submit">Lock in my guess</button>
+                <div class="msg" id="msg" role="status"></div>
+                <p class="fine">By entering you agree that Wayber may email you about this game and Washington real estate. Unsubscribe anytime.</p>
+            </form>
+        </div>
+    {% elif listing.status == 'sold' %}
+        <div class="card closed">
+            <div style="color:var(--muted)">Guessing is closed. This home sold for</div>
+            <div class="big">{{ listing.final_price | money }}</div>
+            <div style="color:var(--muted)">Watch Wayber on Instagram for the winner and the next round.</div>
+        </div>
+    {% else %}
+        <div class="card closed">
+            <div style="font-weight:700">Guessing is closed for this home.</div>
+            <div style="color:var(--muted)">Watch Wayber on Instagram for the next round.</div>
+        </div>
+    {% endif %}
+
+    <footer>Wayber &middot; Washington real estate</footer>
+</div>
+
+<script>
+(function () {
+    var hero = document.getElementById('hero');
+    var strip = document.getElementById('strip');
+    if (hero && strip) {
+        strip.addEventListener('click', function (e) {
+            if (e.target.tagName !== 'IMG') return;
+            hero.src = e.target.src;
+            strip.querySelectorAll('img').forEach(function (img) { img.classList.toggle('active', img === e.target); });
+        });
+    }
+
+    var form = document.getElementById('guess-form');
+    if (!form) return;
+    var msg = document.getElementById('msg');
+    var submit = document.getElementById('submit');
+
+    function showErrors(fields) {
+        form.querySelectorAll('.field-error').forEach(function (el) {
+            var key = el.getAttribute('data-for');
+            el.textContent = (fields && fields[key]) || '';
+            document.getElementById(key).classList.toggle('bad', !!(fields && fields[key]));
+        });
+    }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        msg.className = 'msg';
+        showErrors(null);
+        submit.disabled = true;
+        var body = {
+            guess: form.guess.value,
+            name: form.name.value,
+            email: form.email.value,
+            instagram: form.instagram.value
+        };
+        fetch('/api/game/{{ listing.id }}/guess', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        }).then(function (res) {
+            return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        }).then(function (r) {
+            if (r.ok && r.data.ok) {
+                msg.textContent = r.data.message;
+                msg.className = 'msg ok';
+                form.querySelectorAll('input').forEach(function (i) { i.disabled = true; });
+                submit.style.display = 'none';
+            } else {
+                showErrors(r.data.fields);
+                msg.textContent = r.data.error || 'Something went wrong. Please try again.';
+                msg.className = 'msg err';
+                submit.disabled = false;
+            }
+        }).catch(function () {
+            msg.textContent = 'Network error. Please try again.';
+            msg.className = 'msg err';
+            submit.disabled = false;
+        });
+    });
+})();
+</script>
+</body>
+</html>

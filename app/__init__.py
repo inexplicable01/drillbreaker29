@@ -98,6 +98,7 @@ def create_app(debug=False,config_object="config.module.path"):
     with app.app_context():
         from app.DBModels.BriefListing import BriefListing
         from app.DBModels.CustomerZpid import CustomerZpid
+        from app.DBModels.GuessGame import GameListing, GameGuess, GameRun
 
         # Register relationships (execute only after models are loaded)
         from app.DBModels import relationships

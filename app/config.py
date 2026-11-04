@@ -127,3 +127,33 @@ class Config(object):
     HOMETYPES = [SW.CONDO, SW.TOWNHOUSE, SW.SINGLE_FAMILY, SW.APARTMENT]
     # NEIGHBORHOOD2 = ['Ballard', 'Fremont', 'Crown Hill', 'Green Wood', 'Phinney Ridge', 'Wallingford', 'North Beach',
     #                  'Blue Ridge', 'Whittier Heights', 'Loyal Heights', 'Sunset Hill', 'Magnolia', 'Queen Anne']
+
+
+import os
+
+
+class GuessGameConfig(object):
+    # How often new homes are picked: 'daily' or 'weekly' (weekly picks on GAME_WEEKDAY, 0=Monday)
+    GAME_FREQUENCY = os.getenv('GAME_FREQUENCY', 'daily')
+    GAME_WEEKDAY = int(os.getenv('GAME_WEEKDAY', '0'))
+    MIN_DAYS_PENDING = int(os.getenv('GAME_MIN_DAYS_PENDING', '14'))
+    MAX_DAYS_PENDING = int(os.getenv('GAME_MAX_DAYS_PENDING', '120'))
+    PICKS_PER_RUN = int(os.getenv('GAME_PICKS_PER_RUN', '2'))
+    MIN_PHOTOS = 5
+    # Zillow API budget per run
+    MAX_PICK_LOOKUPS_PER_RUN = int(os.getenv('GAME_MAX_PICK_LOOKUPS', '8'))
+    MAX_STATUS_CHECKS_PER_RUN = int(os.getenv('GAME_MAX_STATUS_CHECKS', '60'))
+    EXPIRE_AFTER_DAYS = 90
+    PACKAGE_RECIPIENT = os.getenv('GAME_PACKAGE_RECIPIENT', 'waichak.luk@gmail.com')
+    ADMIN_EMAIL = os.getenv('GAME_ADMIN_EMAIL', 'waichak.luk@gmail.com')
+    # Email every entrant the result when a round is scored
+    NOTIFY_ENTRANTS = os.getenv('GAME_NOTIFY_ENTRANTS', 'false').lower() == 'true'
+    BASE_URL = os.getenv('GAME_BASE_URL', 'https://www.drillbreaker29.com')
+    # Public game page players are sent to; {id} is the round id.
+    # Switch to e.g. https://www.wayber.ai/game/{id} once that page is live.
+    GAME_PAGE_URL = os.getenv('GAME_PAGE_URL', BASE_URL.rstrip('/') + '/game/{id}')
+    # Sites allowed to call the /api/game endpoints from the browser
+    ALLOWED_ORIGINS = [o.strip() for o in
+                       os.getenv('GAME_ALLOWED_ORIGINS', 'https://www.wayber.ai,https://wayber.ai').split(',') if o.strip()]
+    # Protects /game/admin and the scheduled-task endpoint; both are locked if unset
+    ADMIN_PASSWORD = os.getenv('GAME_ADMIN_PASSWORD')

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Game Monitor</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; background: #f6f7f9; color: #1b1f24; }
+        .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+        h1 { margin: 0 0 4px; }
+        .muted { color: #5f6b76; font-size: 14px; }
+        .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+        .bar form { display: inline; }
+        .btn { display: inline-block; padding: 8px 12px; border-radius: 6px; border: 1px solid #0b6e4f; background: #fff;
+               color: #0b6e4f; text-decoration: none; font-size: 14px; cursor: pointer; }
+        .btn.primary { background: #0b6e4f; color: #fff; }
+        .stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
+        .stat { background: #fff; border: 1px solid #e3e7eb; border-radius: 8px; padding: 10px 14px; min-width: 120px; }
+        .stat b { display: block; font-size: 22px; }
+        .scroll { overflow-x: auto; background: #fff; border: 1px solid #e3e7eb; border-radius: 8px; }
+        table { border-collapse: collapse; width: 100%; font-size: 14px; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid #eef1f3; text-align: left; white-space: nowrap; }
+        th { background: #fafbfc; font-size: 12px; text-transform: uppercase; color: #5f6b76; }
+        .pill { padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+        .open { background: #e8f1fb; color: #1d5fa8; }
+        .sold { background: #e7f5ee; color: #0b6e4f; }
+        .expired, .failed { background: #fdecea; color: #b42318; }
+        .success { background: #e7f5ee; color: #0b6e4f; }
+        .running { background: #fff4e5; color: #9a5b00; }
+        h2 { margin: 24px 0 8px; font-size: 18px; }
+        .msg { white-space: normal; max-width: 460px; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <a href="{{ url_for('main.index') }}" class="muted">&larr; Home</a>
+    <h1>Guess the Price: Game Monitor</h1>
+    <div class="muted">Picks: {{ config.GAME_FREQUENCY }}{% if config.GAME_FREQUENCY == 'weekly' %} (weekday {{ config.GAME_WEEKDAY }}){% endif %},
+        {{ config.PICKS_PER_RUN }} per run, pending &ge; {{ config.MIN_DAYS_PENDING }} days.
+        Package emails go to {{ config.PACKAGE_RECIPIENT }}. Entrant result emails: {{ 'on' if config.NOTIFY_ENTRANTS else 'off' }}.</div>
+
+    {% set open_rounds = rounds | selectattr('listing.status', 'equalto', 'open') | list %}
+    {% set sold_rounds = rounds | selectattr('listing.status', 'equalto', 'sold') | list %}
+    <div class="stats">
+        <div class="stat"><b>{{ open_rounds | length }}</b>open rounds</div>
+        <div class="stat"><b>{{ sold_rounds | length }}</b>scored rounds</div>
+        <div class="stat"><b>{{ rounds | sum(attribute='guess_count') }}</b>total guesses</div>
+        <div class="stat"><b>{{ runs[0].started_at.strftime('%b %d %H:%M') ~ ' UTC' if runs else 'never' }}</b>last run{% if runs %} ({{ runs[0].status }}){% endif %}</div>
+    </div>
+
+    <div class="bar">
+        <a class="btn" href="{{ url_for('guessgame_bp.export_entrants') }}">Export all entrant emails (CSV)</a>
+        <form method="post" action="{{ url_for('guessgame_bp.admin_run_now') }}">
+            <button class="btn" type="submit">Run sold check now</button>
+        </form>
+        <form method="post" action="{{ url_for('guessgame_bp.admin_run_now') }}"
+              onsubmit="return confirm('Pick new homes now and send the package email?');">
+            <input type="hidden" name="force_pick" value="1">
+            <button class="btn primary" type="submit">Pick new homes now</button>
+        </form>
+    </div>
+
+    <h2>Rounds</h2>
+    <div class="scroll">
+        <table>
+            <tr><th>#</th><th>Status</th><th>Address</th><th>List</th><th>Pending</th><th>Guesses</th>
+                <th>Sold</th><th>Winner</th><th>Started</th><th></th></tr>
+            {% for r in rounds %}
+                {% set l = r.listing %}
+                <tr>
+                    <td>{{ l.id }}</td>
+                    <td><span class="pill {{ l.status }}">{{ l.status }}</span></td>
+                    <td><a href="{{ url_for('guessgame_bp.admin_round', listing_id=l.id) }}">{{ l.address }}</a></td>
+                    <td>{{ l.list_price | money }}</td>
+                    <td>{{ l.days_pending() }} days</td>
+                    <td>{{ r.guess_count }}</td>
+                    <td>{{ l.final_price | money if l.final_price else '' }}</td>
+                    <td>{% if r.winner %}{{ r.winner.name }} ({{ r.winner.guessed_price | money }}, off {{ r.winner.error | money }}){% endif %}</td>
+                    <td>{{ l.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td><a href="{{ url_for('guessgame_bp.game_page', listing_id=l.id) }}" target="_blank">game page</a>
+                        &middot; <a href="{{ url_for('guessgame_bp.export_entrants', listing_id=l.id) }}">CSV</a></td>
+                </tr>
+            {% else %}
+                <tr><td colspan="10" class="muted">No rounds yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <h2>Recent runs</h2>
+    <div class="scroll">
+        <table>
+            <tr><th>Run</th><th>Started (UTC)</th><th>Status</th><th>Picks</th><th>Checked</th><th>Scored</th>
+                <th>Expired</th><th>API calls</th><th>Message</th></tr>
+            {% for run in runs %}
+                <tr>
+                    <td>{{ run.id }}</td>
+                    <td>{{ run.started_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td><span class="pill {{ run.status }}">{{ run.status }}</span></td>
+                    <td>{{ run.picks }}</td><td>{{ run.checked }}</td><td>{{ run.scored }}</td>
+                    <td>{{ run.expired }}</td><td>{{ run.api_calls }}</td>
+                    <td class="msg">{{ (run.message or '').splitlines()[0] if run.message else '' }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="9" class="muted">No runs yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+</body>
+</html>

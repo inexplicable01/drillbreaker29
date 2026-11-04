@@ -22,6 +22,7 @@ from .campaignRoute import campaignRoute_bp
 from .usefulRoute import useful_bp
 from .dirtyscoop import dirty_scoop_bp
 from .zonesRoute import zones_bp
+from .guessgame import guessgame_bp
 
 
 def register_blueprints(app: Flask):
@@ -46,3 +47,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(useful_bp)
     app.register_blueprint(dirty_scoop_bp)
     app.register_blueprint(zones_bp)
+    app.register_blueprint(guessgame_bp)

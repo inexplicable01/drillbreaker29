@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Game Round {{ listing.id }}</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; background: #f6f7f9; color: #1b1f24; }
+        .wrap { max-width: 1000px; margin: 0 auto; padding: 16px; }
+        .muted { color: #5f6b76; font-size: 14px; }
+        .card { background: #fff; border: 1px solid #e3e7eb; border-radius: 8px; padding: 14px 16px; margin: 12px 0; }
+        .thumbs img { height: 90px; border-radius: 6px; margin: 2px; }
+        .scroll { overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; font-size: 14px; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid #eef1f3; text-align: left; white-space: nowrap; }
+        th { background: #fafbfc; font-size: 12px; text-transform: uppercase; color: #5f6b76; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <a href="{{ url_for('guessgame_bp.admin') }}" class="muted">&larr; Game Monitor</a>
+    <h1 style="margin:6px 0">{{ listing.address }}</h1>
+    <div class="muted">Round {{ listing.id }} &middot; {{ listing.status }} &middot; started {{ listing.created_at.strftime('%Y-%m-%d') }}
+        &middot; <a href="{{ url_for('guessgame_bp.game_page', listing_id=listing.id) }}" target="_blank">game page</a>
+        {% if listing.zillow_url %}&middot; <a href="{{ listing.zillow_url }}" target="_blank">Zillow</a>{% endif %}</div>
+
+    <div class="card">
+        List {{ listing.list_price | money }} &middot; {{ listing.beds | num }} bd / {{ listing.baths | num }} ba / {{ '{:,}'.format(listing.sqft) if listing.sqft }} sqft
+        &middot; pending since {{ listing.pending_date }} ({{ listing.days_pending() }} days)
+        {% if listing.final_price %}&middot; <b>sold {{ listing.final_price | money }}</b>{% if listing.sold_date %} on {{ listing.sold_date }}{% endif %}{% endif %}
+        <div class="thumbs">{% for url in listing.photos[:10] %}<a href="{{ url }}" target="_blank"><img src="{{ url }}" loading="lazy"></a>{% endfor %}</div>
+    </div>
+
+    <div class="card">
+        <b>Reel script</b>
+        <p><b>Hook:</b> {{ script.hook }}</p>
+        <ol>{% for f in script.facts %}<li>{{ f }}</li>{% endfor %}</ol>
+        <p>{{ script.guess_line }}</p>
+        <p><b>CTA:</b> {{ script.cta }}</p>
+    </div>
+
+    <div class="card scroll">
+        <b>Guesses ({{ guesses | length }})</b>
+        <a href="{{ url_for('guessgame_bp.export_entrants', listing_id=listing.id) }}" style="float:right">Export CSV</a>
+        <table>
+            <tr><th>Rank</th><th>Name</th><th>Email</th><th>Instagram</th><th>Guess</th><th>Off by</th><th>Submitted (UTC)</th></tr>
+            {% for g in guesses %}
+                <tr><td>{{ g.rank or '' }}</td><td>{{ g.name }}</td><td>{{ g.email }}</td>
+                    <td>{{ '@' ~ g.instagram if g.instagram else '' }}</td><td>{{ g.guessed_price | money }}</td>
+                    <td>{{ g.error | money if g.error is not none else '' }}</td><td>{{ g.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+            {% else %}
+                <tr><td colspan="7" class="muted">No guesses yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+</body>
+</html>
