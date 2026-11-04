@@ -18,6 +18,7 @@ from app.ZillowAPI.ZillowAPICall import SearchZillowByZPID
 EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$')
 INSTAGRAM_RE = re.compile(r'^[A-Za-z0-9._]{1,30}$')
 MIN_GUESS = 10_000
+RELIST_GAP_DAYS = 180
 MAX_GUESS = 100_000_000
 GAME_HOME_TYPES = ['SINGLE_FAMILY', 'TOWNHOUSE', 'CONDO']
 
@@ -45,6 +46,24 @@ HISTORY_FIELDS = ('date', 'event', 'price', 'priceChangeRate', 'pricePerSquareFo
 def _listing_history(propertydata):
     """Zillow priceHistory as returned, newest first (only the fields we display)."""
     return [{k: event.get(k) for k in HISTORY_FIELDS} for event in propertydata.get('priceHistory') or []]
+
+
+def _listing_agent(propertydata):
+    """Listing agent, brokerage and MLS attribution from the long listing."""
+    info = propertydata.get('attributionInfo') or {}
+    license_no = next((a.get('memberStateLicense') for a in info.get('listingAgents') or []
+                       if a.get('associatedAgentType') == 'listAgent'), None)
+    return {
+        'agent_name': info.get('agentName'),
+        'agent_phone': info.get('agentPhoneNumber'),
+        'agent_email': info.get('agentEmail'),
+        'agent_license': info.get('agentLicenseNumber') or license_no,
+        'co_agent_name': info.get('coAgentName'),
+        'brokerage': info.get('brokerName') or propertydata.get('brokerageName'),
+        'brokerage_phone': info.get('brokerPhoneNumber'),
+        'mls_name': info.get('mlsName'),
+        'mls_id': propertydata.get('mlsid'),
+    }
 
 
 def _photo_urls(propertydata, limit=15):
@@ -240,18 +259,20 @@ class GuessGameController():
             list_price=int(price),
             pending_date=pending_date,
             listing_history=json.dumps(_listing_history(p)),
+            listing_agent=json.dumps(_listing_agent(p)),
             beds=beds, baths=baths, sqft=int(sqft),
             photo_urls=json.dumps(photos),
             zillow_url=f"https://www.zillow.com{p['hdpUrl']}" if p.get('hdpUrl') else None,
             status='open',
         )
 
-    def refresh_history(self, listing):
-        """Re-pull listing history from Zillow (one API call)."""
+    def refresh_details(self, listing):
+        """Re-pull listing history and listing agent from Zillow (one API call)."""
         p = self._lookup(listing.zpid)
         if not p:
             return False
         listing.listing_history = json.dumps(_listing_history(p))
+        listing.listing_agent = json.dumps(_listing_agent(p))
         db.session.commit()
         return True
 
@@ -339,6 +360,8 @@ class GuessGameController():
             'pending_date': listing.pending_date.isoformat() if listing.pending_date else None,
             'days_pending': listing.days_pending(),
             'listing_history': listing.history,
+            # Public attribution only; agent phone/email stay in the admin views
+            'listed_by': {k: listing.agent.get(k) for k in ('agent_name', 'co_agent_name', 'brokerage', 'mls_name', 'mls_id')},
             'photos': listing.photos,
             'guess_count': listing.guesses.count(),
             'final_price': listing.final_price if listing.status == 'sold' else None,
@@ -348,15 +371,60 @@ class GuessGameController():
             'created_at': listing.created_at.isoformat() + 'Z',
         }
 
+    @staticmethod
+    def listing_timeline(listing):
+        """(first listed event, pending event) for the current sale, from the stored price history.
+
+        The current sale runs back from the pending date to the last sale, or to a listing that was
+        removed more than RELIST_GAP_DAYS before the next event (an old pulled listing is a separate attempt).
+        Rental events are ignored."""
+        end = listing.pending_date.isoformat() if listing.pending_date else '9999'
+        first = pending = None
+        newer = None
+        for e in listing.history:  # newest first
+            event, day = str(e.get('event') or ''), e.get('date') or ''
+            if day > end or 'rent' in event.lower() or 'Rental' in str(e.get('source') or ''):
+                continue
+            if event == 'Sold':
+                break
+            current = datetime.strptime(day, '%Y-%m-%d').date()
+            if event == 'Listing removed' and newer and (newer - current).days > RELIST_GAP_DAYS:
+                break
+            if pending is None and event == 'Pending sale':
+                pending = e
+            if event.startswith('Listed') or event == 'Relisted':
+                first = e
+            newer = current
+        return first, pending
+
     def reel_script(self, listing):
         city = listing.address.split(', ')[1] if ', ' in listing.address else 'Washington'
         days = listing.days_pending()
         beds = _fmt_num(listing.beds)
-        hooks = [
-            f"This {beds}-bed home in {city} has been pending for {days} days. What do you think it actually sold for?",
-            f"Pending for {days} days in {city}. Did this home sell over or under asking? You tell me.",
-            f"Can you guess what this {city} home really sold for? Most people can't.",
-        ]
+        first, pending = self.listing_timeline(listing)
+        first_price = (first or {}).get('price')
+        pending_price = (pending or {}).get('price') or listing.list_price
+        if first and first_price:
+            first_when = datetime.strptime(first['date'], '%Y-%m-%d')
+            listed = f"first listed in {first_when:%B %Y} at {_money(first_price)}"
+            pending_when = f"{listing.pending_date:%B}"
+            if pending_price < first_price:
+                price_path = f"By the time it went pending in {pending_when}, the price was down to {_money(pending_price)}."
+            elif pending_price > first_price:
+                price_path = f"By the time it went pending in {pending_when}, the price was up to {_money(pending_price)}."
+            else:
+                price_path = f"It went pending in {pending_when} still asking {_money(pending_price)}."
+            hooks = [
+                f"This {beds}-bed {city} home was {listed}. {price_path} What did it actually sell for?",
+                f"{listed[0].upper() + listed[1:]}. {price_path} Over or under asking? You tell me.",
+                f"This {city} home was {listed}. {price_path} Can you guess the final sale price?",
+            ]
+        else:
+            hooks = [
+                f"This {beds}-bed home in {city} has been pending for {days} days. What do you think it actually sold for?",
+                f"Pending for {days} days in {city}. Did this home sell over or under asking? You tell me.",
+                f"Can you guess what this {city} home really sold for? Most people can't.",
+            ]
         ppsf = round(listing.list_price / listing.sqft) if listing.sqft else None
         facts = [
             f"{beds} beds, {_fmt_num(listing.baths)} baths, {listing.sqft:,} square feet.",
@@ -392,6 +460,7 @@ class GuessGameController():
   <p><b>List price:</b> {_money(listing.list_price)}<br>
      <b>Days pending:</b> {listing.days_pending()} (since {listing.pending_date:%b %d, %Y})<br>
      <b>Beds / baths / sqft:</b> {_fmt_num(listing.beds)} / {_fmt_num(listing.baths)} / {listing.sqft:,}</p>
+  <p><b>Listed by:</b> {self._agent_html(listing.agent)}</p>
   <p><b>Listing history:</b></p>
   <table border="1" cellpadding="4" style="border-collapse:collapse;font-size:13px">
     <tr><th>Date</th><th>Event</th><th>Price</th><th>Price Change Rate</th><th>Price/Sqft</th><th>Source</th></tr>{history_rows or '<tr><td colspan="6">No price history available.</td></tr>'}</table>
@@ -406,6 +475,26 @@ class GuessGameController():
   <p><b>CTA:</b> {script['cta']}</p>
 </div>""")
         return f"<div style='font-family:Arial,sans-serif;max-width:720px'><h1>Guess the Price: today's homes</h1>{''.join(sections)}</div>"
+
+    @staticmethod
+    def _agent_html(agent):
+        if not agent.get('agent_name') and not agent.get('brokerage'):
+            return 'not available'
+        parts = [agent.get('agent_name') or 'Unknown agent']
+        if agent.get('agent_license'):
+            parts[0] += f" (lic. {agent['agent_license']})"
+        contact = ', '.join(x for x in (agent.get('agent_phone'), agent.get('agent_email')) if x)
+        if contact:
+            parts.append(contact)
+        if agent.get('co_agent_name'):
+            parts.append(f"co-listed with {agent['co_agent_name']}")
+        brokerage = agent.get('brokerage') or ''
+        if agent.get('brokerage_phone'):
+            brokerage += f" ({agent['brokerage_phone']})"
+        lines = [' &middot; '.join(parts), brokerage]
+        if agent.get('mls_id'):
+            lines.append(f"{agent.get('mls_name') or 'MLS'} #{agent['mls_id']}")
+        return '<br>'.join(l for l in lines if l)
 
     def results_email_html(self, listing, ranked):
         diff = listing.final_price - listing.list_price if listing.list_price else None

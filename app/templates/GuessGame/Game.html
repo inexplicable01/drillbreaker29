@@ -28,6 +28,7 @@
         .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
         .fact .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
         .fact .value { font-size: 20px; font-weight: 700; }
+        .listed-by { font-size: 13px; color: var(--muted); margin: 10px 2px 0; }
         .history-wrap { overflow-x: auto; }
         .history-wrap.collapsed { max-height: 260px; overflow-y: auto; }
         .history { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -75,6 +76,13 @@
         <div class="fact"><div class="label">Square feet</div><div class="value">{{ '{:,}'.format(listing.sqft) if listing.sqft else 'n/a' }}</div></div>
         <div class="fact"><div class="label">Pending since</div><div class="value">{{ listing.pending_date.strftime('%b %d') if listing.pending_date else 'n/a' }}</div></div>
     </div>
+
+    {% set agent = listing.agent %}
+    {% if agent.agent_name or agent.brokerage %}
+        <div class="listed-by">
+            Listed by {{ agent.agent_name or 'the listing agent' }}{% if agent.co_agent_name %} and {{ agent.co_agent_name }}{% endif %}{% if agent.brokerage %}, {{ agent.brokerage }}{% endif %}{% if agent.mls_id %} &middot; {{ agent.mls_name or 'MLS' }} #{{ agent.mls_id }}{% endif %}
+        </div>
+    {% endif %}
 
     <div class="card">
         <h2 style="margin:0 0 8px;font-size:18px">Price history</h2>

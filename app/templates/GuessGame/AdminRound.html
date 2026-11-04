@@ -31,6 +31,21 @@
         <div class="thumbs">{% for url in listing.photos[:10] %}<a href="{{ url }}" target="_blank"><img src="{{ url }}" loading="lazy"></a>{% endfor %}</div>
     </div>
 
+    {% set agent = listing.agent %}
+    <div class="card">
+        <b>Listed by</b>
+        {% if agent.agent_name or agent.brokerage %}
+            <div>{{ agent.agent_name or 'Unknown agent' }}{% if agent.agent_license %} (lic. {{ agent.agent_license }}){% endif %}
+                {% if agent.agent_phone %}&middot; {{ agent.agent_phone }}{% endif %}
+                {% if agent.agent_email %}&middot; <a href="mailto:{{ agent.agent_email }}">{{ agent.agent_email }}</a>{% endif %}
+                {% if agent.co_agent_name %}&middot; co-listed with {{ agent.co_agent_name }}{% endif %}</div>
+            <div>{{ agent.brokerage or '' }}{% if agent.brokerage_phone %} ({{ agent.brokerage_phone }}){% endif %}</div>
+            {% if agent.mls_id %}<div class="muted">{{ agent.mls_name or 'MLS' }} #{{ agent.mls_id }}</div>{% endif %}
+        {% else %}
+            <div class="muted">Not available</div>
+        {% endif %}
+    </div>
+
     <div class="card scroll">
         <b>Price history</b>
         <table>
