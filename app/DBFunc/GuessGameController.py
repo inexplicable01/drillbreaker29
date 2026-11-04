@@ -39,6 +39,14 @@ def _history_event(propertydata, keyword):
     return None
 
 
+HISTORY_FIELDS = ('date', 'event', 'price', 'priceChangeRate', 'pricePerSquareFoot', 'source')
+
+
+def _listing_history(propertydata):
+    """Zillow priceHistory as returned, newest first (only the fields we display)."""
+    return [{k: event.get(k) for k in HISTORY_FIELDS} for event in propertydata.get('priceHistory') or []]
+
+
 def _photo_urls(propertydata, limit=15):
     urls = []
     for photo in propertydata.get('originalPhotos') or propertydata.get('photos') or []:
@@ -231,11 +239,21 @@ class GuessGameController():
             address=f"{street}, {p.get('city')}, {p.get('state')} {p.get('zipcode')}",
             list_price=int(price),
             pending_date=pending_date,
+            listing_history=json.dumps(_listing_history(p)),
             beds=beds, baths=baths, sqft=int(sqft),
             photo_urls=json.dumps(photos),
             zillow_url=f"https://www.zillow.com{p['hdpUrl']}" if p.get('hdpUrl') else None,
             status='open',
         )
+
+    def refresh_history(self, listing):
+        """Re-pull listing history from Zillow (one API call)."""
+        p = self._lookup(listing.zpid)
+        if not p:
+            return False
+        listing.listing_history = json.dumps(_listing_history(p))
+        db.session.commit()
+        return True
 
     # ---------- sold tracking & scoring ----------
 
@@ -320,6 +338,7 @@ class GuessGameController():
             'sqft': listing.sqft,
             'pending_date': listing.pending_date.isoformat() if listing.pending_date else None,
             'days_pending': listing.days_pending(),
+            'listing_history': listing.history,
             'photos': listing.photos,
             'guess_count': listing.guesses.count(),
             'final_price': listing.final_price if listing.status == 'sold' else None,
@@ -362,12 +381,20 @@ class GuessGameController():
             thumbs = ''.join(f'<a href="{u}"><img src="{u}" width="160" style="margin:2px;border-radius:4px"></a>' for u in photos[:4])
             photo_links = ''.join(f'<li><a href="{u}">Photo {i}</a></li>' for i, u in enumerate(photos, start=1))
             facts = ''.join(f'<li>{f}</li>' for f in script['facts'])
+            history_rows = ''.join(
+                f"<tr><td>{e.get('date')}</td><td>{e.get('event')}</td><td>{_money(e.get('price')) if e.get('price') is not None else 'N/A'}</td>"
+                f"<td>{format(e['priceChangeRate'], '.2%') if e.get('priceChangeRate') is not None else 'N/A'}</td>"
+                f"<td>{('$' + str(e['pricePerSquareFoot']) + '/sqft') if e.get('pricePerSquareFoot') is not None else 'N/A'}</td>"
+                f"<td>{e.get('source') or ''}</td></tr>" for e in listing.history)
             sections.append(f"""
 <div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:20px">
   <h2 style="margin-top:0">{listing.address}</h2>
   <p><b>List price:</b> {_money(listing.list_price)}<br>
      <b>Days pending:</b> {listing.days_pending()} (since {listing.pending_date:%b %d, %Y})<br>
      <b>Beds / baths / sqft:</b> {_fmt_num(listing.beds)} / {_fmt_num(listing.baths)} / {listing.sqft:,}</p>
+  <p><b>Listing history:</b></p>
+  <table border="1" cellpadding="4" style="border-collapse:collapse;font-size:13px">
+    <tr><th>Date</th><th>Event</th><th>Price</th><th>Price Change Rate</th><th>Price/Sqft</th><th>Source</th></tr>{history_rows or '<tr><td colspan="6">No price history available.</td></tr>'}</table>
   <p><b>Game page:</b> <a href="{self.game_url(listing)}">{self.game_url(listing)}</a><br>
      <b>Zillow:</b> <a href="{listing.zillow_url}">{listing.zillow_url}</a></p>
   <div>{thumbs}</div>

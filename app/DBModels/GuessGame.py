@@ -12,6 +12,7 @@ class GameListing(db.Model):
     address = db.Column(db.String(255), nullable=False)
     list_price = db.Column(db.BigInteger, nullable=True)
     pending_date = db.Column(db.Date, nullable=True)
+    listing_history = db.Column(db.Text, nullable=True)  # Zillow priceHistory as returned (JSON), newest first
     beds = db.Column(db.Float, nullable=True)
     baths = db.Column(db.Float, nullable=True)
     sqft = db.Column(db.Integer, nullable=True)
@@ -41,6 +42,13 @@ class GameListing(db.Model):
         if not self.pending_date:
             return None
         return ((today or datetime.utcnow().date()) - self.pending_date).days
+
+    @property
+    def history(self):
+        try:
+            return json.loads(self.listing_history or '[]')
+        except ValueError:
+            return []
 
     def __repr__(self):
         return f"<GameListing {self.id} {self.address} {self.status}>"

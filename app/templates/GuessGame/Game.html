@@ -25,10 +25,17 @@
                      scroll-snap-align: start; opacity: .75; border: 2px solid transparent; flex: none; }
         .strip img.active { opacity: 1; border-color: var(--accent); }
         .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-top: 14px; }
-        .facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
         .fact .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
         .fact .value { font-size: 20px; font-weight: 700; }
-        @media (min-width: 560px) { .facts { grid-template-columns: repeat(4, 1fr); } }
+        .history-wrap { overflow-x: auto; }
+        .history-wrap.collapsed { max-height: 260px; overflow-y: auto; }
+        .history { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .history th { position: sticky; top: 0; background: #f0f2f4; text-align: left; font-size: 12px; color: var(--muted); }
+        .history th, .history td { padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+        .history td:nth-child(3), .history td:nth-child(4), .history td:nth-child(5) { font-variant-numeric: tabular-nums; }
+        button.toggle { margin-top: 8px; width: auto; padding: 6px 12px; font-size: 13px; font-weight: 600;
+                        background: #fff; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; }
         label { display: block; font-weight: 600; margin: 12px 0 4px; font-size: 14px; }
         label .opt { font-weight: 400; color: var(--muted); }
         input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #c9d0d6; border-radius: 8px; background: #fff; }
@@ -67,6 +74,36 @@
         <div class="fact"><div class="label">Beds / Baths</div><div class="value">{{ listing.beds | num }} / {{ listing.baths | num }}</div></div>
         <div class="fact"><div class="label">Square feet</div><div class="value">{{ '{:,}'.format(listing.sqft) if listing.sqft else 'n/a' }}</div></div>
         <div class="fact"><div class="label">Pending since</div><div class="value">{{ listing.pending_date.strftime('%b %d') if listing.pending_date else 'n/a' }}</div></div>
+    </div>
+
+    <div class="card">
+        <h2 style="margin:0 0 8px;font-size:18px">Price history</h2>
+        {% if listing.history %}
+            <div class="history-wrap collapsed" id="history-wrap">
+                <table class="history">
+                    <thead>
+                    <tr><th>Date</th><th>Event</th><th>Price</th><th>Price Change Rate</th><th>Price/Sqft</th><th>Source</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for e in listing.history %}
+                        <tr>
+                            <td>{{ e.date }}</td>
+                            <td>{{ e.event }}</td>
+                            <td>{{ '${:,.0f}'.format(e.price) if e.price is not none else 'N/A' }}</td>
+                            <td>{{ '{:.2%}'.format(e.priceChangeRate) if e.priceChangeRate is not none else 'N/A' }}</td>
+                            <td>{{ '$' ~ e.pricePerSquareFoot ~ '/sqft' if e.pricePerSquareFoot is not none else 'N/A' }}</td>
+                            <td>{{ e.source or '' }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if listing.history | length > 6 %}
+                <button type="button" class="toggle" id="history-toggle">Show full history ({{ listing.history | length }} events)</button>
+            {% endif %}
+        {% else %}
+            <p style="color:var(--muted)">No price history available.</p>
+        {% endif %}
     </div>
 
     {% if listing.status == 'open' %}
@@ -121,6 +158,16 @@
             if (e.target.tagName !== 'IMG') return;
             hero.src = e.target.src;
             strip.querySelectorAll('img').forEach(function (img) { img.classList.toggle('active', img === e.target); });
+        });
+    }
+
+    var historyWrap = document.getElementById('history-wrap');
+    var historyToggle = document.getElementById('history-toggle');
+    if (historyWrap && historyToggle) {
+        var fullLabel = historyToggle.textContent;
+        historyToggle.addEventListener('click', function () {
+            var collapsed = historyWrap.classList.toggle('collapsed');
+            historyToggle.textContent = collapsed ? fullLabel : 'Collapse';
         });
     }
 

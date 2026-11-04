@@ -31,6 +31,22 @@
         <div class="thumbs">{% for url in listing.photos[:10] %}<a href="{{ url }}" target="_blank"><img src="{{ url }}" loading="lazy"></a>{% endfor %}</div>
     </div>
 
+    <div class="card scroll">
+        <b>Price history</b>
+        <table>
+            <tr><th>Date</th><th>Event</th><th>Price</th><th>Price Change Rate</th><th>Price/Sqft</th><th>Source</th></tr>
+            {% for e in listing.history %}
+                <tr><td>{{ e.date }}</td><td>{{ e.event }}</td>
+                    <td>{{ '${:,.0f}'.format(e.price) if e.price is not none else 'N/A' }}</td>
+                    <td>{{ '{:.2%}'.format(e.priceChangeRate) if e.priceChangeRate is not none else 'N/A' }}</td>
+                    <td>{{ '$' ~ e.pricePerSquareFoot ~ '/sqft' if e.pricePerSquareFoot is not none else 'N/A' }}</td>
+                    <td>{{ e.source or '' }}</td></tr>
+            {% else %}
+                <tr><td colspan="6" class="muted">No price history available.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
     <div class="card">
         <b>Reel script</b>
         <p><b>Hook:</b> {{ script.hook }}</p>
