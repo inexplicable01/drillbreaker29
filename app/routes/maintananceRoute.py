@@ -202,6 +202,8 @@ def maintainSoldListings():
         try:
             doz = int(request.form.get('doz'))
             city = request.form.get('city')
+            # Zillow's sold window; longer only for one-time backfills of a new area
+            soldInLast = request.form.get('soldInLast', '90_days')
             max_sqft=10000
             # Track stats for email report
             stats = {
@@ -217,7 +219,7 @@ def maintainSoldListings():
 
             # Updating the Sold Properties
             soldbrieflistingarr = []
-            soldrawdata = SearchZillowHomesByLocation(city, status="Sold", max_sqft = max_sqft)
+            soldrawdata = SearchZillowHomesByLocation(city, status="Sold", soldInLast=soldInLast, max_sqft = max_sqft)
             stats['total_api_results'] = len(soldrawdata)
 
             for briefhomedata in soldrawdata:

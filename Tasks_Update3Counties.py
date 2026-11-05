@@ -29,7 +29,9 @@ getpendinglistingsurl = base + "maintanance/maintainPendingListings"
 urlfsbo = f"{base}maintanance/fsbo"
 urlopen = f"{base}maintanance/updateopenhouse"
 
-params = [("county", "King"), ("county", "Snohomish"), ("county", "Skagit")]
+# Pierce added 2026-11: wayber_erp seller leads in Puyallup/Graham had no
+# recent comps on the weekly cadence
+params = [("county", "King"), ("county", "Snohomish"), ("county", "Skagit"), ("county", "Pierce")]
 payload = {}
 headers = {}
 
@@ -100,7 +102,7 @@ payload = {}
 response = requests.request("POST", base+"zonestats/update", headers=headers, data=payload)
 
 # Build comprehensive email message
-email_message = "3 County Update Summary\n"
+email_message = "4 County Update Summary (King, Snohomish, Skagit, Pierce)\n"
 email_message += "=" * 60 + "\n\n"
 
 for city_stats in all_stats['sold_details']:

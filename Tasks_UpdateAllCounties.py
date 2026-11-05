@@ -38,7 +38,7 @@ urlfsbo = f"{base}maintanance/fsbo"
 urlopen = f"{base}maintanance/updateopenhouse"
 
 # Tasks_Update3Counties.py already updates these daily
-params = [("exclude_county", "King"), ("exclude_county", "Snohomish"), ("exclude_county", "Skagit")]
+params = [("exclude_county", "King"), ("exclude_county", "Snohomish"), ("exclude_county", "Skagit"), ("exclude_county", "Pierce")]
 payload = {}
 headers = {}
 
