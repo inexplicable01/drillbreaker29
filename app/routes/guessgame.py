@@ -1,6 +1,7 @@
 import csv
 import hmac
 import io
+import re
 from functools import wraps
 
 from flask import Blueprint, render_template, request, jsonify, Response, abort, redirect, url_for
@@ -10,6 +11,23 @@ from app.DBFunc.GuessGameController import guessgamecontroller, _money, _fmt_num
 from app.DBModels.GuessGame import GameGuess
 
 guessgame_bp = Blueprint('guessgame_bp', __name__)
+
+
+ZPID_IN_URL_RE = re.compile(r'(\d+)_zpid')
+
+
+def parse_zpids(raw):
+    """zpids from free text: bare numbers or Zillow URLs (…/38593240_zpid/), separated by spaces, commas or lines."""
+    if isinstance(raw, (list, tuple)):
+        raw = ' '.join(str(x) for x in raw)
+    zpids = []
+    for token in re.split(r'[\s,]+', str(raw or '')):
+        match = ZPID_IN_URL_RE.search(token)
+        if match:
+            zpids.append(int(match.group(1)))
+        elif token.isdigit():
+            zpids.append(int(token))
+    return zpids
 
 
 def _password_ok(supplied):
@@ -101,6 +119,21 @@ def run_daily_task():
                     'message': run.message}), 200 if run.status == 'success' else 500
 
 
+@guessgame_bp.route('/game/tasks/add', methods=['POST'])
+def add_rounds_task():
+    """Start rounds for specific homes: JSON {"zpids": [..]} (numbers or Zillow URLs), header X-Game-Key."""
+    if not _password_ok(request.headers.get('X-Game-Key')):
+        return jsonify({'ok': False, 'error': 'unauthorized'}), 401
+    zpids = parse_zpids((request.get_json(silent=True) or {}).get('zpids'))
+    if not zpids:
+        return jsonify({'ok': False, 'error': 'no zpids given'}), 400
+    added, skipped = guessgamecontroller.add_by_zpids(zpids)
+    return jsonify({'ok': 'error' not in skipped,
+                    'added': [{'id': l.id, 'zpid': l.zpid, 'address': l.address,
+                               'game_url': guessgamecontroller.game_url(l)} for l in added],
+                    'skipped': {str(k): v for k, v in skipped.items()}}), 500 if 'error' in skipped else 200
+
+
 # ---------- admin ----------
 
 @guessgame_bp.route('/game/admin', methods=['GET'])
@@ -113,7 +146,21 @@ def admin():
         rounds.append({'listing': listing, 'guess_count': len(ranked),
                        'winner': ranked[0] if listing.status == 'sold' and ranked else None})
     return render_template('GuessGame/Admin.html', rounds=rounds, runs=guessgamecontroller.recent_runs(),
-                           config=GC)
+                           config=GC, notice=request.args.get('notice'))
+
+
+@guessgame_bp.route('/game/admin/add', methods=['POST'])
+@admin_required
+def admin_add_rounds():
+    zpids = parse_zpids(request.form.get('zpids'))
+    if not zpids:
+        return redirect(url_for('guessgame_bp.admin', notice='No zpids or Zillow links found.'))
+    added, skipped = guessgamecontroller.add_by_zpids(zpids)
+    notice = f"Added {len(added)} round{'s' if len(added) != 1 else ''}" + \
+             (': ' + '; '.join(l.address for l in added) if added else '') + '.'
+    if skipped:
+        notice += ' Skipped: ' + '; '.join(f'{z} ({r})' for z, r in skipped.items()) + '.'
+    return redirect(url_for('guessgame_bp.admin', notice=notice))
 
 
 @guessgame_bp.route('/game/admin/<int:listing_id>', methods=['GET'])

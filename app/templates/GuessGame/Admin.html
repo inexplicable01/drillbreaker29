@@ -29,6 +29,9 @@
         .running { background: #fff4e5; color: #9a5b00; }
         h2 { margin: 24px 0 8px; font-size: 18px; }
         .msg { white-space: normal; max-width: 460px; }
+        .notice { background: #fff; border: 1px solid #0b6e4f; border-left-width: 4px; border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+        .add { background: #fff; border: 1px solid #e3e7eb; border-radius: 8px; padding: 12px 14px; margin: 12px 0; }
+        .add textarea { width: 100%; box-sizing: border-box; min-height: 64px; font: inherit; font-size: 14px; margin: 6px 0; }
     </style>
 </head>
 <body>
@@ -59,6 +62,17 @@
             <button class="btn primary" type="submit">Pick new homes now</button>
         </form>
     </div>
+
+    {% if notice %}<div class="notice">{{ notice }}</div>{% endif %}
+
+    <form class="add" method="post" action="{{ url_for('guessgame_bp.admin_add_rounds') }}"
+          onsubmit="return confirm('Start rounds for these homes and send the package email?');">
+        <b>Add specific homes</b>
+        <div class="muted">Paste zpids or Zillow links, one per line. Each home is checked on Zillow (1 API call each)
+            and must be pending at least {{ config.MIN_DAYS_PENDING }} days.</div>
+        <textarea name="zpids" placeholder="38593240&#10;https://www.zillow.com/homedetails/.../63339297_zpid/"></textarea>
+        <button class="btn primary" type="submit">Add rounds</button>
+    </form>
 
     <h2>Rounds</h2>
     <div class="scroll">

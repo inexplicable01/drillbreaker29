@@ -226,7 +226,7 @@ class GuessGameController():
         for candidate in candidates:
             if len(picks) >= GC.PICKS_PER_RUN:
                 break
-            listing = self._build_listing(candidate.zpid)
+            listing, _reason = self._build_listing(candidate.zpid)
             if listing:
                 db.session.add(listing)
                 db.session.commit()
@@ -234,23 +234,69 @@ class GuessGameController():
                 print_and_log(f"[GuessGame] picked {listing.address} (zpid {listing.zpid})")
         return picks
 
+    def add_by_zpids(self, zpids):
+        """Starts rounds for specific homes (admin hand-picks). Each home is checked on Zillow like a
+        random pick (one API call each). Sends one package email for everything added.
+
+        Returns (added GameListings, {zpid: reason} for homes that were skipped)."""
+        self.api_calls = 0
+        run = GameRun()
+        db.session.add(run)
+        db.session.commit()
+        added, skipped = [], {}
+        try:
+            for zpid in dict.fromkeys(zpids):  # de-duplicate, keep order
+                if GameListing.query.filter_by(zpid=zpid).first():
+                    skipped[zpid] = 'already used in a round'
+                    continue
+                listing, reason = self._build_listing(zpid)
+                if not listing:
+                    skipped[zpid] = reason
+                    continue
+                db.session.add(listing)
+                db.session.commit()
+                added.append(listing)
+                print_and_log(f"[GuessGame] hand-picked {listing.address} (zpid {zpid})")
+            if added and not send_email(self._package_subject(added), GC.PACKAGE_RECIPIENT, self.package_email_html(added)):
+                raise RuntimeError('Game package email failed to send')
+            run.status = 'success'
+        except Exception as e:
+            db.session.rollback()
+            run.status = 'failed'
+            skipped['error'] = str(e)
+            print_and_log(f"[GuessGame] hand-pick failed: {e}\n{traceback.format_exc()}")
+        run.picks = len(added)
+        parts = [f"Hand-picked {len(added)}: " + '; '.join(p.address for p in added)]
+        parts += [f"skipped {z}: {r}" for z, r in skipped.items()]
+        run.message = ' | '.join(parts)
+        run.api_calls = self.api_calls
+        run.finished_at = datetime.utcnow()
+        db.session.add(run)
+        db.session.commit()
+        return added, skipped
+
     def _build_listing(self, zpid):
-        """Confirms the home on Zillow and returns an unsaved GameListing, or None if it doesn't qualify."""
+        """Confirms the home on Zillow. Returns (unsaved GameListing, None), or (None, reason) if it doesn't qualify."""
         p = self._lookup(zpid)
-        if not p or p.get('homeStatus') != PENDING:
-            return None
+        if not p:
+            return None, 'Zillow lookup failed'
+        if p.get('homeStatus') != PENDING:
+            return None, f"not pending on Zillow (status {p.get('homeStatus')})"
 
         pending_event = _history_event(p, 'Pending')
         if not pending_event:
-            return None
+            return None, 'no pending event in price history'
         pending_date = datetime.strptime(pending_event['date'], '%Y-%m-%d').date()
-        if (datetime.utcnow().date() - pending_date).days < GC.MIN_DAYS_PENDING:
-            return None
+        days = (datetime.utcnow().date() - pending_date).days
+        if days < GC.MIN_DAYS_PENDING:
+            return None, f"pending only {days} days (minimum {GC.MIN_DAYS_PENDING})"
 
         photos = _photo_urls(p)
         beds, baths, sqft, price = p.get('bedrooms'), p.get('bathrooms'), p.get('livingArea'), p.get('price')
-        if len(photos) < GC.MIN_PHOTOS or not (beds and baths and sqft and price):
-            return None
+        if len(photos) < GC.MIN_PHOTOS:
+            return None, f"only {len(photos)} photos (minimum {GC.MIN_PHOTOS})"
+        if not (beds and baths and sqft and price):
+            return None, 'missing beds, baths, sqft or price'
 
         street = p.get('streetAddress') or (p.get('address') or {}).get('streetAddress')
         return GameListing(
@@ -264,7 +310,7 @@ class GuessGameController():
             photo_urls=json.dumps(photos),
             zillow_url=f"https://www.zillow.com{p['hdpUrl']}" if p.get('hdpUrl') else None,
             status='open',
-        )
+        ), None
 
     def refresh_details(self, listing):
         """Re-pull listing history and listing agent from Zillow (one API call)."""

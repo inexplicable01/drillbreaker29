@@ -2,6 +2,8 @@
 
 Schedule on PythonAnywhere once a day:  python Tasks_GuessGame.py --base prod
 How often new homes are picked is controlled by GAME_FREQUENCY in the app's .env (daily/weekly).
+
+Start rounds for specific homes instead:  python Tasks_GuessGame.py --base prod --zpids 38593240 63339297
 """
 import argparse
 import os
@@ -9,9 +11,24 @@ import sys
 from datetime import datetime
 
 import requests
-from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_env(path):
+    """Minimal .env reader (no python-dotenv needed, so any Python on the server can run this task)."""
+    try:
+        with open(path, encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+    except FileNotFoundError:
+        pass
+
+
+load_env(os.path.join(HERE, '.env'))
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -25,6 +42,11 @@ parser.add_argument(
     action="store_true",
     help="Pick new homes even if today isn't a pick day",
 )
+parser.add_argument(
+    "--zpids",
+    nargs="+",
+    help="Start rounds for these homes (zpids or Zillow links) instead of the daily run",
+)
 args = parser.parse_args()
 
 if args.base == "local":
@@ -34,9 +56,13 @@ else:  # "prod"
 
 print(f"{datetime.now()} Guess the Price run against {base}")
 try:
-    response = requests.post(base + "game/tasks/daily",
+    if args.zpids:
+        endpoint, payload = "game/tasks/add", {"zpids": args.zpids}
+    else:
+        endpoint, payload = "game/tasks/daily", {"force_pick": args.force_pick}
+    response = requests.post(base + endpoint,
                              headers={"X-Game-Key": os.getenv("GAME_ADMIN_PASSWORD") or ""},
-                             json={"force_pick": args.force_pick},
+                             json=payload,
                              timeout=900)
     print(response.status_code, response.text)
     response.raise_for_status()
